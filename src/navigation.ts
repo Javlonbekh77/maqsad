@@ -1,3 +1,4 @@
+
 import {
   createLocalizedPathnamesNavigation,
   Pathnames
@@ -13,6 +14,7 @@ export const pathnames = {
   '/dashboard': '/dashboard',
   '/groups': '/groups',
   '/leaderboard': '/leaderboard',
+  '/settings': '/settings',
   '/profile/[id]': {
     en: '/profile/[id]',
     uz: '/profil/[id]'
