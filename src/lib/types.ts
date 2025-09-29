@@ -12,6 +12,7 @@ export type TaskHistory = {
 };
 
 export type User = {
+  firebaseId?: string; // Firestore document ID
   id: string;
   fullName: string;
   avatarUrl: string;
