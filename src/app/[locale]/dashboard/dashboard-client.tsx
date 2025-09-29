@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from '@/navigation';
 import AppLayout from "@/components/layout/app-layout";
 import TodoList from "@/components/dashboard/todo-list";
@@ -10,26 +10,43 @@ import { useTranslations } from "next-intl";
 import HabitTracker from "@/components/profile/habit-tracker";
 import { useAuth } from '@/context/auth-context';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getUserById, getUserTasks } from '@/lib/data';
 
-interface DashboardClientProps {
-  user: User | null;
-  initialTasks: UserTask[];
-}
-
-export default function DashboardClient({ user: serverUser, initialTasks }: DashboardClientProps) {
+export default function DashboardClient() {
   const t = useTranslations('dashboard');
-  const { user, loading } = useAuth();
+  const { user: authUser, loading: authLoading } = useAuth();
   const router = useRouter();
 
+  const [user, setUser] = useState<User | null>(null);
+  const [tasks, setTasks] = useState<UserTask[]>([]);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    if (!loading && !user) {
+    if (!authLoading && !authUser) {
       router.push('/login');
+      return;
     }
-  }, [user, loading, router]);
 
-  const currentUser = user || serverUser;
+    if (authUser) {
+      const fetchData = async () => {
+        setLoading(true);
+        const [userData, userTasks] = await Promise.all([
+          getUserById(authUser.id),
+          getUserTasks(authUser.id)
+        ]);
+        
+        setUser(userData || null);
+        setTasks(userTasks);
+        setLoading(false);
+      };
 
-  if (loading || !currentUser) {
+      fetchData();
+    }
+  }, [authUser, authLoading, router]);
+
+  const isLoading = authLoading || loading;
+
+  if (isLoading || !user) {
     return (
       <AppLayout>
         <div className="grid gap-8">
@@ -50,16 +67,16 @@ export default function DashboardClient({ user: serverUser, initialTasks }: Dash
     <AppLayout>
       <div className="grid gap-8">
         <div>
-          <h1 className="text-3xl font-bold font-display">{t('welcome', { name: currentUser.firstName })}</h1>
+          <h1 className="text-3xl font-bold font-display">{t('welcome', { name: user.firstName })}</h1>
           <p className="text-muted-foreground">{t('welcomeSubtitle')}</p>
         </div>
 
         <div className="grid gap-8 items-start">
           <div>
-            <TodoList initialTasks={initialTasks} userId={currentUser.id} />
+            <TodoList initialTasks={tasks} userId={user.id} />
           </div>
           <div>
-            <HabitTracker user={currentUser} />
+            <HabitTracker user={user} />
           </div>
         </div>
       </div>
