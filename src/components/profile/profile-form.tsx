@@ -19,6 +19,9 @@ import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
 import { Separator } from '../ui/separator';
 import { useTranslations } from 'next-intl';
+import { updateUserProfile } from '@/lib/data';
+import { useRouter } from '@/navigation';
+import { useTransition } from 'react';
 
 const profileFormSchema = z.object({
   goals: z
@@ -36,6 +39,8 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 export default function ProfileForm({ user }: { user: User }) {
   const t = useTranslations('profile');
   const { toast } = useToast();
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -47,11 +52,13 @@ export default function ProfileForm({ user }: { user: User }) {
   });
 
   function onSubmit(data: ProfileFormValues) {
-    // In a real app, this would be an API call
-    console.log('Updating profile:', data);
-    toast({
-      title: t('toast.title'),
-      description: t('toast.description'),
+    startTransition(async () => {
+      await updateUserProfile(user.id, data);
+      toast({
+        title: t('toast.title'),
+        description: t('toast.description'),
+      });
+      router.refresh();
     });
   }
 
@@ -100,7 +107,7 @@ export default function ProfileForm({ user }: { user: User }) {
           )}
         />
         <div className="flex justify-end">
-            <Button type="submit">{t('updateButton')}</Button>
+            <Button type="submit" disabled={isPending}>{t('updateButton')}</Button>
         </div>
       </form>
     </Form>

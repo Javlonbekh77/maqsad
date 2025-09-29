@@ -1,4 +1,6 @@
 
+'use server';
+
 import type { User, Group, Task, TaskHistory, WeeklyMeeting } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 import { subDays, format } from 'date-fns';
@@ -333,6 +335,16 @@ export const completeUserTask = async (userId: string, taskId: string, coins: nu
           taskHistory: [...user.taskHistory, { taskId, date: today }],
         };
       }
+    }
+    return user;
+  });
+  return Promise.resolve();
+};
+
+export const updateUserProfile = async (userId: string, data: { goals: string; habits: string }): Promise<void> => {
+  usersStore = usersStore.map(user => {
+    if (user.id === userId) {
+      return { ...user, ...data };
     }
     return user;
   });
