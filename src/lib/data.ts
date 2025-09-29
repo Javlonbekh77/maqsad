@@ -205,6 +205,16 @@ export const getGroupById = async (id: string): Promise<Group | undefined> => {
   return Promise.resolve(group ? JSON.parse(JSON.stringify(group)) : undefined);
 };
 
+export const getGroupsByUserId = async (userId: string): Promise<Group[]> => {
+  const user = await getUserById(userId);
+  if (!user) {
+    return [];
+  }
+  const allGroups = await getGroups();
+  const userGroups = allGroups.filter(group => user.groups.includes(group.id));
+  return userGroups;
+};
+
 export const getTasksByGroupId = async (groupId: string): Promise<Task[]> => {
   const tasks = tasksStore.filter((t) => t.groupId === groupId);
   return Promise.resolve(JSON.parse(JSON.stringify(tasks)));

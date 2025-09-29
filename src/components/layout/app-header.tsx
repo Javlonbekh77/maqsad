@@ -42,7 +42,7 @@ export default function AppHeader() {
         <Input
           type="search"
           placeholder={t('header.searchPlaceholder')}
-          className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px] bg-secondary"
+          className="pl-8 w-full md:w-[200px] lg:w-[300px] bg-secondary"
         />
       </div>
 
@@ -81,3 +81,4 @@ export default function AppHeader() {
     </header>
   );
 }
+
