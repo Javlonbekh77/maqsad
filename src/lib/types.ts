@@ -14,7 +14,9 @@ export type TaskHistory = {
 export type User = {
   firebaseId?: string; // Firestore document ID
   id: string; // This is the Firebase Auth UID
-  fullName: string;
+  firstName: string;
+  lastName: string;
+  fullName: string; // Combined for easier display
   email: string;
   avatarUrl: string;
   coins: number;

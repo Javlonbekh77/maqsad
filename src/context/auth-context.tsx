@@ -13,7 +13,7 @@ interface AuthContextType {
   firebaseUser: FirebaseUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<any>;
-  signup: (data: Partial<User>) => Promise<any>;
+  signup: (data: Omit<User, 'id' | 'firebaseId' | 'avatarUrl' | 'coins' | 'goals' | 'habits' | 'groups' | 'taskHistory' | 'fullName' | 'occupation'>) => Promise<any>;
   logout: () => Promise<any>;
 }
 
@@ -51,10 +51,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return signInWithEmailAndPassword(auth, email, password);
   };
 
-  const signup = async (data: Partial<User>) => {
-    const userCredential = await createUserWithEmailAndPassword(auth, data.email!, data.password!);
+  const signup = async (data: Omit<User, 'id' | 'firebaseId' | 'avatarUrl' | 'coins' | 'goals' | 'habits' | 'groups' | 'taskHistory' | 'fullName' | 'occupation'> & { password?: string }) => {
+    if (!data.email || !data.password) {
+      throw new Error("Email and password are required for signup.");
+    }
+    const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+    
+    const profileData = {
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      university: data.university,
+      specialization: data.specialization,
+      course: data.course,
+      telegram: data.telegram,
+    };
+
     // Create user profile in Firestore
-    await createUserProfile(userCredential.user.uid, data);
+    await createUserProfile(userCredential.user.uid, profileData);
     return userCredential;
   };
 

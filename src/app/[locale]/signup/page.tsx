@@ -23,12 +23,13 @@ import { AlertCircle } from 'lucide-react';
 import Logo from '@/components/logo';
 
 const formSchema = z.object({
-  fullName: z.string().min(2, { message: 'Full name must be at least 2 characters.' }),
-  email: z.string().email({ message: 'Invalid email address.' }),
-  password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
-  university: z.string().min(2, { message: 'Please enter your university.' }),
-  specialization: z.string().min(2, { message: 'Please enter your field of study.' }),
-  course: z.string().min(1, { message: 'Please enter your year of study.' }),
+  firstName: z.string().min(2, { message: 'Ism kamida 2 harfdan iborat bo\'lishi kerak.' }),
+  lastName: z.string().min(2, { message: 'Familiya kamida 2 harfdan iborat bo\'lishi kerak.' }),
+  email: z.string().email({ message: 'Yaroqsiz email manzili.' }),
+  password: z.string().min(6, { message: 'Parol kamida 6 belgidan iborat bo\'lishi kerak.' }),
+  university: z.string().min(2, { message: 'Iltimos, universitetingizni kiriting.' }),
+  specialization: z.string().min(2, { message: 'Iltimos, mutaxassisligingizni kiriting.' }),
+  course: z.string().min(1, { message: 'Iltimos, o\'qish yilingizni kiriting.' }),
   telegram: z.string().optional(),
 });
 
@@ -40,7 +41,8 @@ export default function SignupPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      fullName: '',
+      firstName: '',
+      lastName: '',
       email: '',
       password: '',
       university: '',
@@ -58,9 +60,9 @@ export default function SignupPage() {
     } catch (err: any) {
       console.error(err.message);
       if (err.code === 'auth/email-already-in-use') {
-        setError('This email is already registered. Please log in.');
+        setError('Bu email allaqachon ro\'yxatdan o\'tgan. Iltimos, tizimga kiring.');
       } else {
-        setError('An unexpected error occurred. Please try again.');
+        setError('Kutilmagan xatolik yuz berdi. Iltimos, qaytadan urunib ko\'ring.');
       }
     }
   }
@@ -72,8 +74,8 @@ export default function SignupPage() {
           <div className="flex justify-center mb-4">
             <Logo />
           </div>
-          <CardTitle className="text-2xl font-bold">Create an Account</CardTitle>
-          <CardDescription>Join the community and start achieving your goals.</CardDescription>
+          <CardTitle className="text-2xl font-bold">Hisob Yaratish</CardTitle>
+          <CardDescription>Hamjamiyatga qo'shiling va maqsadlaringizga erishishni boshlang.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -81,23 +83,38 @@ export default function SignupPage() {
               {error && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Signup Failed</AlertTitle>
+                  <AlertTitle>Ro'yxatdan o'tish muvaffaqiyatsiz</AlertTitle>
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
-              <FormField
-                control={form.control}
-                name="fullName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Full Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="John Doe" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Ism</FormLabel>
+                      <FormControl>
+                        <Input placeholder="John" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Familiya</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Doe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               <FormField
                 control={form.control}
                 name="email"
@@ -116,7 +133,7 @@ export default function SignupPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>Parol</FormLabel>
                     <FormControl>
                       <Input type="password" placeholder="••••••••" {...field} />
                     </FormControl>
@@ -129,9 +146,9 @@ export default function SignupPage() {
                 name="university"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>University</FormLabel>
+                    <FormLabel>Universitet</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Tashkent University of Information Technologies" {...field} />
+                      <Input placeholder="Masalan, TATU" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -142,9 +159,9 @@ export default function SignupPage() {
                 name="specialization"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Field of Study</FormLabel>
+                    <FormLabel>Mutaxassislik</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Software Engineering" {...field} />
+                      <Input placeholder="Masalan, Dasturiy injiniring" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -155,9 +172,9 @@ export default function SignupPage() {
                 name="course"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Year of Study</FormLabel>
+                    <FormLabel>Kurs</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="e.g., 3" {...field} />
+                      <Input type="number" placeholder="Masalan, 3" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -168,23 +185,23 @@ export default function SignupPage() {
                 name="telegram"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Telegram Username <span className="text-muted-foreground">(Optional)</span></FormLabel>
+                    <FormLabel>Telegram Username <span className="text-muted-foreground">(Ixtiyoriy)</span></FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., johndoe" {...field} />
+                      <Input placeholder="masalan, johndoe" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Creating Account...' : 'Sign Up'}
+                {form.formState.isSubmitting ? 'Hisob yaratilmoqda...' : 'Ro\'yxatdan o\'tish'}
               </Button>
             </form>
           </Form>
           <div className="mt-4 text-center text-sm">
-            Already have an account?{' '}
+            Hisobingiz bormi?{' '}
             <Link href="/login" className="underline">
-              Log in
+              Kirish
             </Link>
           </div>
         </CardContent>

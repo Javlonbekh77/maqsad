@@ -72,7 +72,7 @@ export default function ProfilePage() {
             <div className="flex flex-col md:flex-row gap-6">
                 <Avatar className="w-32 h-32 border-4 border-background ring-4 ring-primary">
                   <AvatarImage src={user.avatarUrl} alt={user.fullName} />
-                  <AvatarFallback className="text-4xl">{user.fullName.charAt(0)}</AvatarFallback>
+                  <AvatarFallback className="text-4xl">{user.firstName.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col justify-center gap-1">
                     <h2 className="text-3xl font-bold font-display">{user.fullName}</h2>

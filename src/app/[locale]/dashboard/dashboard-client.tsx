@@ -50,7 +50,7 @@ export default function DashboardClient({ user: serverUser, initialTasks }: Dash
     <AppLayout>
       <div className="grid gap-8">
         <div>
-          <h1 className="text-3xl font-bold font-display">{t('welcome', { name: currentUser.fullName.split(' ')[0] })}</h1>
+          <h1 className="text-3xl font-bold font-display">{t('welcome', { name: currentUser.firstName })}</h1>
           <p className="text-muted-foreground">{t('welcomeSubtitle')}</p>
         </div>
 

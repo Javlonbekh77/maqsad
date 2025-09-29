@@ -61,7 +61,7 @@ export default function AppHeader() {
             <Button variant="ghost" size="icon" className="rounded-full">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={user?.avatarUrl} alt={user?.fullName} />
-                <AvatarFallback>{user?.fullName?.charAt(0)}</AvatarFallback>
+                <AvatarFallback>{user?.firstName?.charAt(0)}</AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>

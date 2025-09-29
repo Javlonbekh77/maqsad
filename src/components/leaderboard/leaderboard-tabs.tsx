@@ -76,7 +76,7 @@ export default function LeaderboardTabs() {
                       <Link href={`/profile/${user.id}`} className="flex items-center gap-3 hover:underline">
                         <Avatar>
                           <AvatarImage src={user.avatarUrl} alt={user.fullName} />
-                          <AvatarFallback>{user.fullName.charAt(0)}</AvatarFallback>
+                          <AvatarFallback>{user.firstName.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <span className="font-medium">{user.fullName}</span>
                       </Link>

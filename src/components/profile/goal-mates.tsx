@@ -44,7 +44,7 @@ export default function GoalMates({ userId }: GoalMatesProps) {
                         <Link href={{pathname: '/profile/[id]', params: {id: mate.id}}} key={mate.id} className="group flex flex-col items-center gap-2 text-center">
                             <Avatar className="h-20 w-20 ring-2 ring-offset-2 ring-offset-background ring-transparent group-hover:ring-primary transition-all">
                                 <AvatarImage src={mate.avatarUrl} alt={mate.fullName} />
-                                <AvatarFallback>{mate.fullName.charAt(0)}</AvatarFallback>
+                                <AvatarFallback>{mate.firstName.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <div className="text-sm font-medium">{mate.fullName}</div>
                         </Link>

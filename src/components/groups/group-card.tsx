@@ -14,13 +14,13 @@ import { useEffect, useState } from "react";
 
 export default function GroupCard({ group }: { group: Group }) {
   const t = useTranslations('groupCard');
-  const [members, setMembers] = useState<(User | undefined)[]>([]);
+  const [members, setMembers] = useState<(User)[]>([]);
 
   useEffect(() => {
     async function fetchMembers() {
       const memberPromises = group.members.map(id => getUserById(id));
       const membersData = await Promise.all(memberPromises);
-      setMembers(membersData.filter(Boolean));
+      setMembers(membersData.filter(Boolean) as User[]);
     }
     fetchMembers();
   }, [group.members]);
@@ -50,7 +50,7 @@ export default function GroupCard({ group }: { group: Group }) {
               member &&
               <Avatar key={member.id} className="inline-block h-6 w-6 rounded-full ring-2 ring-background">
                 <AvatarImage src={member.avatarUrl} />
-                <AvatarFallback>{member.fullName.charAt(0)}</AvatarFallback>
+                <AvatarFallback>{member.firstName.charAt(0)}</AvatarFallback>
               </Avatar>
             ))}
           </div>

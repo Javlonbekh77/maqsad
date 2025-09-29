@@ -15,6 +15,7 @@ import {
   writeBatch,
   addDoc,
   Timestamp,
+  setDoc,
 } from 'firebase/firestore';
 
 import type { User, Group, Task, TaskHistory, WeeklyMeeting, UserTask } from './types';
@@ -38,16 +39,6 @@ async function getDocByCustomId<T>(collectionName: string, id: string): Promise<
   return { ...docSnap.data() as T, firebaseId: docSnap.id };
 }
 
-async function getDocByFirebaseId<T>(collectionName: string, firebaseId: string): Promise<T | undefined> {
-    const docRef = doc(db, collectionName, firebaseId);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-        return docSnap.data() as T;
-    }
-    return undefined;
-}
-
-
 // Generic function to get all documents from a collection
 async function getCollection<T>(collectionName: string): Promise<T[]> {
   const querySnapshot = await getDocs(collection(db, collectionName));
@@ -55,10 +46,13 @@ async function getCollection<T>(collectionName: string): Promise<T[]> {
 }
 
 export const createUserProfile = async (uid: string, data: Partial<User>) => {
+    const fullName = `${data.firstName || ''} ${data.lastName || ''}`.trim();
     const newUser: User = {
         id: uid,
-        firebaseId: uid,
-        fullName: data.fullName || '',
+        firebaseId: uid, // In users collection, firebaseId and id are the same (UID)
+        firstName: data.firstName || '',
+        lastName: data.lastName || '',
+        fullName: fullName,
         email: data.email || '',
         avatarUrl: PlaceHolderImages.find(p => p.id === 'user3')?.imageUrl || '',
         coins: 0,
@@ -72,7 +66,8 @@ export const createUserProfile = async (uid: string, data: Partial<User>) => {
         course: data.course,
         telegram: data.telegram,
     };
-    await addDoc(collection(db, 'users'), newUser);
+    // Use setDoc with the user's UID as the document ID for direct lookup
+    await setDoc(doc(db, 'users', uid), newUser);
     return newUser;
 };
 
@@ -112,7 +107,13 @@ export const getUsers = async (): Promise<User[]> => {
 
 export const getUserById = async (id: string): Promise<User | undefined> => {
   if (!id) return undefined;
-  // In the 'users' collection, the document ID is the Firebase Auth UID
+  // In the 'users' collection, the document ID is the Firebase Auth UID, allowing direct access.
+  const docRef = doc(db, "users", id);
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    return docSnap.data() as User;
+  }
+  // Fallback to query if direct lookup fails (e.g., if IDs don't match)
   return getDocByCustomId<User>('users', id);
 };
 
@@ -192,11 +193,11 @@ export const getGoalMates = async (userId: string): Promise<User[]> => {
 // --- Mutation functions (Firestore) ---
 
 export const addUserToGroup = async (userId: string, groupId: string): Promise<void> => {
-    const userDocRef = await getDocByCustomId('users', userId);
+    const userDocSnap = await getDoc(doc(db, "users", userId));
     const groupDocRef = await getDocByCustomId('groups', groupId);
 
-    if (userDocRef && groupDocRef) {
-        const userFirestoreDoc = doc(db, 'users', userDocRef.firebaseId);
+    if (userDocSnap.exists() && groupDocRef) {
+        const userFirestoreDoc = doc(db, 'users', userDocSnap.id);
         const groupFirestoreDoc = doc(db, 'groups', groupDocRef.firebaseId);
 
         const batch = writeBatch(db);
@@ -216,14 +217,17 @@ export const addUserToGroup = async (userId: string, groupId: string): Promise<v
 };
 
 export const completeUserTask = async (userId: string, taskId: string, coins: number): Promise<void> => {
-    const userDocRef = await getDocByCustomId('users', userId);
-    if (!userDocRef) {
+    const userDocRef = doc(db, 'users', userId);
+    const userDocSnap = await getDoc(userDocRef);
+
+    if (!userDocSnap.exists()) {
         console.error("User not found by custom ID");
         return;
     }
+    const user = userDocSnap.data() as User;
     
     const today = format(new Date(), 'yyyy-MM-dd');
-    const alreadyCompleted = userDocRef.taskHistory.some(
+    const alreadyCompleted = user.taskHistory.some(
         h => h.taskId === taskId && h.date === today
     );
 
@@ -232,21 +236,21 @@ export const completeUserTask = async (userId: string, taskId: string, coins: nu
         return;
     }
 
-    const userFirestoreDoc = doc(db, 'users', userDocRef.firebaseId);
-    const newCoins = (userDocRef.coins || 0) + coins;
-    await updateDoc(userFirestoreDoc, {
+    const newCoins = (user.coins || 0) + coins;
+    await updateDoc(userDocRef, {
         coins: newCoins,
         taskHistory: arrayUnion({ taskId, date: today }),
     });
 };
 
 export const updateUserProfile = async (userId: string, data: { goals?: string; habits?: string }): Promise<void> => {
-    const userDocRef = await getDocByCustomId('users', userId);
-    if (userDocRef) {
-        const userFirestoreDoc = doc(db, 'users', userDocRef.firebaseId);
-        await updateDoc(userFirestoreDoc, data);
+    const userDocRef = doc(db, 'users', userId);
+    const userDocSnap = await getDoc(userDocRef);
+
+    if (userDocSnap.exists()) {
+        await updateDoc(userDocRef, data);
     } else {
-        console.error("User not found by custom ID for update");
+        console.error("User not found for update");
         throw new Error("User not found");
     }
 };

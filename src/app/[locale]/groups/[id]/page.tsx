@@ -54,7 +54,7 @@ export default function GroupDetailPage() {
       
       const memberPromises = groupData.members.map(id => getUserById(id));
       const membersData = await Promise.all(memberPromises);
-      setMembers(membersData.filter(Boolean));
+      setMembers(membersData.filter(Boolean) as User[]);
       
       const tasksData = await getTasksByGroupId(groupData.id);
       setTasks(tasksData);
@@ -166,7 +166,7 @@ export default function GroupDetailPage() {
                     <Link href={{pathname: '/profile/[id]', params: {id: member.id}}} className="flex items-center gap-3 hover:underline">
                       <Avatar>
                         <AvatarImage src={member.avatarUrl} alt={member.fullName} />
-                        <AvatarFallback>{member.fullName.charAt(0)}</AvatarFallback>
+                        <AvatarFallback>{member.firstName.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div className='flex flex-col'>
                          <p className="font-medium">{member.fullName}</p>
