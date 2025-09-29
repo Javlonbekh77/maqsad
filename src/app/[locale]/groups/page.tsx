@@ -11,33 +11,47 @@ import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import type { Group, User } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/context/auth-context";
+import { useRouter } from "@/navigation";
 
 type GroupWithMembers = Group & { memberUsers: User[] };
 
 export default function GroupsPage() {
   const t = useTranslations('groups');
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
+
   const [groupsWithMembers, setGroupsWithMembers] = useState<GroupWithMembers[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchGroupsAndMembers() {
-      setLoading(true);
-      const groupsData = await getGroups();
-      const allUsers = await getUsers();
-      const userMap = new Map(allUsers.map(u => [u.id, u]));
-      
-      const enrichedGroups = groupsData.map(group => {
-        const memberUsers = group.members
-          .map(memberId => userMap.get(memberId))
-          .filter(Boolean) as User[];
-        return { ...group, memberUsers };
-      });
-      
-      setGroupsWithMembers(enrichedGroups);
-      setLoading(false);
+    if (!authLoading && !user) {
+      router.push('/login');
+      return;
     }
-    fetchGroupsAndMembers();
-  }, []);
+
+    if (user) {
+        async function fetchGroupsAndMembers() {
+            setLoading(true);
+            const groupsData = await getGroups();
+            const allUsers = await getUsers();
+            const userMap = new Map(allUsers.map(u => [u.id, u]));
+            
+            const enrichedGroups = groupsData.map(group => {
+                const memberUsers = group.members
+                .map(memberId => userMap.get(memberId))
+                .filter(Boolean) as User[];
+                return { ...group, memberUsers };
+            });
+            
+            setGroupsWithMembers(enrichedGroups);
+            setLoading(false);
+        }
+        fetchGroupsAndMembers();
+    }
+  }, [user, authLoading, router]);
+
+  const isLoading = authLoading || loading;
 
   return (
     <AppLayout>
@@ -62,7 +76,7 @@ export default function GroupsPage() {
             </Button>
           </div>
         </div>
-        {loading ? (
+        {isLoading ? (
            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {Array.from({ length: 8 }).map((_, i) => (
               <Skeleton key={i} className="h-80 w-full" />

@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Link } from '@/navigation';
+import { Link, useRouter } from '@/navigation';
 import GoBackButton from '@/components/go-back-button';
 import { useEffect, useState } from 'react';
 import JoinGroupDialog from '@/components/groups/join-group-dialog';
@@ -28,61 +28,90 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import WeeklyMeetings from '@/components/groups/weekly-meetings';
 import type { Group, Task, User, WeeklyMeeting } from '@/lib/types';
 import { useAuth } from '@/context/auth-context';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 export default function GroupDetailPage() {
   const t = useTranslations('groupDetail');
   const params = useParams();
   const id = params.id as string;
-  const { user: currentUser, loading } = useAuth();
-  const currentUserId = currentUser?.id;
+  const { user: currentUser, loading: authLoading } = useAuth();
+  const router = useRouter();
   
   const [group, setGroup] = useState<Group | null | undefined>(undefined);
   const [members, setMembers] = useState<(User | undefined)[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [meetings, setMeetings] = useState<WeeklyMeeting[]>([]);
   const [isJoinDialogOpen, setJoinDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchData() {
-      const groupData = await getGroupById(id);
-      if (!groupData) {
-        notFound();
+    if (!authLoading && !currentUser) {
+        router.push('/login');
         return;
-      }
-      setGroup(groupData);
-      
-      const memberPromises = groupData.members.map(id => getUserById(id));
-      const membersData = await Promise.all(memberPromises);
-      setMembers(membersData.filter(Boolean) as User[]);
-      
-      const tasksData = await getTasksByGroupId(groupData.id);
-      setTasks(tasksData);
-
-      const meetingsData = await getMeetingsByGroupId(groupData.id);
-      setMeetings(meetingsData);
     }
-    fetchData();
-  }, [id]);
 
-  if (group === undefined || loading) {
-    // Loading state
-    return <AppLayout><div>Loading...</div></AppLayout>;
+    if (id && currentUser) {
+      async function fetchData() {
+        setLoading(true);
+        const groupData = await getGroupById(id);
+        if (!groupData) {
+          notFound();
+          return;
+        }
+        setGroup(groupData);
+        
+        const [membersData, tasksData, meetingsData] = await Promise.all([
+            Promise.all(groupData.members.map(id => getUserById(id))),
+            getTasksByGroupId(groupData.id),
+            getMeetingsByGroupId(groupData.id)
+        ]);
+
+        setMembers(membersData.filter(Boolean) as User[]);
+        setTasks(tasksData);
+        setMeetings(meetingsData);
+        setLoading(false);
+      }
+      fetchData();
+    }
+  }, [id, authLoading, currentUser, router]);
+
+  const isLoading = authLoading || loading;
+
+  if (isLoading || !group) {
+    return (
+        <AppLayout>
+            <div className="space-y-8">
+                <GoBackButton />
+                <Skeleton className="w-full h-64 rounded-xl" />
+                <Skeleton className="h-12 w-full" />
+                <Card>
+                    <CardHeader>
+                        <Skeleton className="h-8 w-1/3" />
+                        <Skeleton className="h-4 w-1/2" />
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-40 w-full" />
+                    </CardContent>
+                </Card>
+            </div>
+        </AppLayout>
+    );
   }
 
-  if (!group) {
-    // Not found will be triggered by useEffect, but this is a safeguard
-    return null;
-  }
-
-  const isAdmin = group.adminId === currentUserId;
-  const isMember = !!currentUserId && group.members.includes(currentUserId);
+  const isAdmin = group.adminId === currentUser?.id;
+  const isMember = !!currentUser?.id && group.members.includes(currentUser.id);
 
   const handleJoinGroup = async () => {
-    if (!currentUserId) return;
-    await addUserToGroup(currentUserId, group.id);
-    const updatedGroupData = await getGroupById(id);
-    setGroup(updatedGroupData);
+    if (!currentUser) return;
+    await addUserToGroup(currentUser.id, group.id);
+    const updatedGroupData = await getGroupById(id); // Re-fetch to update state
+    if (updatedGroupData) {
+      setGroup(updatedGroupData);
+      const memberPromises = updatedGroupData.members.map(id => getUserById(id));
+      const membersData = await Promise.all(memberPromises);
+      setMembers(membersData.filter(Boolean) as User[]);
+    }
     setJoinDialogOpen(false);
   };
 
@@ -103,7 +132,7 @@ export default function GroupDetailPage() {
             <p className="text-lg text-white/80 max-w-2xl mt-2">{group.description}</p>
           </div>
            <div className="absolute top-4 right-4">
-              {!isMember && currentUserId && (
+              {!isMember && currentUser && (
                 <Button onClick={() => setJoinDialogOpen(true)}>
                   <UserPlus className="mr-2 h-4 w-4" />
                   {t('joinGroup')}

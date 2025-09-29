@@ -3,7 +3,7 @@
 
 import { useParams, notFound } from 'next/navigation';
 import AppLayout from "@/components/layout/app-layout";
-import { getUserById, getGroupsByUserId } from "@/lib/data";
+import { getUserById, getGroupsByUserId, getUsers } from "@/lib/data";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -19,8 +19,6 @@ import GroupCard from '@/components/groups/group-card';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from '@/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getUsers } from '@/lib/data';
-
 
 export default function ProfilePage() {
   const t = useTranslations('profile');
@@ -29,7 +27,6 @@ export default function ProfilePage() {
   const router = useRouter();
   
   const { user: currentUser, loading: authLoading } = useAuth();
-  const isCurrentUser = userId === currentUser?.id;
   
   const [user, setUser] = useState<User | null | undefined>(undefined);
   const [userGroups, setUserGroups] = useState<Group[]>([]);
@@ -37,30 +34,39 @@ export default function ProfilePage() {
   const [loadingPage, setLoadingPage] = useState(true);
 
   useEffect(() => {
-    async function fetchData() {
-      if (!userId) return;
-      setLoadingPage(true);
-      const [userData, groupsData, usersData] = await Promise.all([
-        getUserById(userId),
-        getGroupsByUserId(userId),
-        getUsers(),
-      ]);
-
-      if (!userData) {
-        notFound();
-      } else {
-        setUser(userData);
-        setUserGroups(groupsData);
-        setAllUsers(usersData);
-        setLoadingPage(false);
-      }
+     if (!authLoading && !currentUser) {
+        router.push('/login');
+        return;
     }
-    fetchData();
-  }, [userId]);
+    
+    if (userId) {
+      async function fetchData() {
+        setLoadingPage(true);
+        const [userData, groupsData, usersData] = await Promise.all([
+          getUserById(userId),
+          getGroupsByUserId(userId),
+          getUsers(),
+        ]);
+
+        if (!userData) {
+          notFound();
+        } else {
+          setUser(userData);
+          setUserGroups(groupsData);
+          setAllUsers(usersData);
+          setLoadingPage(false);
+        }
+      }
+      fetchData();
+    }
+  }, [userId, authLoading, currentUser, router]);
   
   const userMap = new Map(allUsers.map(u => [u.id, u]));
 
-  if (user === undefined || authLoading || loadingPage) {
+  const isLoading = authLoading || loadingPage;
+  const isCurrentUser = userId === currentUser?.id;
+
+  if (isLoading || !user) {
     return (
         <AppLayout>
             <div className="space-y-8">
@@ -85,10 +91,6 @@ export default function ProfilePage() {
             </div>
         </AppLayout>
     );
-  }
-
-  if (!user) {
-      return null;
   }
 
   return (
