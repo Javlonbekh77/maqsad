@@ -18,6 +18,8 @@ import { useEffect, useState } from 'react';
 import GroupCard from '@/components/groups/group-card';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from '@/navigation';
+import { Skeleton } from '@/components/ui/skeleton';
+import { getUsers } from '@/lib/data';
 
 
 export default function ProfilePage() {
@@ -26,29 +28,63 @@ export default function ProfilePage() {
   const userId = params.id as string;
   const router = useRouter();
   
-  const { user: currentUser, loading } = useAuth();
+  const { user: currentUser, loading: authLoading } = useAuth();
   const isCurrentUser = userId === currentUser?.id;
   
   const [user, setUser] = useState<User | null | undefined>(undefined);
   const [userGroups, setUserGroups] = useState<Group[]>([]);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [loadingPage, setLoadingPage] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
       if (!userId) return;
-      const userData = await getUserById(userId);
+      setLoadingPage(true);
+      const [userData, groupsData, usersData] = await Promise.all([
+        getUserById(userId),
+        getGroupsByUserId(userId),
+        getUsers(),
+      ]);
+
       if (!userData) {
         notFound();
       } else {
         setUser(userData);
-        const groupsData = await getGroupsByUserId(userId);
         setUserGroups(groupsData);
+        setAllUsers(usersData);
+        setLoadingPage(false);
       }
     }
     fetchData();
   }, [userId]);
+  
+  const userMap = new Map(allUsers.map(u => [u.id, u]));
 
-  if (user === undefined || loading) {
-    return <AppLayout><div>Loading...</div></AppLayout>;
+  if (user === undefined || authLoading || loadingPage) {
+    return (
+        <AppLayout>
+            <div className="space-y-8">
+                <Skeleton className="h-8 w-24" />
+                <Card>
+                    <CardHeader>
+                        <div className="flex flex-col md:flex-row gap-6">
+                            <Skeleton className="w-32 h-32 rounded-full" />
+                            <div className="flex flex-col justify-center gap-2">
+                                <Skeleton className="h-8 w-48" />
+                                <Skeleton className="h-6 w-32" />
+                                <Skeleton className="h-8 w-40 mt-2" />
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-40 w-full" />
+                    </CardContent>
+                </Card>
+                <Skeleton className="h-64 w-full" />
+                 <Skeleton className="h-64 w-full" />
+            </div>
+        </AppLayout>
+    );
   }
 
   if (!user) {
@@ -110,9 +146,12 @@ export default function ProfilePage() {
               <h3 className="text-xl font-bold">A'zo bo'lgan guruhlar</h3>
             </CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {userGroups.map(group => (
-                <GroupCard key={group.id} group={group} />
-              ))}
+              {userGroups.map(group => {
+                  const memberUsers = group.members
+                    .map(memberId => userMap.get(memberId))
+                    .filter(Boolean) as User[];
+                  return <GroupCard key={group.id} group={group} members={memberUsers} />;
+              })}
             </CardContent>
           </Card>
         )}

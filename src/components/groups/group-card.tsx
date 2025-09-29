@@ -6,30 +6,19 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { Group, User } from "@/lib/types";
-import { getUserById } from "@/lib/data";
 import { ArrowRight, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/navigation";
 import { useEffect, useState } from "react";
 import { Skeleton } from "../ui/skeleton";
 
-export default function GroupCard({ group }: { group: Group }) {
-  const t = useTranslations('groupCard');
-  const [members, setMembers] = useState<(User)[]>([]);
-  const [loading, setLoading] = useState(true);
+interface GroupCardProps {
+  group: Group;
+  members: User[];
+}
 
-  useEffect(() => {
-    async function fetchMembers() {
-      setLoading(true);
-      if (group.members.length > 0) {
-        const memberPromises = group.members.map(id => getUserById(id));
-        const membersData = await Promise.all(memberPromises);
-        setMembers(membersData.filter(Boolean) as User[]);
-      }
-      setLoading(false);
-    }
-    fetchMembers();
-  }, [group.members]);
+export default function GroupCard({ group, members }: GroupCardProps) {
+  const t = useTranslations('groupCard');
 
   return (
     <Card className="flex flex-col overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1">
@@ -50,20 +39,18 @@ export default function GroupCard({ group }: { group: Group }) {
         <p className="text-sm text-muted-foreground line-clamp-3">{group.description}</p>
       </CardContent>
       <CardFooter className="p-6 pt-0 flex justify-between items-center">
-        {loading ? <Skeleton className="h-6 w-24" /> : (
-            <div className="flex items-center gap-2">
-            <div className="flex -space-x-2 overflow-hidden">
-                {members.slice(0, 3).map((member) => (
-                member &&
-                <Avatar key={member.id} className="inline-block h-6 w-6 rounded-full ring-2 ring-background">
-                    <AvatarImage src={member.avatarUrl} />
-                    <AvatarFallback>{member.firstName.charAt(0)}</AvatarFallback>
-                </Avatar>
-                ))}
-            </div>
-            <span className="text-xs font-medium text-muted-foreground">{t('members', { count: group.members.length })}</span>
-            </div>
-        )}
+        <div className="flex items-center gap-2">
+          <div className="flex -space-x-2 overflow-hidden">
+              {members.slice(0, 3).map((member) => (
+              member &&
+              <Avatar key={member.id} className="inline-block h-6 w-6 rounded-full ring-2 ring-background">
+                  <AvatarImage src={member.avatarUrl} />
+                  <AvatarFallback>{member.firstName.charAt(0)}</AvatarFallback>
+              </Avatar>
+              ))}
+          </div>
+          <span className="text-xs font-medium text-muted-foreground">{t('members', { count: group.members.length })}</span>
+        </div>
         <Button variant="outline" size="sm" asChild>
           <Link href={`/groups/${group.id}`}>
             {t('view')}

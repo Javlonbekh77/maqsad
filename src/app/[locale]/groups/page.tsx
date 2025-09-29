@@ -2,28 +2,41 @@
 'use client';
 
 import AppLayout from "@/components/layout/app-layout";
-import { getGroups } from "@/lib/data";
+import { getGroups, getUsers } from "@/lib/data";
 import GroupCard from "@/components/groups/group-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PlusCircle, Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
-import type { Group } from "@/lib/types";
+import type { Group, User } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
+
+type GroupWithMembers = Group & { memberUsers: User[] };
 
 export default function GroupsPage() {
   const t = useTranslations('groups');
-  const [groups, setGroups] = useState<Group[]>([]);
+  const [groupsWithMembers, setGroupsWithMembers] = useState<GroupWithMembers[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchGroups() {
+    async function fetchGroupsAndMembers() {
+      setLoading(true);
       const groupsData = await getGroups();
-      setGroups(groupsData);
+      const allUsers = await getUsers();
+      const userMap = new Map(allUsers.map(u => [u.id, u]));
+      
+      const enrichedGroups = groupsData.map(group => {
+        const memberUsers = group.members
+          .map(memberId => userMap.get(memberId))
+          .filter(Boolean) as User[];
+        return { ...group, memberUsers };
+      });
+      
+      setGroupsWithMembers(enrichedGroups);
       setLoading(false);
     }
-    fetchGroups();
+    fetchGroupsAndMembers();
   }, []);
 
   return (
@@ -57,8 +70,8 @@ export default function GroupsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {groups.map((group) => (
-              <GroupCard key={group.id} group={group} />
+            {groupsWithMembers.map((group) => (
+              <GroupCard key={group.id} group={group} members={group.memberUsers} />
             ))}
           </div>
         )}
