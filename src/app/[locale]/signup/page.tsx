@@ -61,9 +61,9 @@ export default function SignupPage() {
       {
       console.error("Signup failed with code:", err.code, "and message:", err.message);
       if (err.code === 'auth/email-already-in-use') {
-        setError('Bu email allaqachon ro\'yxatdan o\'tgan. Iltimos, tizimga kiring.');
-      } else if (err.code === 'permission-denied') {
-        setError('Ma\'lumotlar bazasiga yozishda xatolik. Firebase Rules sozlamalarini tekshirishingiz kerak.');
+        setError('Bu email allaqachon ro\'yxatdan o\'tgan. Iltimos, tizimga kiring yoki boshqa email ishlating.');
+      } else if (err.code === 'permission-denied' || err.code === 'failed-precondition') {
+        setError('Ma\'lumotlar bazasiga yozishda xatolik. Firebase Rules sozlamalarini tekshiring yoki internet aloqasi mavjudligiga ishonch hosil qiling.');
       }
       else {
         setError('Kutilmagan xatolik yuz berdi. Iltimos, qaytadan urunib ko\'ring.');
