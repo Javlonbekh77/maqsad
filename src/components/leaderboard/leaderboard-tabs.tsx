@@ -20,6 +20,7 @@ import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/navigation';
 import { useEffect, useState } from 'react';
+import { Skeleton } from '../ui/skeleton';
 
 const RankIcon = ({ rank }: { rank: number }) => {
   if (rank === 1) return <Medal className="h-5 w-5 text-yellow-500" />;
@@ -28,17 +29,51 @@ const RankIcon = ({ rank }: { rank: number }) => {
   return <span className="text-sm font-bold w-5 text-center">{rank}</span>;
 };
 
+const LoadingSkeleton = () => (
+    <div className="p-0">
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead className="w-16 text-center"><Skeleton className="h-5 w-10 mx-auto" /></TableHead>
+                    <TableHead><Skeleton className="h-5 w-24" /></TableHead>
+                    <TableHead className="text-right"><Skeleton className="h-5 w-16 ml-auto" /></TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                        <TableCell><Skeleton className="h-6 w-6 rounded-full mx-auto" /></TableCell>
+                        <TableCell>
+                            <div className="flex items-center gap-3">
+                                <Skeleton className="h-10 w-10 rounded-full" />
+                                <Skeleton className="h-5 w-32" />
+                            </div>
+                        </TableCell>
+                        <TableCell><Skeleton className="h-5 w-12 ml-auto" /></TableCell>
+                    </TableRow>
+                ))}
+            </TableBody>
+        </Table>
+    </div>
+);
+
+
 export default function LeaderboardTabs() {
   const t = useTranslations('leaderboard');
   const [topUsers, setTopUsers] = useState<User[]>([]);
   const [topGroups, setTopGroups] = useState<(Group & { coins: number })[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
-      const users = await getTopUsers();
+      setLoading(true);
+      const [users, groups] = await Promise.all([
+          getTopUsers(),
+          getTopGroups()
+      ]);
       setTopUsers(users);
-      const groups = await getTopGroups();
       setTopGroups(groups);
+      setLoading(false);
     }
     fetchData();
   }, []);
@@ -55,82 +90,86 @@ export default function LeaderboardTabs() {
       </TabsList>
       <TabsContent value="users">
         <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-16 text-center">{t('rank')}</TableHead>
-                  <TableHead>{t('user')}</TableHead>
-                  <TableHead className="text-right">{t('coins')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {topUsers.map((user, index) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="text-center">
-                      <div className="flex justify-center">
-                         <RankIcon rank={index + 1} />
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Link href={`/profile/${user.id}`} className="flex items-center gap-3 hover:underline">
-                        <Avatar>
-                          <AvatarImage src={user.avatarUrl} alt={user.fullName} />
-                          <AvatarFallback>{user.firstName.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <span className="font-medium">{user.fullName}</span>
-                      </Link>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1 font-semibold text-amber-500">
-                        <Coins className="w-4 h-4" />
-                        <span>{user.coins}</span>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
+            <CardContent className="p-0">
+                {loading ? <LoadingSkeleton /> : (
+                    <Table>
+                    <TableHeader>
+                        <TableRow>
+                        <TableHead className="w-16 text-center">{t('rank')}</TableHead>
+                        <TableHead>{t('user')}</TableHead>
+                        <TableHead className="text-right">{t('coins')}</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {topUsers.map((user, index) => (
+                        <TableRow key={user.id}>
+                            <TableCell className="text-center">
+                            <div className="flex justify-center">
+                                <RankIcon rank={index + 1} />
+                            </div>
+                            </TableCell>
+                            <TableCell>
+                            <Link href={`/profile/${user.id}`} className="flex items-center gap-3 hover:underline">
+                                <Avatar>
+                                <AvatarImage src={user.avatarUrl} alt={user.fullName} />
+                                <AvatarFallback>{user.firstName.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <span className="font-medium">{user.fullName}</span>
+                            </Link>
+                            </TableCell>
+                            <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1 font-semibold text-amber-500">
+                                <Coins className="w-4 h-4" />
+                                <span>{user.coins}</span>
+                            </div>
+                            </TableCell>
+                        </TableRow>
+                        ))}
+                    </TableBody>
+                    </Table>
+                )}
+            </CardContent>
         </Card>
       </TabsContent>
       <TabsContent value="groups">
         <Card>
           <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-16 text-center">{t('rank')}</TableHead>
-                  <TableHead>{t('group')}</TableHead>
-                  <TableHead className="text-right">{t('totalCoins')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {topGroups.map((group, index) => (
-                  <TableRow key={group.id}>
-                     <TableCell className="text-center">
-                      <div className="flex justify-center">
-                         <RankIcon rank={index + 1} />
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                       <Link href={`/groups/${group.id}`} className="flex items-center gap-3 hover:underline">
-                        <div className="w-10 h-10 rounded-md overflow-hidden relative">
-                            <Image src={group.imageUrl} alt={group.name} fill className='object-cover' />
+             {loading ? <LoadingSkeleton /> : (
+                <Table>
+                <TableHeader>
+                    <TableRow>
+                    <TableHead className="w-16 text-center">{t('rank')}</TableHead>
+                    <TableHead>{t('group')}</TableHead>
+                    <TableHead className="text-right">{t('totalCoins')}</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {topGroups.map((group, index) => (
+                    <TableRow key={group.id}>
+                        <TableCell className="text-center">
+                        <div className="flex justify-center">
+                            <RankIcon rank={index + 1} />
                         </div>
-                        <span className="font-medium">{group.name}</span>
-                      </Link>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1 font-semibold text-amber-500">
-                        <Coins className="w-4 h-4" />
-                        <span>{group.coins}</span>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                        </TableCell>
+                        <TableCell>
+                        <Link href={`/groups/${group.id}`} className="flex items-center gap-3 hover:underline">
+                            <div className="w-10 h-10 rounded-md overflow-hidden relative">
+                                <Image src={group.imageUrl} alt={group.name} fill className='object-cover' />
+                            </div>
+                            <span className="font-medium">{group.name}</span>
+                        </Link>
+                        </TableCell>
+                        <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1 font-semibold text-amber-500">
+                            <Coins className="w-4 h-4" />
+                            <span>{group.coins}</span>
+                        </div>
+                        </TableCell>
+                    </TableRow>
+                    ))}
+                </TableBody>
+                </Table>
+             )}
           </CardContent>
         </Card>
       </TabsContent>

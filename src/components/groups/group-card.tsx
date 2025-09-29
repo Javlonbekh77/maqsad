@@ -11,16 +11,22 @@ import { ArrowRight, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/navigation";
 import { useEffect, useState } from "react";
+import { Skeleton } from "../ui/skeleton";
 
 export default function GroupCard({ group }: { group: Group }) {
   const t = useTranslations('groupCard');
   const [members, setMembers] = useState<(User)[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchMembers() {
-      const memberPromises = group.members.map(id => getUserById(id));
-      const membersData = await Promise.all(memberPromises);
-      setMembers(membersData.filter(Boolean) as User[]);
+      setLoading(true);
+      if (group.members.length > 0) {
+        const memberPromises = group.members.map(id => getUserById(id));
+        const membersData = await Promise.all(memberPromises);
+        setMembers(membersData.filter(Boolean) as User[]);
+      }
+      setLoading(false);
     }
     fetchMembers();
   }, [group.members]);
@@ -44,20 +50,21 @@ export default function GroupCard({ group }: { group: Group }) {
         <p className="text-sm text-muted-foreground line-clamp-3">{group.description}</p>
       </CardContent>
       <CardFooter className="p-6 pt-0 flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <div className="flex -space-x-2 overflow-hidden">
-            {members.slice(0, 3).map((member) => (
-              member &&
-              <Avatar key={member.id} className="inline-block h-6 w-6 rounded-full ring-2 ring-background">
-                <AvatarImage src={member.avatarUrl} />
-                <AvatarFallback>{member.firstName.charAt(0)}</AvatarFallback>
-              </Avatar>
-            ))}
-          </div>
-          <span className="text-xs font-medium text-muted-foreground">{t('members', { count: group.members.length })}</span>
-        </div>
+        {loading ? <Skeleton className="h-6 w-24" /> : (
+            <div className="flex items-center gap-2">
+            <div className="flex -space-x-2 overflow-hidden">
+                {members.slice(0, 3).map((member) => (
+                member &&
+                <Avatar key={member.id} className="inline-block h-6 w-6 rounded-full ring-2 ring-background">
+                    <AvatarImage src={member.avatarUrl} />
+                    <AvatarFallback>{member.firstName.charAt(0)}</AvatarFallback>
+                </Avatar>
+                ))}
+            </div>
+            <span className="text-xs font-medium text-muted-foreground">{t('members', { count: group.members.length })}</span>
+            </div>
+        )}
         <Button variant="outline" size="sm" asChild>
-          {/* We now use the original ID for the link, not the Firebase ID */}
           <Link href={`/groups/${group.id}`}>
             {t('view')}
             <ArrowRight className="ml-2 h-4 w-4" />

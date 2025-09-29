@@ -26,14 +26,21 @@ const getPastDates = (days: number): Date[] => {
 export default function HabitTracker({ user }: HabitTrackerProps) {
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
   const [userTasks, setUserTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
   
   const dates = useMemo(() => getPastDates(14), []);
 
   useEffect(() => {
     async function fetchUserTasks() {
-      const taskPromises = user.groups.map(groupId => getTasksByGroupId(groupId));
-      const tasksByGroup = await Promise.all(taskPromises);
-      setUserTasks(tasksByGroup.flat());
+      setLoading(true);
+      if (user.groups && user.groups.length > 0) {
+        const taskPromises = user.groups.map(groupId => getTasksByGroupId(groupId));
+        const tasksByGroup = await Promise.all(taskPromises);
+        setUserTasks(tasksByGroup.flat());
+      } else {
+        setUserTasks([]);
+      }
+      setLoading(false);
     }
     fetchUserTasks();
   }, [user.groups]);
@@ -52,9 +59,9 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
         <CardTitle>Habit Tracker</CardTitle>
         <CardDescription>Your progress on tasks over the last 14 days.</CardDescription>
         <div className="pt-4">
-             <Select onValueChange={handleTaskSelectionChange} value={selectedTaskIds.length > 0 ? selectedTaskIds[0] : ''}>
+             <Select onValueChange={handleTaskSelectionChange} value={selectedTaskIds.length > 0 ? selectedTaskIds[0] : ''} disabled={loading || userTasks.length === 0}>
                 <SelectTrigger className="w-[280px]">
-                    <SelectValue placeholder="Select a task to track" />
+                    <SelectValue placeholder={loading ? "Loading tasks..." : "Select a task to track"} />
                 </SelectTrigger>
                 <SelectContent>
                     {userTasks.map(task => (
@@ -108,7 +115,11 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
           </div>
         ) : (
             <div className="text-center py-8 text-muted-foreground">
-                <p>Select a task from the dropdown to see your progress.</p>
+                <p>
+                  {userTasks.length > 0 
+                  ? "Select a task from the dropdown to see your progress."
+                  : "You are not in any groups with tasks yet."}
+                </p>
             </div>
         )}
       </CardContent>
