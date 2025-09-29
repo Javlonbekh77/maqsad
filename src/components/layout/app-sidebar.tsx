@@ -2,15 +2,6 @@
 'use client';
 
 import { Link, usePathname } from '@/navigation';
-import {
-  Sidebar,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarFooter,
-  useSidebar,
-} from '@/components/ui/sidebar';
 import Logo from '@/components/logo';
 import {
   LayoutDashboard,
@@ -19,30 +10,15 @@ import {
   UserCircle,
   Settings,
   LogOut,
+  LifeBuoy,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { getUserById } from '@/lib/data';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
-import type { User } from '@/lib/types';
-
-const currentUserId = 'user-1';
 
 export default function AppSidebar() {
   const t = useTranslations('nav');
-  const tHeader = useTranslations('header');
   const pathname = usePathname();
-  const { state } = useSidebar();
-  const [currentUser, setCurrentUser] = useState<User | null | undefined>(undefined);
-  
-  useEffect(() => {
-    async function fetchUser() {
-      const user = await getUserById(currentUserId);
-      setCurrentUser(user);
-    }
-    fetchUser();
-  }, []);
+  const currentUserId = 'user-1';
 
   const navItems = [
     { href: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard },
@@ -52,45 +28,50 @@ export default function AppSidebar() {
   ];
 
   return (
-    <Sidebar>
-      <SidebarHeader>
-        <Logo />
-      </SidebarHeader>
-      <SidebarMenu className="flex-1">
-        {navItems.map((item) => (
-          <SidebarMenuItem key={item.href}>
-            <Link href={item.href}>
-              <SidebarMenuButton
-                isActive={pathname.startsWith(item.href)}
-                tooltip={t(item.labelKey)}
+     <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
+      <TooltipProvider>
+        <nav className="flex flex-col items-center gap-4 px-2 py-4">
+          <Link
+            href="/dashboard"
+            className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
+          >
+            <Logo />
+            <span className="sr-only">MaqsadM</span>
+          </Link>
+          {navItems.map((item) => (
+            <Tooltip key={item.href}>
+              <TooltipTrigger asChild>
+                <Link
+                  href={item.href}
+                  className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors md:h-8 md:w-8 ${
+                    pathname.startsWith(item.href)
+                      ? 'bg-accent text-accent-foreground'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <item.icon className="h-5 w-5" />
+                  <span className="sr-only">{t(item.labelKey)}</span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">{t(item.labelKey)}</TooltipContent>
+            </Tooltip>
+          ))}
+        </nav>
+        <nav className="mt-auto flex flex-col items-center gap-4 px-2 py-4">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                href="#"
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
               >
-                <item.icon className="h-5 w-5" />
-                <span>{t(item.labelKey)}</span>
-              </SidebarMenuButton>
-            </Link>
-          </SidebarMenuItem>
-        ))}
-      </SidebarMenu>
-      <SidebarFooter
-        className={cn(
-          'p-4 border-t transition-opacity duration-200',
-          state === 'collapsed' && 'opacity-0'
-        )}
-      >
-        <div className="flex items-center gap-3">
-          <Avatar className="h-9 w-9">
-            <AvatarImage src={currentUser?.avatarUrl} alt={currentUser?.fullName} />
-            <AvatarFallback>{currentUser?.fullName.charAt(0)}</AvatarFallback>
-          </Avatar>
-          <div className="flex-1 overflow-hidden">
-            <p className="truncate font-semibold">{currentUser?.fullName}</p>
-            <p className="truncate text-xs text-muted-foreground">{tHeader('logout')}</p>
-          </div>
-          <button>
-            <LogOut className="h-5 w-5 text-muted-foreground hover:text-foreground" />
-          </button>
-        </div>
-      </SidebarFooter>
-    </Sidebar>
+                <LifeBuoy className="h-5 w-5" />
+                <span className="sr-only">Support</span>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="right">Support</TooltipContent>
+          </Tooltip>
+        </nav>
+      </TooltipProvider>
+    </aside>
   );
 }

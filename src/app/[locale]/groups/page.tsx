@@ -19,7 +19,7 @@ export default async function GroupsPage() {
       <div className="space-y-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold font-headline">{t('title')}</h1>
+            <h1 className="text-3xl font-bold font-display">{t('title')}</h1>
             <p className="text-muted-foreground">{t('subtitle')}</p>
           </div>
           <div className="flex gap-2">

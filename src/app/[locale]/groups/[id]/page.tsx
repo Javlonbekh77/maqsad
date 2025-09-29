@@ -100,7 +100,7 @@ export default function GroupDetailPage() {
             data-ai-hint={group.imageHint}
           />
           <div className="absolute inset-0 bg-black/50 flex flex-col justify-end p-8">
-            <h1 className="text-4xl font-bold text-white font-headline">{group.name}</h1>
+            <h1 className="text-4xl font-bold text-white font-display">{group.name}</h1>
             <p className="text-lg text-white/80 max-w-2xl mt-2">{group.description}</p>
           </div>
            <div className="absolute top-4 right-4">

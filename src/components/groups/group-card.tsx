@@ -40,7 +40,7 @@ export default function GroupCard({ group }: { group: Group }) {
         </div>
       </CardHeader>
       <CardContent className="flex-1 p-6">
-        <CardTitle className="font-headline text-xl mb-2">{group.name}</CardTitle>
+        <CardTitle className="font-display text-xl mb-2">{group.name}</CardTitle>
         <p className="text-sm text-muted-foreground line-clamp-3">{group.description}</p>
       </CardContent>
       <CardFooter className="p-6 pt-0 flex justify-between items-center">

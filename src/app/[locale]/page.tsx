@@ -34,7 +34,7 @@ export default function LandingPage() {
   const heroImage = PlaceHolderImages.find((img) => img.id === 'hero');
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-background">
       <header className="px-4 lg:px-6 h-16 flex items-center bg-background/80 backdrop-blur-sm fixed top-0 left-0 right-0 z-50">
         <Link href="/" className="flex items-center justify-center" prefetch={false}>
           <Logo />
@@ -56,7 +56,7 @@ export default function LandingPage() {
         <section className="relative w-full pt-24 lg:pt-32 pb-12 md:pb-24 lg:pb-32">
           <div className="container px-4 md:px-6 text-center">
             <div className="flex flex-col items-center space-y-4">
-              <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl font-headline bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
+              <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl font-display bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
                 {t('heroTitle')}
               </h1>
               <p className="mx-auto max-w-[700px] text-foreground/80 md:text-xl">
@@ -85,20 +85,20 @@ export default function LandingPage() {
           )}
         </section>
 
-        <section id="features" className="w-full py-12 md:py-24 lg:py-32 bg-background">
+        <section id="features" className="w-full py-12 md:py-24 lg:py-32 bg-secondary/50">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl font-headline">{t('whyTitle')}</h2>
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl font-display">{t('whyTitle')}</h2>
               <p className="max-w-[900px] text-foreground/80 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                 {t('whySubtitle')}
               </p>
             </div>
             <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-2 md:gap-12 lg:max-w-none lg:grid-cols-3">
               {features.map((feature) => (
-                <Card key={feature.title} className="bg-card/80 border-border/50 hover:border-primary/50 transition-all hover:shadow-lg hover:-translate-y-1">
+                <Card key={feature.title} className="bg-background border-border/50 hover:border-primary/50 transition-all hover:shadow-lg hover:-translate-y-1">
                   <CardHeader className="flex flex-col items-center text-center gap-4">
                     {feature.icon}
-                    <CardTitle className="font-headline">{feature.title}</CardTitle>
+                    <CardTitle className="font-display">{feature.title}</CardTitle>
                   </CardHeader>
                   <CardContent className="text-center text-foreground/80">
                     {feature.description}

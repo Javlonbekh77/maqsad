@@ -54,7 +54,7 @@ export default function ProfilePage() {
       <div className="space-y-8">
         <GoBackButton />
         <div>
-          <h1 className="text-3xl font-bold font-headline">{isCurrentUser ? t('title') : user.fullName}</h1>
+          <h1 className="text-3xl font-bold font-display">{isCurrentUser ? t('title') : user.fullName}</h1>
           {!isCurrentUser && <p className="text-muted-foreground">{user.occupation}</p>}
         </div>
 
@@ -73,7 +73,7 @@ export default function ProfilePage() {
                   )}
                 </div>
                 <div className="flex flex-col justify-center gap-1">
-                    <h2 className="text-3xl font-bold font-headline">{user.fullName}</h2>
+                    <h2 className="text-3xl font-bold font-display">{user.fullName}</h2>
                      <div className="flex items-center gap-2 text-muted-foreground">
                         <Briefcase className="h-5 w-5" />
                         <span className="text-lg">{user.occupation}</span>

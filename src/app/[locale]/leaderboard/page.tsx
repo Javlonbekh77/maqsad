@@ -11,7 +11,7 @@ export default function LeaderboardPage() {
     <AppLayout>
       <div className="space-y-8">
         <div>
-          <h1 className="text-3xl font-bold font-headline">{t('title')}</h1>
+          <h1 className="text-3xl font-bold font-display">{t('title')}</h1>
           <p className="text-muted-foreground">{t('subtitle')}</p>
         </div>
         <LeaderboardTabs />
