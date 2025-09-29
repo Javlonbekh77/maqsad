@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useParams, notFound, useRouter } from 'next/navigation';
+import { useParams, notFound } from 'next/navigation';
 import AppLayout from "@/components/layout/app-layout";
 import { getUserById, getGroupsByUserId } from "@/lib/data";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -17,6 +17,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import GroupCard from '@/components/groups/group-card';
 import { useAuth } from '@/context/auth-context';
+import { useRouter } from '@/navigation';
 
 
 export default function ProfilePage() {

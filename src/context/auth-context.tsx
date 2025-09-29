@@ -13,7 +13,7 @@ interface AuthContextType {
   firebaseUser: FirebaseUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<any>;
-  signup: (data: Omit<User, 'id' | 'firebaseId' | 'avatarUrl' | 'coins' | 'goals' | 'habits' | 'groups' | 'taskHistory' | 'fullName' | 'occupation'>) => Promise<any>;
+  signup: (data: Omit<User, 'id' | 'firebaseId' | 'avatarUrl' | 'coins' | 'goals' | 'habits' | 'groups' | 'taskHistory' | 'fullName' | 'occupation'> & { password?: string }) => Promise<any>;
   logout: () => Promise<any>;
 }
 
@@ -57,15 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
     
-    const profileData = {
-      firstName: data.firstName,
-      lastName: data.lastName,
-      email: data.email,
-      university: data.university,
-      specialization: data.specialization,
-      course: data.course,
-      telegram: data.telegram,
-    };
+    const { password, ...profileData } = data;
 
     // Create user profile in Firestore
     await createUserProfile(userCredential.user.uid, profileData);
