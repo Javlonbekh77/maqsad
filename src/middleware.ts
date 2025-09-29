@@ -1,5 +1,5 @@
 import createMiddleware from 'next-intl/middleware';
-import {locales, pathnames} from './navigation';
+import {locales, pathnames, localePrefix} from './navigation';
  
 export default createMiddleware({
   // A list of all locales that are supported
@@ -7,6 +7,9 @@ export default createMiddleware({
  
   // Used when no locale matches
   defaultLocale: 'uz',
+
+  // Always use a locale prefix
+  localePrefix,
   
   // The `pathnames` object holds pairs of internal
   // and external paths, separated by locale.

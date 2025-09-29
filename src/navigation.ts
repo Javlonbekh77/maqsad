@@ -6,6 +6,7 @@ import {
  
 export const locales = ['en', 'uz'] as const;
 export type Locale = typeof locales[number];
+export const localePrefix = 'always';
  
 // The `pathnames` object holds pairs of internal
 // and external paths, separated by locale.
@@ -23,4 +24,4 @@ export const pathnames = {
 } satisfies Pathnames<typeof locales>;
  
 export const {Link, redirect, usePathname, useRouter} =
-  createLocalizedPathnamesNavigation({locales, pathnames});
+  createLocalizedPathnamesNavigation({locales, pathnames, localePrefix});
