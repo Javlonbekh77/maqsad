@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/table";
 import { Link, useRouter } from '@/navigation';
 import GoBackButton from '@/components/go-back-button';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import JoinGroupDialog from '@/components/groups/join-group-dialog';
 import { useTranslations } from 'next-intl';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -30,7 +30,6 @@ import type { Group, Task, User, WeeklyMeeting } from '@/lib/types';
 import { useAuth } from '@/context/auth-context';
 import { Skeleton } from '@/components/ui/skeleton';
 
-
 export default function GroupDetailPage() {
   const t = useTranslations('groupDetail');
   const params = useParams();
@@ -38,82 +37,86 @@ export default function GroupDetailPage() {
   const { user: currentUser, loading: authLoading } = useAuth();
   const router = useRouter();
   
-  const [group, setGroup] = useState<Group | null | undefined>(undefined);
-  const [members, setMembers] = useState<(User | undefined)[]>([]);
+  const [group, setGroup] = useState<Group | null>(null);
+  const [members, setMembers] = useState<User[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [meetings, setMeetings] = useState<WeeklyMeeting[]>([]);
   const [isJoinDialogOpen, setJoinDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const fetchGroupData = useCallback(async (groupId: string) => {
+    setLoading(true);
+    const groupData = await getGroupById(groupId);
+    if (!groupData) {
+      setGroup(null); // Explicitly set to null to indicate not found
+      setLoading(false);
+      return;
+    }
+    setGroup(groupData);
+    
+    const [membersData, tasksData, meetingsData] = await Promise.all([
+        Promise.all(groupData.members.map(id => getUserById(id))),
+        getTasksByGroupId(groupData.id),
+        getMeetingsByGroupId(groupData.id)
+    ]);
+
+    setMembers(membersData.filter(Boolean) as User[]);
+    setTasks(tasksData);
+    setMeetings(meetingsData);
+    setLoading(false);
+  }, []);
+
   useEffect(() => {
     if (!authLoading && !currentUser) {
-        router.push('/login');
-        return;
+      router.push('/login');
+      return;
     }
 
-    if (id && currentUser) {
-      async function fetchData() {
-        setLoading(true);
-        const groupData = await getGroupById(id);
-        if (!groupData) {
-          notFound();
-          return;
-        }
-        setGroup(groupData);
-        
-        const [membersData, tasksData, meetingsData] = await Promise.all([
-            Promise.all(groupData.members.map(id => getUserById(id))),
-            getTasksByGroupId(groupData.id),
-            getMeetingsByGroupId(groupData.id)
-        ]);
-
-        setMembers(membersData.filter(Boolean) as User[]);
-        setTasks(tasksData);
-        setMeetings(meetingsData);
-        setLoading(false);
-      }
-      fetchData();
+    if (id && !authLoading && currentUser) {
+      fetchGroupData(id);
     }
-  }, [id, authLoading, currentUser, router]);
+  }, [id, authLoading, currentUser, router, fetchGroupData]);
 
+  const handleJoinGroup = useCallback(async () => {
+    if (!currentUser || !group) return;
+    await addUserToGroup(currentUser.id, group.id);
+    setJoinDialogOpen(false);
+    // Re-fetch data to show the new member
+    await fetchGroupData(id); 
+  }, [currentUser, group, id, fetchGroupData]);
+  
   const isLoading = authLoading || loading;
 
-  if (isLoading || !group) {
+  if (isLoading) {
     return (
         <AppLayout>
             <div className="space-y-8">
                 <GoBackButton />
                 <Skeleton className="w-full h-64 rounded-xl" />
-                <Skeleton className="h-12 w-full" />
-                <Card>
-                    <CardHeader>
-                        <Skeleton className="h-8 w-1/3" />
-                        <Skeleton className="h-4 w-1/2" />
-                    </CardHeader>
-                    <CardContent>
-                        <Skeleton className="h-40 w-full" />
-                    </CardContent>
-                </Card>
+                <Skeleton className="h-12 w-full mt-4 rounded-md" />
+                <div className="mt-4">
+                  <Card>
+                      <CardHeader>
+                          <Skeleton className="h-8 w-1/3" />
+                          <Skeleton className="h-4 w-1/2" />
+                      </CardHeader>
+                      <CardContent>
+                          <Skeleton className="h-40 w-full" />
+                      </CardContent>
+                  </Card>
+                </div>
             </div>
         </AppLayout>
     );
   }
 
+  if (!group) {
+    notFound();
+    return null;
+  }
+
   const isAdmin = group.adminId === currentUser?.id;
   const isMember = !!currentUser?.id && group.members.includes(currentUser.id);
-
-  const handleJoinGroup = async () => {
-    if (!currentUser) return;
-    await addUserToGroup(currentUser.id, group.id);
-    const updatedGroupData = await getGroupById(id); // Re-fetch to update state
-    if (updatedGroupData) {
-      setGroup(updatedGroupData);
-      const memberPromises = updatedGroupData.members.map(id => getUserById(id));
-      const membersData = await Promise.all(memberPromises);
-      setMembers(membersData.filter(Boolean) as User[]);
-    }
-    setJoinDialogOpen(false);
-  };
 
   return (
     <AppLayout>
@@ -224,7 +227,7 @@ export default function GroupDetailPage() {
       <JoinGroupDialog
         isOpen={isJoinDialogOpen}
         onClose={() => setJoinDialogOpen(false)}
-        onConfirm={() => handleJoinGroup()}
+        onConfirm={handleJoinGroup}
         groupName={group.name}
         tasks={tasks}
       />

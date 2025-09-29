@@ -30,13 +30,15 @@ export default function DashboardClient() {
     if (authUser) {
       const fetchData = async () => {
         setLoading(true);
-        const [userData, userTasks] = await Promise.all([
-          getUserById(authUser.id),
-          getUserTasks(authUser.id)
-        ]);
-        
-        setUser(userData || null);
-        setTasks(userTasks);
+        // Ensure authUser has a valid ID before fetching
+        if (authUser.id) {
+          const [userData, userTasks] = await Promise.all([
+            getUserById(authUser.id),
+            getUserTasks(authUser.id)
+          ]);
+          setUser(userData || null);
+          setTasks(userTasks);
+        }
         setLoading(false);
       };
 
@@ -54,7 +56,7 @@ export default function DashboardClient() {
             <Skeleton className="h-10 w-1/2" />
             <Skeleton className="h-4 w-3/4 mt-2" />
           </div>
-          <div className="grid gap-8 items-start">
+          <div className="grid md:grid-cols-2 gap-8 items-start">
             <Skeleton className="h-64 w-full" />
             <Skeleton className="h-64 w-full" />
           </div>
@@ -71,7 +73,7 @@ export default function DashboardClient() {
           <p className="text-muted-foreground">{t('welcomeSubtitle')}</p>
         </div>
 
-        <div className="grid gap-8 items-start">
+        <div className="grid md:grid-cols-2 gap-8 items-start">
           <div>
             <TodoList initialTasks={tasks} userId={user.id} />
           </div>

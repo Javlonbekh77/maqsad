@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PlusCircle, Search } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import type { Group, User } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/auth-context";
@@ -18,38 +18,44 @@ type GroupWithMembers = Group & { memberUsers: User[] };
 
 export default function GroupsPage() {
   const t = useTranslations('groups');
-  const { user, loading: authLoading } = useAuth();
+  const { user: authUser, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  const [groupsWithMembers, setGroupsWithMembers] = useState<GroupWithMembers[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!authLoading && !user) {
+    if (!authLoading && !authUser) {
       router.push('/login');
       return;
     }
 
-    if (user) {
+    if (!authLoading && authUser) {
         async function fetchGroupsAndMembers() {
             setLoading(true);
-            const groupsData = await getGroups();
-            const allUsers = await getUsers();
-            const userMap = new Map(allUsers.map(u => [u.id, u]));
-            
-            const enrichedGroups = groupsData.map(group => {
-                const memberUsers = group.members
-                .map(memberId => userMap.get(memberId))
-                .filter(Boolean) as User[];
-                return { ...group, memberUsers };
-            });
-            
-            setGroupsWithMembers(enrichedGroups);
+            const [groupsData, usersData] = await Promise.all([
+              getGroups(),
+              getUsers()
+            ]);
+            setGroups(groupsData);
+            setUsers(usersData);
             setLoading(false);
         }
         fetchGroupsAndMembers();
     }
-  }, [user, authLoading, router]);
+  }, [authUser, authLoading, router]);
+
+  const userMap = useMemo(() => new Map(users.map(u => [u.id, u])), [users]);
+
+  const groupsWithMembers = useMemo(() => {
+    return groups.map(group => {
+      const memberUsers = group.members
+        .map(memberId => userMap.get(memberId))
+        .filter(Boolean) as User[];
+      return { ...group, memberUsers };
+    });
+  }, [groups, userMap]);
 
   const isLoading = authLoading || loading;
 
@@ -79,7 +85,7 @@ export default function GroupsPage() {
         {isLoading ? (
            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="h-80 w-full" />
+              <Skeleton key={i} className="h-80 w-full rounded-xl" />
             ))}
           </div>
         ) : (

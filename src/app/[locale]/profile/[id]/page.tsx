@@ -14,7 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import GoBackButton from '@/components/go-back-button';
 import GoalMates from '@/components/profile/goal-mates';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import GroupCard from '@/components/groups/group-card';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from '@/navigation';
@@ -28,7 +28,7 @@ export default function ProfilePage() {
   
   const { user: currentUser, loading: authLoading } = useAuth();
   
-  const [user, setUser] = useState<User | null | undefined>(undefined);
+  const [user, setUser] = useState<User | null>(null);
   const [userGroups, setUserGroups] = useState<Group[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [loadingPage, setLoadingPage] = useState(true);
@@ -39,34 +39,34 @@ export default function ProfilePage() {
         return;
     }
     
-    if (userId) {
+    if (userId && !authLoading && currentUser) {
       async function fetchData() {
         setLoadingPage(true);
         const [userData, groupsData, usersData] = await Promise.all([
           getUserById(userId),
           getGroupsByUserId(userId),
-          getUsers(),
+          getUsers(), // To populate group member avatars in GroupCard
         ]);
 
         if (!userData) {
-          notFound();
+          setUser(null);
         } else {
           setUser(userData);
           setUserGroups(groupsData);
           setAllUsers(usersData);
-          setLoadingPage(false);
         }
+        setLoadingPage(false);
       }
       fetchData();
     }
   }, [userId, authLoading, currentUser, router]);
   
-  const userMap = new Map(allUsers.map(u => [u.id, u]));
+  const userMap = useMemo(() => new Map(allUsers.map(u => [u.id, u])), [allUsers]);
 
   const isLoading = authLoading || loadingPage;
   const isCurrentUser = userId === currentUser?.id;
 
-  if (isLoading || !user) {
+  if (isLoading) {
     return (
         <AppLayout>
             <div className="space-y-8">
@@ -91,6 +91,11 @@ export default function ProfilePage() {
             </div>
         </AppLayout>
     );
+  }
+
+  if (!user) {
+      notFound();
+      return null;
   }
 
   return (

@@ -6,7 +6,6 @@ import ProfileForm from "@/components/profile/profile-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/context/auth-context";
 import { useTranslations } from "next-intl";
-import { redirect } from 'next/navigation';
 import { useRouter } from "@/navigation";
 import { useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
