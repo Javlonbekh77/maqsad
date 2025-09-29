@@ -62,7 +62,7 @@ export default function ProfilePage() {
           {isCurrentUser && (
             <Button variant="outline" onClick={() => router.push('/settings')}>
               <Settings className="mr-2 h-4 w-4" />
-              Sozlamalar
+              {t('settings.title')}
             </Button>
           )}
         </div>

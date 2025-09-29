@@ -63,7 +63,7 @@ export default function SignupPage() {
       if (err.code === 'auth/email-already-in-use') {
         setError('Bu email allaqachon ro\'yxatdan o\'tgan. Iltimos, tizimga kiring.');
       } else if (err.code === 'permission-denied') {
-        setError('Ma\'lumotlar bazasiga yozishda xatolik. Iltimos, Firebase Rules sozlamalarini tekshiring.');
+        setError('Ma\'lumotlar bazasiga yozishda xatolik. Firebase Rules sozlamalarini tekshirishingiz kerak.');
       }
       else {
         setError('Kutilmagan xatolik yuz berdi. Iltimos, qaytadan urunib ko\'ring.');
