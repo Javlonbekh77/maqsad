@@ -21,13 +21,15 @@ export const metadata: Metadata = {
   description: "Achieve your goals together.",
 };
 
+interface RootLayoutProps {
+  children: React.ReactNode;
+  params: { locale: string };
+}
+
 export default function RootLayout({
   children,
   params: {locale}
-}: Readonly<{
-  children: React.ReactNode;
-  params: {locale: string};
-}>) {
+}: Readonly<RootLayoutProps>) {
   const messages = useMessages();
 
   return (
