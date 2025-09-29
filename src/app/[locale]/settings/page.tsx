@@ -8,6 +8,8 @@ import { notFound } from "next/navigation";
 
 export default async function SettingsPage() {
     const t = await getTranslations('profile');
+    const tSettings = await getTranslations('settings');
+
     // In a real app, this would come from an auth context
     const currentUserId = 'user-1';
     const user = await getUserById(currentUserId);
@@ -20,8 +22,8 @@ export default async function SettingsPage() {
         <AppLayout>
             <div className="space-y-8">
                 <div>
-                    <h1 className="text-3xl font-bold font-display">Sozlamalar</h1>
-                    <p className="text-muted-foreground">Shaxsiy ma'lumotlaringizni boshqaring.</p>
+                    <h1 className="text-3xl font-bold font-display">{tSettings('title')}</h1>
+                    <p className="text-muted-foreground">{tSettings('subtitle')}</p>
                 </div>
                 <Card>
                     <CardHeader>

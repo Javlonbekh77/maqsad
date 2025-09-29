@@ -117,6 +117,10 @@
         "goalMates": "Goal Mates",
         "goalMatesDescription": "Teammates from your groups."
     },
+    "settings": {
+        "title": "Settings",
+        "subtitle": "Manage your personal information."
+    },
     "languageSwitcher": {
         "label": "Language",
         "uz": "O'zbekcha",

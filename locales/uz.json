@@ -117,6 +117,10 @@
         "goalMates": "Maqsaddoshlar",
         "goalMatesDescription": "Guruhlaringizdagi jamoa a'zolari."
     },
+    "settings": {
+        "title": "Sozlamalar",
+        "subtitle": "Shaxsiy ma'lumotlaringizni boshqaring."
+    },
     "languageSwitcher": {
         "label": "Til",
         "uz": "O'zbekcha",
