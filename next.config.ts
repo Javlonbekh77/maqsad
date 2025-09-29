@@ -2,7 +2,7 @@ import type {NextConfig} from 'next';
 import withNextIntl from 'next-intl/plugin';
  
 const withNextIntlConfig = withNextIntl(
-  // This is the correct path to the i18n configuration
+  // This is the default location of the configuration object
   './src/i18n.ts'
 );
 
