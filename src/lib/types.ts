@@ -23,6 +23,10 @@ export type User = {
   groups: string[]; // array of group IDs
   occupation: string;
   taskHistory: TaskHistory[];
+  university?: string;
+  specialization?: string;
+  course?: string;
+  telegram?: string;
 };
 
 export type WeeklyMeeting = {

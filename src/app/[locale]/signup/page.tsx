@@ -26,6 +26,10 @@ const formSchema = z.object({
   fullName: z.string().min(2, { message: 'Full name must be at least 2 characters.' }),
   email: z.string().email({ message: 'Invalid email address.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
+  university: z.string().min(2, { message: 'Please enter your university.' }),
+  specialization: z.string().min(2, { message: 'Please enter your field of study.' }),
+  course: z.string().min(1, { message: 'Please enter your year of study.' }),
+  telegram: z.string().optional(),
 });
 
 export default function SignupPage() {
@@ -39,13 +43,17 @@ export default function SignupPage() {
       fullName: '',
       email: '',
       password: '',
+      university: '',
+      specialization: '',
+      course: '',
+      telegram: '',
     },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setError(null);
     try {
-      await signup(values.email, values.password, values.fullName);
+      await signup(values);
       router.push('/dashboard');
     } catch (err: any) {
       console.error(err.message);
@@ -58,7 +66,7 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-secondary">
+    <div className="flex items-center justify-center min-h-screen bg-secondary py-12">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
@@ -111,6 +119,58 @@ export default function SignupPage() {
                     <FormLabel>Password</FormLabel>
                     <FormControl>
                       <Input type="password" placeholder="••••••••" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="university"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>University</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Tashkent University of Information Technologies" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="specialization"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Field of Study</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Software Engineering" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="course"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Year of Study</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="e.g., 3" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="telegram"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Telegram Username <span className="text-muted-foreground">(Optional)</span></FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., johndoe" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

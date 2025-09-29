@@ -13,7 +13,7 @@ interface AuthContextType {
   firebaseUser: FirebaseUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<any>;
-  signup: (email: string, password: string, fullName: string) => Promise<any>;
+  signup: (data: Partial<User>) => Promise<any>;
   logout: () => Promise<any>;
 }
 
@@ -51,10 +51,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return signInWithEmailAndPassword(auth, email, password);
   };
 
-  const signup = async (email: string, password: string, fullName: string) => {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+  const signup = async (data: Partial<User>) => {
+    const userCredential = await createUserWithEmailAndPassword(auth, data.email!, data.password!);
     // Create user profile in Firestore
-    await createUserProfile(userCredential.user.uid, fullName, email);
+    await createUserProfile(userCredential.user.uid, data);
     return userCredential;
   };
 

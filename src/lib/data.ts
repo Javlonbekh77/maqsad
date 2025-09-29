@@ -54,21 +54,24 @@ async function getCollection<T>(collectionName: string): Promise<T[]> {
   return querySnapshot.docs.map(doc => ({ ...doc.data() as T, firebaseId: doc.id }));
 }
 
-export const createUserProfile = async (uid: string, fullName: string, email: string) => {
+export const createUserProfile = async (uid: string, data: Partial<User>) => {
     const newUser: User = {
         id: uid,
-        firebaseId: uid, // In 'users' collection, we can use auth UID as document ID
-        fullName,
-        email,
+        firebaseId: uid,
+        fullName: data.fullName || '',
+        email: data.email || '',
         avatarUrl: PlaceHolderImages.find(p => p.id === 'user3')?.imageUrl || '',
         coins: 0,
         goals: '',
         habits: '',
         groups: [],
-        occupation: '',
+        occupation: data.specialization || '',
         taskHistory: [],
+        university: data.university,
+        specialization: data.specialization,
+        course: data.course,
+        telegram: data.telegram,
     };
-    // Here, we use the uid as the document ID for easy lookup
     await addDoc(collection(db, 'users'), newUser);
     return newUser;
 };
