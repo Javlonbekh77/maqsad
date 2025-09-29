@@ -8,12 +8,9 @@ import {
   Users,
   Trophy,
   UserCircle,
-  Settings,
-  LogOut,
-  LifeBuoy,
 } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { useTranslations } from 'next-intl';
+import { cn } from '@/lib/utils';
 
 export default function AppSidebar() {
   const t = useTranslations('nav');
@@ -28,50 +25,30 @@ export default function AppSidebar() {
   ];
 
   return (
-     <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
-      <TooltipProvider>
-        <nav className="flex flex-col items-center gap-4 px-2 py-4">
-          <Link
-            href="/dashboard"
-            className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
-          >
-            <Logo />
-            <span className="sr-only">MaqsadM</span>
-          </Link>
-          {navItems.map((item) => (
-            <Tooltip key={item.href}>
-              <TooltipTrigger asChild>
-                <Link
-                  href={item.href}
-                  className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors md:h-8 md:w-8 ${
-                    pathname.startsWith(item.href)
-                      ? 'bg-accent text-accent-foreground'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <item.icon className="h-5 w-5" />
-                  <span className="sr-only">{t(item.labelKey)}</span>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">{t(item.labelKey)}</TooltipContent>
-            </Tooltip>
-          ))}
+     <aside className="fixed inset-y-0 left-0 z-10 hidden w-64 flex-col border-r bg-background sm:flex">
+        <div className="flex h-16 items-center border-b px-6">
+             <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
+                <Logo />
+            </Link>
+        </div>
+        <nav className="flex-1 overflow-y-auto py-4">
+            <ul className="grid items-start px-4 text-sm font-medium">
+                 {navItems.map((item) => (
+                    <li key={item.href}>
+                        <Link
+                        href={item.href}
+                        className={cn(
+                            'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
+                            pathname.startsWith(item.href) && 'bg-muted text-primary'
+                        )}
+                        >
+                        <item.icon className="h-4 w-4" />
+                        {t(item.labelKey)}
+                        </Link>
+                    </li>
+                ))}
+            </ul>
         </nav>
-        <nav className="mt-auto flex flex-col items-center gap-4 px-2 py-4">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link
-                href="#"
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
-              >
-                <LifeBuoy className="h-5 w-5" />
-                <span className="sr-only">Support</span>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right">Support</TooltipContent>
-          </Tooltip>
-        </nav>
-      </TooltipProvider>
     </aside>
   );
 }
