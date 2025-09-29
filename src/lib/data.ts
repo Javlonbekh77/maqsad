@@ -82,7 +82,7 @@ export const getGroupById = async (id: string): Promise<Group | undefined> => {
 export const getGroupsByUserId = async (userId: string): Promise<Group[]> => {
   if (!userId) return [];
   const user = await getUserById(userId);
-  if (!user || user.groups.length === 0) return [];
+  if (!user || !user.groups || user.groups.length === 0) return [];
 
   const groupsQuery = query(collection(db, 'groups'), where('id', 'in', user.groups));
   const querySnapshot = await getDocs(groupsQuery);
@@ -145,7 +145,7 @@ export const getUserTasks = async (userId: string): Promise<UserTask[]> => {
 
     const today = format(new Date(), 'yyyy-MM-dd');
     
-    if (user.groups.length === 0) {
+    if (!user.groups || user.groups.length === 0) {
       return [];
     }
 
@@ -168,7 +168,7 @@ export const getUserTasks = async (userId: string): Promise<UserTask[]> => {
 
 export const getGoalMates = async (userId: string): Promise<User[]> => {
     const currentUser = await getUserById(userId);
-    if (!currentUser || currentUser.groups.length === 0) return [];
+    if (!currentUser || !currentUser.groups || currentUser.groups.length === 0) return [];
 
     const groupsSnapshot = await getDocs(query(collection(db, 'groups'), where('id', 'in', currentUser.groups)));
     const memberIds = new Set<string>();
