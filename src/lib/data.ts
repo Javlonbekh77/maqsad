@@ -13,6 +13,8 @@ import {
   updateDoc,
   arrayUnion,
   writeBatch,
+  addDoc,
+  Timestamp,
 } from 'firebase/firestore';
 
 import type { User, Group, Task, TaskHistory, WeeklyMeeting, UserTask } from './types';
@@ -21,16 +23,11 @@ import { format } from 'date-fns';
 
 // --- Helper Functions ---
 
-// Since we are moving to a real database, the data fetching logic will be different.
-// The placeholder data and initialization logic is no longer needed.
-// We'll replace it with Firestore queries.
-
 // A helper to safely stringify and parse to avoid object reference issues.
 const deepCopy = <T>(obj: T): T => JSON.parse(JSON.stringify(obj));
 
 // --- Data Access Functions (Firestore) ---
 
-// Generic function to get a single document by our custom 'id' field
 async function getDocByCustomId<T>(collectionName: string, id: string): Promise<(T & { firebaseId: string }) | undefined> {
   const q = query(collection(db, collectionName), where('id', '==', id), limit(1));
   const querySnapshot = await getDocs(q);
@@ -41,26 +38,55 @@ async function getDocByCustomId<T>(collectionName: string, id: string): Promise<
   return { ...docSnap.data() as T, firebaseId: docSnap.id };
 }
 
+async function getDocByFirebaseId<T>(collectionName: string, firebaseId: string): Promise<T | undefined> {
+    const docRef = doc(db, collectionName, firebaseId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+        return docSnap.data() as T;
+    }
+    return undefined;
+}
+
+
 // Generic function to get all documents from a collection
 async function getCollection<T>(collectionName: string): Promise<T[]> {
   const querySnapshot = await getDocs(collection(db, collectionName));
-  return querySnapshot.docs.map(doc => doc.data() as T);
+  return querySnapshot.docs.map(doc => ({ ...doc.data() as T, firebaseId: doc.id }));
 }
+
+export const createUserProfile = async (uid: string, fullName: string, email: string) => {
+    const newUser: User = {
+        id: uid,
+        firebaseId: uid, // In 'users' collection, we can use auth UID as document ID
+        fullName,
+        email,
+        avatarUrl: PlaceHolderImages.find(p => p.id === 'user3')?.imageUrl || '',
+        coins: 0,
+        goals: '',
+        habits: '',
+        groups: [],
+        occupation: '',
+        taskHistory: [],
+    };
+    // Here, we use the uid as the document ID for easy lookup
+    await addDoc(collection(db, 'users'), newUser);
+    return newUser;
+};
 
 export const getGroups = async (): Promise<Group[]> => {
   return getCollection<Group>('groups');
 };
 
 export const getGroupById = async (id: string): Promise<Group | undefined> => {
-  // We search by the custom `id` field, not the Firestore document ID
   return getDocByCustomId<Group>('groups', id);
 };
 
 export const getGroupsByUserId = async (userId: string): Promise<Group[]> => {
+  if (!userId) return [];
   const user = await getUserById(userId);
-  if (!user) return [];
+  if (!user || user.groups.length === 0) return [];
 
-  const groupsQuery = query(collection(db, 'groups'), where('members', 'array-contains', userId));
+  const groupsQuery = query(collection(db, 'groups'), where('id', 'in', user.groups));
   const querySnapshot = await getDocs(groupsQuery);
   return querySnapshot.docs.map(doc => doc.data() as Group);
 };
@@ -82,18 +108,24 @@ export const getUsers = async (): Promise<User[]> => {
 };
 
 export const getUserById = async (id: string): Promise<User | undefined> => {
+  if (!id) return undefined;
+  // In the 'users' collection, the document ID is the Firebase Auth UID
   return getDocByCustomId<User>('users', id);
 };
 
 export const getTopUsers = async (): Promise<User[]> => {
-  const users = await getUsers();
+  const usersQuery = query(collection(db, 'users'), where('coins', '>', 0));
+  const users = (await getDocs(usersQuery)).docs.map(d => d.data() as User);
   return [...users].sort((a, b) => b.coins - a.coins).slice(0, 10);
 };
 
 export const getTopGroups = async (): Promise<(Group & { coins: number })[]> => {
   const groups = await getGroups();
-  const users = await getUsers();
-  const userMap = new Map(users.map(u => [u.id, u]));
+  const usersSnapshot = await getDocs(query(collection(db, 'users'), where('coins', '>', 0)));
+  const userMap = new Map(usersSnapshot.docs.map(d => {
+      const u = d.data() as User;
+      return [u.id, u];
+  }));
 
   return groups.map(group => {
     const groupCoins = group.members.reduce((total, memberId) => {
@@ -117,7 +149,6 @@ export const getUserTasks = async (userId: string): Promise<UserTask[]> => {
     const tasksSnapshot = await getDocs(tasksQuery);
     const tasksForUser = tasksSnapshot.docs.map(doc => doc.data() as Task);
     
-    // To get group names, we can fetch all groups at once to be efficient
     const allGroups = await getGroups();
     const groupMap = new Map(allGroups.map(g => [g.id, g.name]));
 
@@ -158,7 +189,6 @@ export const getGoalMates = async (userId: string): Promise<User[]> => {
 // --- Mutation functions (Firestore) ---
 
 export const addUserToGroup = async (userId: string, groupId: string): Promise<void> => {
-    // Find the documents by our custom IDs
     const userDocRef = await getDocByCustomId('users', userId);
     const groupDocRef = await getDocByCustomId('groups', groupId);
 
@@ -200,18 +230,20 @@ export const completeUserTask = async (userId: string, taskId: string, coins: nu
     }
 
     const userFirestoreDoc = doc(db, 'users', userDocRef.firebaseId);
+    const newCoins = (userDocRef.coins || 0) + coins;
     await updateDoc(userFirestoreDoc, {
-        coins: userDocRef.coins + coins,
+        coins: newCoins,
         taskHistory: arrayUnion({ taskId, date: today }),
     });
 };
 
-export const updateUserProfile = async (userId: string, data: { goals: string; habits: string }): Promise<void> => {
+export const updateUserProfile = async (userId: string, data: { goals?: string; habits?: string }): Promise<void> => {
     const userDocRef = await getDocByCustomId('users', userId);
     if (userDocRef) {
         const userFirestoreDoc = doc(db, 'users', userDocRef.firebaseId);
         await updateDoc(userFirestoreDoc, data);
     } else {
         console.error("User not found by custom ID for update");
+        throw new Error("User not found");
     }
 };

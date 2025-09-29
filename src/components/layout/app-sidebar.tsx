@@ -11,17 +11,20 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/auth-context';
+
 
 export default function AppSidebar() {
   const t = useTranslations('nav');
   const pathname = usePathname();
-  const currentUserId = 'user-1';
+  const { user } = useAuth();
+
 
   const navItems = [
     { href: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard },
     { href: '/groups', labelKey: 'groups', icon: Users },
     { href: '/leaderboard', labelKey: 'leaderboard', icon: Trophy },
-    { href: `/profile/${currentUserId}`, labelKey: 'profile', icon: UserCircle },
+    { href: `/profile/${user?.id}`, labelKey: 'profile', icon: UserCircle },
   ];
 
   return (
@@ -34,6 +37,8 @@ export default function AppSidebar() {
         <nav className="flex-1 overflow-y-auto py-4">
             <ul className="grid items-start px-4 text-sm font-medium">
                  {navItems.map((item) => (
+                    // Don't render profile link if user is not loaded
+                    (item.labelKey === 'profile' && !user) ? null :
                     <li key={item.href}>
                         <Link
                         href={item.href}

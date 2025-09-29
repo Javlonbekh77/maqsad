@@ -1,21 +1,49 @@
 
+'use client';
+
 import AppLayout from "@/components/layout/app-layout";
 import ProfileForm from "@/components/profile/profile-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getUserById } from "@/lib/data";
-import { getTranslations } from "next-intl/server";
-import { notFound } from "next/navigation";
+import { useAuth } from "@/context/auth-context";
+import { useTranslations } from "next-intl";
+import { redirect } from 'next/navigation';
+import { useRouter } from "@/navigation";
+import { useEffect } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export default async function SettingsPage() {
-    const t = await getTranslations('profile');
-    const tSettings = await getTranslations('settings');
+export default function SettingsPage() {
+    const t = useTranslations('profile');
+    const tSettings = useTranslations('settings');
+    const { user, loading } = useAuth();
+    const router = useRouter();
 
-    // In a real app, this would come from an auth context
-    const currentUserId = 'user-1';
-    const user = await getUserById(currentUserId);
+    useEffect(() => {
+        if (!loading && !user) {
+            router.push('/login');
+        }
+    }, [user, loading, router]);
 
-    if (!user) {
-        notFound();
+
+    if (loading || !user) {
+       return (
+        <AppLayout>
+             <div className="space-y-8">
+                <div>
+                    <Skeleton className="h-10 w-1/3" />
+                    <Skeleton className="h-4 w-1/2 mt-2" />
+                </div>
+                <Card>
+                    <CardHeader>
+                        <Skeleton className="h-8 w-1/4" />
+                        <Skeleton className="h-4 w-1/3 mt-1" />
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-64 w-full" />
+                    </CardContent>
+                </Card>
+            </div>
+        </AppLayout>
+       );
     }
 
     return (

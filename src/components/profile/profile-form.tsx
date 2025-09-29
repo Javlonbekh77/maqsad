@@ -27,11 +27,11 @@ const profileFormSchema = z.object({
   goals: z
     .string()
     .max(300, { message: 'Goals must not be longer than 300 characters.' })
-    .min(10, { message: 'Please describe your goals in at least 10 characters.'}),
+    .min(10, { message: 'Please describe your goals in at least 10 characters.'}).optional().or(z.literal('')),
   habits: z
     .string()
     .max(300, { message: 'Habits must not be longer than 300 characters.' })
-    .min(10, { message: 'Please describe your habits in at least 10 characters.'}),
+    .min(10, { message: 'Please describe your habits in at least 10 characters.'}).optional().or(z.literal('')),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -53,12 +53,20 @@ export default function ProfileForm({ user }: { user: User }) {
 
   function onSubmit(data: ProfileFormValues) {
     startTransition(async () => {
-      await updateUserProfile(user.id, data);
-      toast({
-        title: t('toast.title'),
-        description: t('toast.description'),
-      });
-      router.refresh();
+      try {
+        await updateUserProfile(user.id, data);
+        toast({
+          title: t('toast.title'),
+          description: t('toast.description'),
+        });
+        router.refresh();
+      } catch (error) {
+         toast({
+          title: 'Error',
+          description: 'Failed to update profile.',
+          variant: 'destructive',
+        });
+      }
     });
   }
 

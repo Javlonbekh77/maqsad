@@ -13,7 +13,7 @@ import { useTranslations } from 'next-intl';
 import { completeUserTask } from '@/lib/data';
 import { useRouter } from '@/navigation';
 
-export default function TodoList({ initialTasks, userId }: { initialTasks: UserTask[], userId: string }) {
+export default function TodoList({ initialTasks, userId }: { initialTasks: UserTask[], userId?: string }) {
   const t = useTranslations('todoList');
   const [tasks, setTasks] = useState(initialTasks);
   const [selectedTask, setSelectedTask] = useState<UserTask | null>(null);
@@ -23,18 +23,14 @@ export default function TodoList({ initialTasks, userId }: { initialTasks: UserT
     setSelectedTask(task);
   };
 
-  const handleConfirmCompletion = () => {
-    if (!selectedTask) return;
+  const handleConfirmCompletion = async () => {
+    if (!selectedTask || !userId) return;
     
-    // This now updates the data source and should trigger re-renders where data is used.
-    completeUserTask(userId, selectedTask.id, selectedTask.coins);
+    await completeUserTask(userId, selectedTask.id, selectedTask.coins);
 
-    // Update client-side state for immediate UI feedback
     setTasks(tasks.map(t => t.id === selectedTask.id ? { ...t, isCompleted: true } : t));
     setSelectedTask(null);
 
-    // useRouter.refresh() is a soft refresh, it re-fetches server components
-    // This is good for ensuring data consistency across the app after a mutation
     router.refresh();
   };
 
@@ -49,7 +45,11 @@ export default function TodoList({ initialTasks, userId }: { initialTasks: UserT
           <CardDescription>{t('description')}</CardDescription>
         </CardHeader>
         <CardContent>
-          {activeTasks.length > 0 ? (
+          {!userId ? (
+             <div className="text-center py-8 text-muted-foreground">
+                <p>Please log in to see your tasks.</p>
+            </div>
+          ) : activeTasks.length > 0 ? (
             <ul className="space-y-4">
               <AnimatePresence>
                 {activeTasks.map((task, index) => (
@@ -91,7 +91,7 @@ export default function TodoList({ initialTasks, userId }: { initialTasks: UserT
             </div>
           )}
 
-          {completedTasks.length > 0 && (
+          {userId && completedTasks.length > 0 && (
             <div className="mt-8">
               <h3 className="text-lg font-semibold mb-4">{t('completedTasksTitle')}</h3>
               <ul className="space-y-3">

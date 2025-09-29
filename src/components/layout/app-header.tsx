@@ -13,27 +13,26 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Search, Bell, Coins } from 'lucide-react';
 import { Input } from '../ui/input';
-import { getUserById } from '@/lib/data';
 import { Link, usePathname } from '@/navigation';
 import { useTranslations } from 'next-intl';
 import LanguageSwitcher from '../language-switcher';
-import { useEffect, useState } from 'react';
-import type { User } from '@/lib/types';
+import { useAuth } from '@/context/auth-context';
 
 export default function AppHeader() {
   const t = useTranslations();
-  const pathname = usePathname();
-  // In a real app, this would come from an auth context
-  const currentUserId = 'user-1';
-  const [currentUser, setCurrentUser] = useState<User | null | undefined>(undefined);
-  
-  useEffect(() => {
-    async function fetchUser() {
-      const user = await getUserById(currentUserId);
-      setCurrentUser(user);
-    }
-    fetchUser();
-  }, [currentUserId]);
+  const { user, loading, logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+  };
+
+  if (loading) {
+    return (
+      <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+        {/* Skeleton loader can be added here */}
+      </header>
+    )
+  }
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
@@ -54,15 +53,15 @@ export default function AppHeader() {
         </Button>
         <div className="flex items-center gap-2 text-sm font-semibold text-amber-500">
             <Coins className="h-5 w-5"/>
-            <span>{currentUser?.coins || 0}</span>
+            <span>{user?.coins || 0}</span>
         </div>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={currentUser?.avatarUrl} alt={currentUser?.fullName} />
-                <AvatarFallback>{currentUser?.fullName.charAt(0)}</AvatarFallback>
+                <AvatarImage src={user?.avatarUrl} alt={user?.fullName} />
+                <AvatarFallback>{user?.fullName?.charAt(0)}</AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
@@ -70,13 +69,13 @@ export default function AppHeader() {
             <DropdownMenuLabel>{t('header.myAccount')}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href={`/profile/${currentUserId}`}>{t('nav.profile')}</Link>
+              <Link href={`/profile/${user?.id}`}>{t('nav.profile')}</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href="/settings">{t('header.settings')}</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>{t('header.logout')}</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>{t('header.logout')}</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

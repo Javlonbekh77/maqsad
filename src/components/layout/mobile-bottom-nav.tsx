@@ -8,23 +8,26 @@ import {
   UserCircle,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useAuth } from '@/context/auth-context';
 
 export default function MobileBottomNav() {
   const t = useTranslations('nav');
   const pathname = usePathname();
-  const currentUserId = 'user-1';
+  const { user } = useAuth();
 
   const navItems = [
     { href: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard },
     { href: '/groups', labelKey: 'groups', icon: Users },
     { href: '/leaderboard', labelKey: 'leaderboard', icon: Trophy },
-    { href: `/profile/${currentUserId}`, labelKey: 'profile', icon: UserCircle },
+    { href: `/profile/${user?.id}`, labelKey: 'profile', icon: UserCircle },
   ];
 
   return (
     <div className="sm:hidden fixed bottom-0 left-0 z-50 w-full h-16 bg-background border-t">
       <div className="grid h-full max-w-lg grid-cols-4 mx-auto font-medium">
         {navItems.map((item) => (
+           // Don't render profile link if user is not loaded
+          (item.labelKey === 'profile' && !user) ? null :
           <Link
             key={item.href}
             href={item.href}

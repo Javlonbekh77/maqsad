@@ -27,15 +27,15 @@ import { useTranslations } from 'next-intl';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import WeeklyMeetings from '@/components/groups/weekly-meetings';
 import type { Group, Task, User, WeeklyMeeting } from '@/lib/types';
+import { useAuth } from '@/context/auth-context';
 
 
 export default function GroupDetailPage() {
   const t = useTranslations('groupDetail');
   const params = useParams();
   const id = params.id as string;
-  
-  // In a real app, this would be from an auth context
-  const currentUserId = 'user-1';
+  const { user: currentUser, loading } = useAuth();
+  const currentUserId = currentUser?.id;
   
   const [group, setGroup] = useState<Group | null | undefined>(undefined);
   const [members, setMembers] = useState<(User | undefined)[]>([]);
@@ -65,7 +65,7 @@ export default function GroupDetailPage() {
     fetchData();
   }, [id]);
 
-  if (group === undefined) {
+  if (group === undefined || loading) {
     // Loading state
     return <AppLayout><div>Loading...</div></AppLayout>;
   }
@@ -76,12 +76,11 @@ export default function GroupDetailPage() {
   }
 
   const isAdmin = group.adminId === currentUserId;
-  const isMember = group.members.includes(currentUserId);
+  const isMember = !!currentUserId && group.members.includes(currentUserId);
 
   const handleJoinGroup = async () => {
-    // For this demo, we'll just add the user. 
+    if (!currentUserId) return;
     await addUserToGroup(currentUserId, group.id);
-    // Re-fetch group data to update membership status
     const updatedGroupData = await getGroupById(id);
     setGroup(updatedGroupData);
     setJoinDialogOpen(false);
@@ -104,7 +103,7 @@ export default function GroupDetailPage() {
             <p className="text-lg text-white/80 max-w-2xl mt-2">{group.description}</p>
           </div>
            <div className="absolute top-4 right-4">
-              {!isMember && (
+              {!isMember && currentUserId && (
                 <Button onClick={() => setJoinDialogOpen(true)}>
                   <UserPlus className="mr-2 h-4 w-4" />
                   {t('joinGroup')}

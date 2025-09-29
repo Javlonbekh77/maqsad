@@ -41,12 +41,12 @@ export default function LandingPage() {
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6">
           <Button variant="ghost" asChild>
-            <Link href="/dashboard" prefetch={false}>
+            <Link href="/login" prefetch={false}>
               {t('login')}
             </Link>
           </Button>
           <Button asChild>
-            <Link href="/dashboard" prefetch={false}>
+            <Link href="/signup" prefetch={false}>
               {t('signUp')}
             </Link>
           </Button>
@@ -64,7 +64,7 @@ export default function LandingPage() {
               </p>
               <div className="space-x-4">
                 <Button size="lg" asChild>
-                  <Link href="/dashboard" prefetch={false}>
+                  <Link href="/signup" prefetch={false}>
                     {t('getStarted')}
                   </Link>
                 </Button>

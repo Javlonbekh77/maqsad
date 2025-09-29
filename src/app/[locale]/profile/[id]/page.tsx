@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useParams, notFound } from 'next/navigation';
+import { useParams, notFound, useRouter } from 'next/navigation';
 import AppLayout from "@/components/layout/app-layout";
 import { getUserById, getGroupsByUserId } from "@/lib/data";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,21 +16,24 @@ import GoalMates from '@/components/profile/goal-mates';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import GroupCard from '@/components/groups/group-card';
+import { useAuth } from '@/context/auth-context';
 
 
 export default function ProfilePage() {
   const t = useTranslations('profile');
   const params = useParams();
   const userId = params.id as string;
-  // In a real app, this would come from an auth context
-  const currentUserId = 'user-1';
-  const isCurrentUser = userId === currentUserId;
+  const router = useRouter();
+  
+  const { user: currentUser, loading } = useAuth();
+  const isCurrentUser = userId === currentUser?.id;
   
   const [user, setUser] = useState<User | null | undefined>(undefined);
   const [userGroups, setUserGroups] = useState<Group[]>([]);
 
   useEffect(() => {
     async function fetchData() {
+      if (!userId) return;
       const userData = await getUserById(userId);
       if (!userData) {
         notFound();
@@ -43,12 +46,11 @@ export default function ProfilePage() {
     fetchData();
   }, [userId]);
 
-  if (user === undefined) {
+  if (user === undefined || loading) {
     return <AppLayout><div>Loading...</div></AppLayout>;
   }
 
   if (!user) {
-      // notFound() has been called in useEffect
       return null;
   }
 
@@ -58,7 +60,7 @@ export default function ProfilePage() {
         <div className="flex items-center justify-between">
           <GoBackButton />
           {isCurrentUser && (
-            <Button variant="outline">
+            <Button variant="outline" onClick={() => router.push('/settings')}>
               <Settings className="mr-2 h-4 w-4" />
               Sozlamalar
             </Button>
@@ -76,7 +78,7 @@ export default function ProfilePage() {
                     <h2 className="text-3xl font-bold font-display">{user.fullName}</h2>
                      <div className="flex items-center gap-2 text-muted-foreground">
                         <Briefcase className="h-5 w-5" />
-                        <span className="text-lg">{user.occupation}</span>
+                        <span className="text-lg">{user.occupation || 'Kasbi kiritilmagan'}</span>
                     </div>
                     <div className="flex items-center gap-2 mt-2">
                         <Coins className="h-6 w-6 text-amber-500" />
@@ -122,4 +124,3 @@ export default function ProfilePage() {
     </AppLayout>
   );
 }
-

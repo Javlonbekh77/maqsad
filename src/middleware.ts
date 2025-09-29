@@ -2,22 +2,13 @@ import createMiddleware from 'next-intl/middleware';
 import {locales, pathnames, localePrefix} from './navigation';
  
 export default createMiddleware({
-  // A list of all locales that are supported
+  defaultLocale: 'en',
   locales,
- 
-  // Used when no locale matches
-  defaultLocale: 'uz',
-
-  // Always use a locale prefix
-  localePrefix,
-  
-  // The `pathnames` object holds pairs of internal
-  // and external paths, separated by locale.
   pathnames,
+  localePrefix,
 });
  
 export const config = {
-  // Match only internationalized pathnames
   matcher: [
     // Enable a redirect to a matching locale at the root
     '/',

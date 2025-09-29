@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider, useMessages } from 'next-intl';
 import { Inter, Noto_Sans_Display as NotoSansDisplay } from 'next/font/google';
+import { AuthProvider } from '@/context/auth-context';
 
 import '../globals.css';
 import { Toaster } from '@/components/ui/toaster';
@@ -36,8 +37,10 @@ export default function RootLayout({
     <html lang={locale} suppressHydrationWarning>
        <body className={cn('min-h-screen bg-background font-sans antialiased', fontSans.variable, fontDisplay.variable)}>
         <NextIntlClientProvider locale={locale} messages={messages}>
-          {children}
-          <Toaster />
+          <AuthProvider>
+            {children}
+            <Toaster />
+          </AuthProvider>
         </NextIntlClientProvider>
       </body>
     </html>
