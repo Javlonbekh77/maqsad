@@ -55,9 +55,9 @@ export default function LoginPage() {
     <div className="flex items-center justify-center min-h-screen bg-secondary">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
+            <Link href="/" className="flex justify-center mb-4">
                  <Logo />
-            </div>
+            </Link>
           <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
           <CardDescription>Enter your credentials to access your account</CardDescription>
         </CardHeader>

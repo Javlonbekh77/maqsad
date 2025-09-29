@@ -57,11 +57,15 @@ export default function SignupPage() {
     try {
       await signup(values);
       router.push('/dashboard');
-    } catch (err: any) {
-      console.error(err.message);
+    } catch (err: any)
+      {
+      console.error("Signup failed with code:", err.code, "and message:", err.message);
       if (err.code === 'auth/email-already-in-use') {
         setError('Bu email allaqachon ro\'yxatdan o\'tgan. Iltimos, tizimga kiring.');
-      } else {
+      } else if (err.code === 'permission-denied') {
+        setError('Ma\'lumotlar bazasiga yozishda xatolik. Iltimos, Firebase Rules sozlamalarini tekshiring.');
+      }
+      else {
         setError('Kutilmagan xatolik yuz berdi. Iltimos, qaytadan urunib ko\'ring.');
       }
     }
@@ -71,9 +75,9 @@ export default function SignupPage() {
     <div className="flex items-center justify-center min-h-screen bg-secondary py-12">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
+          <Link href="/" className="flex justify-center mb-4">
             <Logo />
-          </div>
+          </Link>
           <CardTitle className="text-2xl font-bold">Hisob Yaratish</CardTitle>
           <CardDescription>Hamjamiyatga qo'shiling va maqsadlaringizga erishishni boshlang.</CardDescription>
         </CardHeader>
