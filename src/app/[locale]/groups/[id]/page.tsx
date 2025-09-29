@@ -46,24 +46,29 @@ export default function GroupDetailPage() {
 
   const fetchGroupData = useCallback(async (groupId: string) => {
     setLoading(true);
-    const groupData = await getGroupById(groupId);
-    if (!groupData) {
-      setGroup(null); // Explicitly set to null to indicate not found
-      setLoading(false);
-      return;
-    }
-    setGroup(groupData);
-    
-    const [membersData, tasksData, meetingsData] = await Promise.all([
-        Promise.all(groupData.members.map(id => getUserById(id))),
-        getTasksByGroupId(groupData.id),
-        getMeetingsByGroupId(groupData.id)
-    ]);
+    try {
+      const groupData = await getGroupById(groupId);
+      if (!groupData) {
+        setGroup(null);
+        setLoading(false);
+        return;
+      }
+      setGroup(groupData);
+      
+      const [membersData, tasksData, meetingsData] = await Promise.all([
+          Promise.all((groupData.members || []).map(id => getUserById(id))),
+          getTasksByGroupId(groupData.id),
+          getMeetingsByGroupId(groupData.id)
+      ]);
 
-    setMembers(membersData.filter(Boolean) as User[]);
-    setTasks(tasksData);
-    setMeetings(meetingsData);
-    setLoading(false);
+      setMembers(membersData.filter(Boolean) as User[]);
+      setTasks(tasksData);
+      setMeetings(meetingsData);
+    } catch (error) {
+      console.error("Failed to fetch group data:", error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -73,16 +78,16 @@ export default function GroupDetailPage() {
     }
 
     if (id && !authLoading && currentUser) {
-      fetchGroupData(id);
+      fetchGroupData(id as string);
     }
   }, [id, authLoading, currentUser, router, fetchGroupData]);
 
   const handleJoinGroup = useCallback(async () => {
     if (!currentUser || !group) return;
+    // In a real app, you would pass selected task IDs
     await addUserToGroup(currentUser.id, group.id);
     setJoinDialogOpen(false);
-    // Re-fetch data to show the new member
-    await fetchGroupData(id); 
+    await fetchGroupData(id as string); 
   }, [currentUser, group, id, fetchGroupData]);
   
   const isLoading = authLoading || loading;
@@ -234,3 +239,5 @@ export default function GroupDetailPage() {
     </AppLayout>
   );
 }
+
+    
