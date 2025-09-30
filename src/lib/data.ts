@@ -28,7 +28,7 @@ export const createUserProfile = async (uid: string, data: Partial<User>) => {
 
     if (userDocSnap.exists()) {
       console.log(`User with UID ${uid} already exists. Skipping creation.`);
-      return userDocSnap.data() as User;
+      return;
     }
     
     console.log(`Creating new user profile for UID: ${uid}`);
@@ -42,9 +42,9 @@ export const createUserProfile = async (uid: string, data: Partial<User>) => {
         email: data.email || '',
         avatarUrl: PlaceHolderImages.find(p => p.id === 'user3')?.imageUrl || '',
         coins: 0,
-        goals: '',
-        habits: '',
-        groups: [],
+        goals: 'Finish my side project and run a 5k marathon by the end of the year.',
+        habits: 'Code for 1 hour every day, read 10 pages of a book, and meditate for 5 minutes in the morning.',
+        groups: ['group1', 'group3'],
         occupation: data.specialization || 'Developer',
         taskHistory: [],
         university: data.university || 'TUIT',
@@ -53,7 +53,6 @@ export const createUserProfile = async (uid: string, data: Partial<User>) => {
         telegram: data.telegram || '',
     };
     await setDoc(userDocRef, newUser);
-    return newUser;
 };
 
 export const getGroups = async (): Promise<Group[]> => {
