@@ -43,7 +43,7 @@ export const createUserProfile = async (firebaseUser: FirebaseUser, data: Partia
         coins: 0,
         goals: 'Finish my side project and run a 5k marathon by the end of the year.',
         habits: 'Code for 1 hour every day, read 10 pages of a book, and meditate for 5 minutes in the morning.',
-        groups: ['group1', 'group3'],
+        groups: [],
         occupation: data.specialization || 'Developer',
         taskHistory: [],
         university: data.university || 'TUIT',
