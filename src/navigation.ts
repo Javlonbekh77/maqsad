@@ -16,14 +16,9 @@ export const pathnames = {
   '/settings': '/settings',
   '/login': '/login',
   '/signup': '/signup',
-  '/profile/[id]': {
-    en: '/profile/[id]',
-    uz: '/profil/[id]'
-  },
+  '/profile/[id]': '/profile/[id]',
   '/groups/[id]': '/groups/[id]',
 } satisfies Pathnames<typeof locales>;
  
 export const {Link, redirect, usePathname, useRouter} =
   createLocalizedPathnamesNavigation({locales, pathnames, localePrefix});
-
-
