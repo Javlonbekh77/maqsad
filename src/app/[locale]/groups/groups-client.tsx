@@ -14,8 +14,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/auth-context";
 import { useRouter } from "@/navigation";
 
-type GroupWithMembers = Group & { memberDetails: User[] };
-
 export default function GroupsClient() {
   const t = useTranslations('groups');
   const { user: authUser, loading: authLoading } = useAuth();
@@ -54,27 +52,32 @@ export default function GroupsClient() {
 
   const userMap = useMemo(() => new Map(users.map(u => [u.id, u])), [users]);
 
-  const filteredGroupsWithMembers = useMemo(() => {
-    return groups
-      .filter(group => group.name.toLowerCase().includes(searchTerm.toLowerCase()))
-      .map(group => {
-        const memberDetails = group.members
-          .map(memberId => userMap.get(memberId))
-          .filter(Boolean) as User[];
-        return { ...group, memberDetails };
-      });
-  }, [groups, userMap, searchTerm]);
+  const filteredGroups = useMemo(() => {
+    return groups.filter(group => group.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  }, [groups, searchTerm]);
 
   const isLoading = authLoading || loadingData;
 
-  if (!authUser) {
+  if (isLoading || !authUser) {
     return (
        <AppLayout>
-         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="h-80 w-full rounded-xl" />
-            ))}
-          </div>
+         <div className="space-y-8">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <Skeleton className="h-10 w-48" />
+                <Skeleton className="h-4 w-64 mt-2" />
+              </div>
+              <div className="flex gap-2">
+                <Skeleton className="h-10 w-48" />
+                <Skeleton className="h-10 w-32" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <Skeleton key={i} className="h-80 w-full rounded-xl" />
+              ))}
+            </div>
+         </div>
        </AppLayout>
     );
   }
@@ -104,19 +107,25 @@ export default function GroupsClient() {
             </Button>
           </div>
         </div>
-        {isLoading ? (
-           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="h-80 w-full rounded-xl" />
-            ))}
+        
+        {filteredGroups.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredGroups.map((group) => {
+              const memberDetails = group.members
+                .map(memberId => userMap.get(memberId))
+                .filter(Boolean) as User[];
+              return <GroupCard key={group.id} group={group} members={memberDetails} />;
+            })}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredGroupsWithMembers.map((group) => (
-              <GroupCard key={group.id} group={group} members={group.memberDetails} />
-            ))}
+          <div className="text-center py-16">
+            <h3 className="text-xl font-semibold">No Groups Found</h3>
+            <p className="text-muted-foreground mt-2">
+              {searchTerm ? `No groups match your search for "${searchTerm}".` : "There are no groups to display yet. Why not create one?"}
+            </p>
           </div>
         )}
+
       </div>
     </AppLayout>
   );

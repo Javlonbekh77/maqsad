@@ -1,19 +1,18 @@
 
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, type User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { getUserById, createUserProfile } from '@/lib/data';
 import type { User } from '@/lib/types';
-import { useRouter } from '@/navigation';
 
 interface AuthContextType {
   user: User | null;
   firebaseUser: FirebaseUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<any>;
-  signup: (data: Omit<User, 'id' | 'firebaseId' | 'avatarUrl' | 'coins' | 'goals' | 'habits' | 'groups' | 'taskHistory' | 'fullName' | 'occupation'> & { password?: string }) => Promise<any>;
+  signup: (data: Omit<User, 'id' | 'firebaseId' | 'avatarUrl' | 'coins' | 'goals' | 'habits' | 'groups' | 'taskHistory' | 'fullName' | 'occupation'> & { password: string }) => Promise<any>;
   logout: () => Promise<void>;
 }
 
@@ -26,9 +25,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      setLoading(true);
+      setFirebaseUser(fbUser);
       if (fbUser) {
-        setFirebaseUser(fbUser);
         try {
           const appUser = await getUserById(fbUser.uid);
           setUser(appUser || null);
@@ -37,7 +35,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(null);
         }
       } else {
-        setFirebaseUser(null);
         setUser(null);
       }
       setLoading(false);
@@ -50,24 +47,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
      return signInWithEmailAndPassword(auth, email, password);
   };
 
-  const signup = async (data: Omit<User, 'id' | 'firebaseId' | 'avatarUrl' | 'coins' | 'goals' | 'habits' | 'groups' | 'taskHistory' | 'fullName' | 'occupation'> & { password?: string }) => {
-    if (!data.email || !data.password) {
-      throw new Error("Email and password are required for signup.");
-    }
+  const signup = async (data: Omit<User, 'id' | 'firebaseId' | 'avatarUrl' | 'coins' | 'goals' | 'habits' | 'groups' | 'taskHistory' | 'fullName' | 'occupation'> & { password: string }) => {
     const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
     const { password, ...profileData } = data;
-
     await createUserProfile(userCredential.user, profileData);
-    
     return userCredential;
   };
 
   const logout = async () => {
-    await signOut(auth);
-    // The redirection will be handled by the component that calls logout
-    // or by a protecting component/hook that reacts to the auth state change.
-    // For example, in AppHeader:
-    // const handleLogout = async () => { await logout(); router.push('/login'); };
+    return await signOut(auth);
   };
 
   const value = { user, firebaseUser, loading, login, signup, logout };

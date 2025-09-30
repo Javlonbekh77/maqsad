@@ -21,7 +21,7 @@ export default function LeaderboardClient() {
     }
   }, [user, loading, router]);
 
-  if (!user) {
+  if (loading || !user) {
     return (
       <AppLayout>
         <div className="space-y-8">

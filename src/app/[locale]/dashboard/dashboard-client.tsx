@@ -21,6 +21,7 @@ export default function DashboardClient() {
   const [loadingTasks, setLoadingTasks] = useState(true);
 
   const fetchData = useCallback(async (userId: string) => {
+    if (!userId) return;
     setLoadingTasks(true);
     try {
       const userTasks = await getUserTasks(userId);
@@ -44,10 +45,7 @@ export default function DashboardClient() {
 
   const isLoading = authLoading || loadingTasks;
 
-  if (!authUser) {
-    // This state should ideally be handled by the AuthProvider,
-    // but as a fallback, we can show a loader or redirect.
-    // Returning a loader is safer to prevent flashes of content.
+  if (isLoading || !authUser) {
     return (
       <AppLayout>
         <div className="grid gap-8">
@@ -73,12 +71,12 @@ export default function DashboardClient() {
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 items-start">
-          <div>
-            {isLoading ? <Skeleton className="h-96 w-full" /> : <TodoList initialTasks={tasks} userId={authUser.id} onTaskCompletion={() => fetchData(authUser.id)} />}
-          </div>
-          <div>
-            <HabitTracker user={authUser} />
-          </div>
+          <TodoList 
+            initialTasks={tasks} 
+            userId={authUser.id} 
+            onTaskCompletion={() => fetchData(authUser.id)} 
+          />
+          <HabitTracker user={authUser} />
         </div>
       </div>
     </AppLayout>

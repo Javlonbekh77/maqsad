@@ -45,6 +45,7 @@ export default function GroupDetailClient() {
   const [loadingData, setLoadingData] = useState(true);
 
   const fetchGroupData = useCallback(async (groupId: string) => {
+    if (!groupId) return;
     setLoadingData(true);
     try {
       const groupData = await getGroupById(groupId);
@@ -186,36 +187,36 @@ export default function GroupDetailClient() {
                 {isAdmin && <CreateTaskDialog />}
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t('taskColumn')}</TableHead>
-                      <TableHead className='text-right'>{t('rewardColumn')}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {tasks.length > 0 ? tasks.map(task => (
-                      <TableRow key={task.id}>
-                        <TableCell>
-                          <div className="font-medium">{task.title}</div>
-                          <div className="text-sm text-muted-foreground hidden md:block">{task.description}</div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1 font-semibold text-amber-500">
-                             <Coins className="w-4 h-4" />
-                             <span>{task.coins}</span>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )) : (
-                      <TableRow>
-                        <TableCell colSpan={2} className="text-center text-muted-foreground h-24">
-                          This group has no tasks yet.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+                 {tasks.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>{t('taskColumn')}</TableHead>
+                          <TableHead className='text-right'>{t('rewardColumn')}</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {tasks.map(task => (
+                          <TableRow key={task.id}>
+                            <TableCell>
+                              <div className="font-medium">{task.title}</div>
+                              <div className="text-sm text-muted-foreground hidden md:block">{task.description}</div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-1 font-semibold text-amber-500">
+                                <Coins className="w-4 h-4" />
+                                <span>{task.coins}</span>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <div className="text-center py-10 text-muted-foreground">
+                        This group has no tasks yet.
+                    </div>
+                  )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -225,29 +226,35 @@ export default function GroupDetailClient() {
                 <CardTitle>{t('membersTitle', { count: members.length })}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {members.map(member => member && (
-                  <div key={member.id} className="flex items-center justify-between">
-                    <Link href={{pathname: '/profile/[id]', params: {id: member.id}}} className="flex items-center gap-3 hover:underline">
-                      <Avatar>
-                        <AvatarImage src={member.avatarUrl} alt={member.fullName} />
-                        <AvatarFallback>{member.firstName.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div className='flex flex-col'>
-                         <p className="font-medium">{member.fullName}</p>
-                          {group.adminId === member.id && (
-                            <Badge variant="secondary" className="gap-1 pl-1.5 w-fit">
-                              <Crown className="h-3 w-3 text-amber-500" />
-                              {t('adminBadge')}
-                            </Badge>
-                          )}
+                {members.length > 0 ? (
+                  members.map(member => member && (
+                    <div key={member.id} className="flex items-center justify-between">
+                      <Link href={{pathname: '/profile/[id]', params: {id: member.id}}} className="flex items-center gap-3 hover:underline">
+                        <Avatar>
+                          <AvatarImage src={member.avatarUrl} alt={member.fullName} />
+                          <AvatarFallback>{member.firstName.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div className='flex flex-col'>
+                          <p className="font-medium">{member.fullName}</p>
+                            {group.adminId === member.id && (
+                              <Badge variant="secondary" className="gap-1 pl-1.5 w-fit">
+                                <Crown className="h-3 w-3 text-amber-500" />
+                                {t('adminBadge')}
+                              </Badge>
+                            )}
+                        </div>
+                      </Link>
+                      <div className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Coins className="w-4 h-4 text-amber-500"/>
+                          {member.coins}
                       </div>
-                    </Link>
-                    <div className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Coins className="w-4 h-4 text-amber-500"/>
-                        {member.coins}
                     </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                   <div className="text-center py-10 text-muted-foreground">
+                        This group has no members yet.
+                    </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -266,3 +273,4 @@ export default function GroupDetailClient() {
     </AppLayout>
   );
 }
+

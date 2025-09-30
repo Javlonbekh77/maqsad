@@ -34,6 +34,7 @@ export default function ProfileClient() {
   const [loadingData, setLoadingData] = useState(true);
 
   const fetchData = useCallback(async (uid: string) => {
+    if (!uid) return;
     setLoadingData(true);
     try {
       const userData = await getUserById(uid);

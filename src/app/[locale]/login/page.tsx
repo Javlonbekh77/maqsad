@@ -51,7 +51,6 @@ export default function LoginPage() {
       } else if (err.code === 'auth/network-request-failed') {
         setError('Network error. Please check your internet connection and try again.');
       } else {
-          console.error("An unexpected login error occurred:", err);
           setError(`An unexpected error occurred. Please try again later.`);
       }
     }
