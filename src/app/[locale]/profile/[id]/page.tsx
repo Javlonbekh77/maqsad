@@ -14,7 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import GoBackButton from '@/components/go-back-button';
 import GoalMates from '@/components/profile/goal-mates';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import GroupCard from '@/components/groups/group-card';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from '@/navigation';
@@ -33,42 +33,39 @@ export default function ProfilePage() {
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [loadingPage, setLoadingPage] = useState(true);
 
-  useEffect(() => {
-     if (!authLoading && !currentUser) {
-        router.push('/login');
-        return;
-    }
-    
-    async function fetchData() {
-      if (!userId) return;
-      setLoadingPage(true);
-      try {
-        const [userData, groupsData, usersData] = await Promise.all([
-          getUserById(userId),
-          getGroupsByUserId(userId),
-          getUsers(),
-        ]);
+  const fetchData = useCallback(async (uid: string) => {
+    setLoadingPage(true);
+    try {
+      const [userData, groupsData, usersData] = await Promise.all([
+        getUserById(uid),
+        getGroupsByUserId(uid),
+        getUsers(),
+      ]);
 
-        if (!userData) {
-          setUser(null);
-        } else {
-          setUser(userData);
-          setUserGroups(groupsData);
-          setAllUsers(usersData);
-        }
-      } catch (error) {
-        console.error("Failed to fetch profile data:", error);
+      if (!userData) {
         setUser(null);
-      } finally {
-        setLoadingPage(false);
+      } else {
+        setUser(userData);
+        setUserGroups(groupsData);
+        setAllUsers(usersData);
       }
+    } catch (error) {
+      console.error("Failed to fetch profile data:", error);
+      setUser(null);
+    } finally {
+      setLoadingPage(false);
     }
-    
-    // Fetch data only when auth is resolved and we have a user.
-    if (!authLoading) {
-      fetchData();
+  }, []);
+
+  useEffect(() => {
+     if (!authLoading) {
+        if (!currentUser) {
+            router.push('/login');
+        } else if (userId) {
+          fetchData(userId);
+        }
     }
-  }, [userId, authLoading, currentUser, router]);
+  }, [userId, authLoading, currentUser, router, fetchData]);
   
   const userMap = useMemo(() => new Map(allUsers.map(u => [u.id, u])), [allUsers]);
 
@@ -107,8 +104,15 @@ export default function ProfilePage() {
   }
 
   if (!user) {
-      notFound();
-      return null;
+      return (
+        <AppLayout>
+            <div className="text-center py-10">
+                <p className="text-lg font-semibold">User not found</p>
+                <p className="text-muted-foreground">The profile you are looking for does not exist.</p>
+                <GoBackButton />
+            </div>
+        </AppLayout>
+      );
   }
 
   return (

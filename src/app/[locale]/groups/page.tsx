@@ -27,29 +27,27 @@ export default function GroupsPage() {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    if (!authLoading && !authUser) {
-      router.push('/login');
-      return;
-    }
-
-    async function fetchGroupsAndMembers() {
-        setLoading(true);
-        try {
-          const [groupsData, usersData] = await Promise.all([
-            getGroups(),
-            getUsers()
-          ]);
-          setGroups(groupsData);
-          setUsers(usersData);
-        } catch (error) {
-          console.error("Failed to fetch groups and users:", error);
-        } finally {
-          setLoading(false);
+    if (!authLoading) {
+      if (!authUser) {
+        router.push('/login');
+      } else {
+        async function fetchGroupsAndMembers() {
+            setLoading(true);
+            try {
+              const [groupsData, usersData] = await Promise.all([
+                getGroups(),
+                getUsers()
+              ]);
+              setGroups(groupsData);
+              setUsers(usersData);
+            } catch (error) {
+              console.error("Failed to fetch groups and users:", error);
+            } finally {
+              setLoading(false);
+            }
         }
-    }
-    
-    if (authUser) {
-      fetchGroupsAndMembers();
+        fetchGroupsAndMembers();
+      }
     }
   }, [authUser, authLoading, router]);
 

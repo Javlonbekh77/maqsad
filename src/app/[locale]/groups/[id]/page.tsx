@@ -55,7 +55,7 @@ export default function GroupDetailPage() {
       }
       setGroup(groupData);
       
-      const memberPromises = (groupData.members || []).map(id => getUserById(id));
+      const memberPromises = (groupData.members || []).map(memberId => getUserById(memberId));
       
       const [membersData, tasksData, meetingsData] = await Promise.all([
           Promise.all(memberPromises),
@@ -74,21 +74,24 @@ export default function GroupDetailPage() {
   }, []);
 
   useEffect(() => {
-    if (!authLoading && !currentUser) {
-      router.push('/login');
-      return;
-    }
-
-    if (id && currentUser) {
-      fetchGroupData(id as string);
+    if (!authLoading) {
+      if (!currentUser) {
+        router.push('/login');
+      } else if (id) {
+        fetchGroupData(id as string);
+      }
     }
   }, [id, authLoading, currentUser, router, fetchGroupData]);
 
   const handleJoinGroup = useCallback(async () => {
     if (!currentUser || !group) return;
-    await addUserToGroup(currentUser.id, group.id);
-    setJoinDialogOpen(false);
-    await fetchGroupData(id as string); 
+    try {
+      await addUserToGroup(currentUser.id, group.id);
+      setJoinDialogOpen(false);
+      await fetchGroupData(id as string); 
+    } catch(error) {
+      console.error("Failed to join group:", error);
+    }
   }, [currentUser, group, id, fetchGroupData]);
   
   const isLoading = authLoading || loading;
@@ -127,8 +130,15 @@ export default function GroupDetailPage() {
   }
 
   if (!group) {
-    notFound();
-    return null;
+    return (
+      <AppLayout>
+        <div className="text-center py-10">
+          <p className="text-lg font-semibold">Group not found</p>
+          <p className="text-muted-foreground">The group you are looking for does not exist or has been removed.</p>
+          <GoBackButton />
+        </div>
+      </AppLayout>
+    )
   }
 
   const isAdmin = group.adminId === currentUser?.id;

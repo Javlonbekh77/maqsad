@@ -15,12 +15,13 @@ import {
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Coins, Crown, Medal, Trophy } from 'lucide-react';
-import { Badge } from '../ui/badge';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Skeleton } from '../ui/skeleton';
+import { useAuth } from '@/context/auth-context';
+import { useRouter } from '@/navigation';
 
 const RankIcon = ({ rank }: { rank: number }) => {
   if (rank === 1) return <Medal className="h-5 w-5 text-yellow-500" />;
@@ -30,7 +31,7 @@ const RankIcon = ({ rank }: { rank: number }) => {
 };
 
 const LoadingSkeleton = () => (
-    <div className="p-0">
+    <CardContent className="p-0">
         <Table>
             <TableHeader>
                 <TableRow>
@@ -54,29 +55,46 @@ const LoadingSkeleton = () => (
                 ))}
             </TableBody>
         </Table>
-    </div>
+    </CardContent>
 );
 
 
 export default function LeaderboardTabs() {
   const t = useTranslations('leaderboard');
+  const { user: authUser, loading: authLoading } = useAuth();
+  const router = useRouter();
+
   const [topUsers, setTopUsers] = useState<User[]>([]);
   const [topGroups, setTopGroups] = useState<(Group & { coins: number })[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
       const [users, groups] = await Promise.all([
           getTopUsers(),
           getTopGroups()
       ]);
       setTopUsers(users);
       setTopGroups(groups);
+    } catch (error) {
+      console.error("Failed to fetch leaderboard data:", error);
+    } finally {
       setLoading(false);
     }
-    fetchData();
   }, []);
+
+  useEffect(() => {
+    if (!authLoading) {
+      if (!authUser) {
+        router.push('/login');
+      } else {
+        fetchData();
+      }
+    }
+  }, [authLoading, authUser, router, fetchData]);
+
+  const isLoading = authLoading || loading;
 
   return (
     <Tabs defaultValue="users">
@@ -90,8 +108,8 @@ export default function LeaderboardTabs() {
       </TabsList>
       <TabsContent value="users">
         <Card>
-            <CardContent className="p-0">
-                {loading ? <LoadingSkeleton /> : (
+            {isLoading ? <LoadingSkeleton /> : (
+                <CardContent className="p-0">
                     <Table>
                     <TableHeader>
                         <TableRow>
@@ -127,14 +145,14 @@ export default function LeaderboardTabs() {
                         ))}
                     </TableBody>
                     </Table>
-                )}
-            </CardContent>
+                </CardContent>
+            )}
         </Card>
       </TabsContent>
       <TabsContent value="groups">
         <Card>
-          <CardContent className="p-0">
-             {loading ? <LoadingSkeleton /> : (
+          {isLoading ? <LoadingSkeleton /> : (
+              <CardContent className="p-0">
                 <Table>
                 <TableHeader>
                     <TableRow>
@@ -169,8 +187,8 @@ export default function LeaderboardTabs() {
                     ))}
                 </TableBody>
                 </Table>
+              </CardContent>
              )}
-          </CardContent>
         </Card>
       </TabsContent>
     </Tabs>

@@ -32,22 +32,18 @@ export default function DashboardClient() {
       setTasks(userTasks);
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
-      // Optional: Show a toast or error message to the user
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    // Redirect if auth is done and there's no user
-    if (!authLoading && !authUser) {
-      router.push('/login');
-      return;
-    }
-    
-    // Fetch data only if we have an authenticated user's ID
-    if (authUser?.id) {
-      fetchData(authUser.id);
+    if (!authLoading) {
+      if (!authUser) {
+        router.push('/login');
+      } else {
+        fetchData(authUser.id);
+      }
     }
   }, [authUser, authLoading, router, fetchData]);
 
@@ -71,7 +67,6 @@ export default function DashboardClient() {
   }
 
   if (!user) {
-    // This can happen if fetching user data fails
     return (
       <AppLayout>
          <div className="text-center">
