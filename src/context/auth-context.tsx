@@ -27,34 +27,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      setLoading(true); // Always start with a loading state on auth change
+      setLoading(true);
       if (fbUser) {
         setFirebaseUser(fbUser);
         try {
-          // Fetch the application-specific user profile from Firestore
           const appUser = await getUserById(fbUser.uid);
-          if (appUser) {
-            setUser(appUser);
-          } else {
-             // This can happen if the Firestore document creation is delayed or failed.
-             // We treat this as not fully logged in.
-             console.warn("User authenticated but no Firestore profile found.");
-             setUser(null);
-          }
+          setUser(appUser || null);
         } catch (error) {
           console.error("Failed to fetch user profile:", error);
-          setUser(null); // Clear app user on error
+          setUser(null);
         }
       } else {
-        // No Firebase user, so clear all user data
         setFirebaseUser(null);
         setUser(null);
       }
-      // Only set loading to false after all async operations are complete
       setLoading(false);
     });
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
   
@@ -71,22 +60,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     await createUserProfile(userCredential.user, profileData);
     
-    // The onAuthStateChanged listener will automatically handle setting the user state.
     return userCredential;
   };
 
   const logout = async () => {
     await signOut(auth);
-    // The onAuthStateChanged listener will handle clearing the user state.
     router.push('/login');
   };
 
   const value = { user, firebaseUser, loading, login, signup, logout };
 
   return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
-    </AuthContext.Provider>
+    <>
+      {children}
+    </>
   );
 };
 
@@ -97,3 +84,4 @@ export const useAuth = () => {
   }
   return context;
 };
+
