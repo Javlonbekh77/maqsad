@@ -14,7 +14,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<any>;
   signup: (data: Omit<User, 'id' | 'firebaseId' | 'avatarUrl' | 'coins' | 'goals' | 'habits' | 'groups' | 'taskHistory' | 'fullName' | 'occupation'> & { password?: string }) => Promise<any>;
-  logout: () => Promise<any>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,46 +25,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  const fetchAppData = useCallback(async (fbUser: FirebaseUser | null) => {
-    if (fbUser) {
-      setFirebaseUser(fbUser);
-      try {
-        const appUser = await getUserById(fbUser.uid);
-        setUser(appUser || null);
-      } catch (error) {
-        console.error("Failed to fetch user profile:", error);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      setLoading(true); // Always start with loading state
+      if (fbUser) {
+        setFirebaseUser(fbUser);
+        try {
+          const appUser = await getUserById(fbUser.uid);
+          if (appUser) {
+            setUser(appUser);
+          } else {
+             // This case might happen if Firestore profile creation failed or is delayed.
+             // For now, we'll treat it as not logged in to the app.
+             console.warn("User is authenticated with Firebase but no profile found in Firestore.");
+             setUser(null);
+          }
+        } catch (error) {
+          console.error("Failed to fetch user profile:", error);
+          setUser(null); // Clear user on error
+        }
+      } else {
+        setFirebaseUser(null);
         setUser(null);
       }
-    } else {
-      setFirebaseUser(null);
-      setUser(null);
-    }
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
-      setLoading(true);
-      fetchAppData(fbUser);
+      setLoading(false); // End loading state after all async operations are done
     });
 
     return () => unsubscribe();
-  }, [fetchAppData]);
+  }, []);
   
   const login = (email: string, password: string) => {
      return signInWithEmailAndPassword(auth, email, password);
   };
 
- const signup = async (data: Omit<User, 'id' | 'firebaseId' | 'avatarUrl' | 'coins' | 'goals' | 'habits' | 'groups' | 'taskHistory' | 'fullName' | 'occupation'> & { password?: string }) => {
+  const signup = async (data: Omit<User, 'id' | 'firebaseId' | 'avatarUrl' | 'coins' | 'goals' | 'habits' | 'groups' | 'taskHistory' | 'fullName' | 'occupation'> & { password?: string }) => {
     if (!data.email || !data.password) {
       throw new Error("Email and password are required for signup.");
     }
     const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
     const { password, ...profileData } = data;
 
+    // The onAuthStateChanged listener will handle fetching the user data after creation,
+    // but we still need to create the profile document.
     await createUserProfile(userCredential.user, profileData);
-    // The onAuthStateChanged listener will handle setting the user state.
     
+    // The listener will automatically update the state, no need to call fetchAppData here.
     return userCredential;
   };
 
