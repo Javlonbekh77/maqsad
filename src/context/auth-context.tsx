@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
@@ -34,10 +35,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (appUser) {
             setUser(appUser);
           } else {
-            console.warn("User document not found in Firestore for UID:", fbUser.uid, "This can happen on first login after signup.");
-            // If the user exists in Auth but not Firestore, it's likely a fresh signup.
-            // We can attempt to create the profile, but it's better to ensure signup flow is robust.
-            // For now, we will let signup handle profile creation.
+            // This can happen briefly after signup before the Firestore doc is created.
+            // The signup function now manually sets the user, so this path is less likely.
+            console.warn("User document not found in Firestore for UID:", fbUser.uid);
             setUser(null); 
           }
         } catch (error) {
@@ -55,21 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = (email: string, password: string) => {
-    return signInWithEmailAndPassword(auth, email, password).catch(async (error) => {
-      if (email === 'test@example.com' && (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential')) {
-        console.log('Test user not found, creating it...');
-        const userCredential = await createUserWithEmailAndPassword(auth, email, "123456");
-        const profileData = {
-          email: userCredential.user.email || '',
-          firstName: 'Asadbek',
-          lastName: 'Anvarov',
-          specialization: 'Frontend Developer',
-        };
-        await createUserProfile(userCredential.user.uid, profileData);
-        return userCredential;
-      }
-      throw error;
-    });
+    return signInWithEmailAndPassword(auth, email, password);
   };
 
   const signup = async (data: Omit<User, 'id' | 'firebaseId' | 'avatarUrl' | 'coins' | 'goals' | 'habits' | 'groups' | 'taskHistory' | 'fullName' | 'occupation'> & { password?: string }) => {
@@ -82,6 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
         await createUserProfile(userCredential.user.uid, profileData);
         // Manually set the user state after signup to avoid waiting for onAuthStateChanged
+        // and potential race conditions where the user doc isn't ready yet.
         const newUser = await getUserById(userCredential.user.uid);
         if (newUser) {
           setUser(newUser);
@@ -118,3 +105,4 @@ export const useAuth = () => {
   }
   return context;
 };
+

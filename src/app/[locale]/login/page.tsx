@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -45,7 +46,7 @@ export default function LoginPage() {
       await login(values.email, values.password);
       router.push('/dashboard');
     } catch (err: any) {
-      console.error(err);
+      console.error("Login failed with code:", err.code, "and message:", err.message);
       if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
           setError('Invalid email or password. Please try again.');
       } else if (err.code === 'auth/network-request-failed') {

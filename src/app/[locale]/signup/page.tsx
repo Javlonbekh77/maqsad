@@ -60,13 +60,11 @@ export default function SignupPage() {
     } catch (err: any) {
       console.error("Signup failed with code:", err.code, "and message:", err.message);
       if (err.code === 'auth/email-already-in-use') {
-        setError('Bu email allaqachon ro\'yxatdan o\'tgan. Iltimos, tizimga kiring yoki "Log In" sahifasiga o\'ting.');
+        setError('This email is already registered. Please log in or use a different email.');
       } else if (err.code === 'auth/network-request-failed') {
-        setError('Tarmoq xatoligi yuz berdi. Internetga ulanishingizni tekshiring yoki Firebase konsolida ushbu domenga ruxsat berilganiga ishonch hosil qiling.');
-      } else if (err.code === 'permission-denied' || err.code === 'failed-precondition') {
-        setError('Ma\'lumotlar bazasiga yozishda xatolik. Firebase Rules sozlamalarini tekshiring yoki internet aloqasi mavjudligiga ishonch hosil qiling.');
+        setError('Network error. Please check your internet connection and ensure this domain is allowed in your Firebase console.');
       } else {
-        setError(`Kutilmagan xatolik yuz berdi: ${err.message}`);
+        setError(`An unexpected error occurred: ${err.message}`);
       }
     }
   }
@@ -78,8 +76,8 @@ export default function SignupPage() {
           <Link href="/" className="flex justify-center mb-4">
             <Logo />
           </Link>
-          <CardTitle className="text-2xl font-bold">Hisob Yaratish</CardTitle>
-          <CardDescription>Hamjamiyatga qo'shiling va maqsadlaringizga erishishni boshlang.</CardDescription>
+          <CardTitle className="text-2xl font-bold">Create an Account</CardTitle>
+          <CardDescription>Join the community and start achieving your goals.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -87,7 +85,7 @@ export default function SignupPage() {
               {error && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Ro'yxatdan o'tish muvaffaqiyatsiz</AlertTitle>
+                  <AlertTitle>Signup Failed</AlertTitle>
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
@@ -97,7 +95,7 @@ export default function SignupPage() {
                   name="firstName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Ism</FormLabel>
+                      <FormLabel>First Name</FormLabel>
                       <FormControl>
                         <Input placeholder="John" {...field} />
                       </FormControl>
@@ -110,7 +108,7 @@ export default function SignupPage() {
                   name="lastName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Familiya</FormLabel>
+                      <FormLabel>Last Name</FormLabel>
                       <FormControl>
                         <Input placeholder="Doe" {...field} />
                       </FormControl>
@@ -137,7 +135,7 @@ export default function SignupPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Parol</FormLabel>
+                    <FormLabel>Password</FormLabel>
                     <FormControl>
                       <Input type="password" placeholder="••••••••" {...field} />
                     </FormControl>
@@ -150,9 +148,9 @@ export default function SignupPage() {
                 name="university"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Universitet</FormLabel>
+                    <FormLabel>University</FormLabel>
                     <FormControl>
-                      <Input placeholder="Masalan, TATU" {...field} />
+                      <Input placeholder="e.g., TUIT" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -163,9 +161,9 @@ export default function SignupPage() {
                 name="specialization"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Mutaxassislik</FormLabel>
+                    <FormLabel>Specialization</FormLabel>
                     <FormControl>
-                      <Input placeholder="Masalan, Dasturiy injiniring" {...field} />
+                      <Input placeholder="e.g., Software Engineering" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -176,9 +174,9 @@ export default function SignupPage() {
                 name="course"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Kurs</FormLabel>
+                    <FormLabel>Course Year</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="Masalan, 3" {...field} />
+                      <Input type="number" placeholder="e.g., 3" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -189,23 +187,23 @@ export default function SignupPage() {
                 name="telegram"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Telegram Username <span className="text-muted-foreground">(Ixtiyoriy)</span></FormLabel>
+                    <FormLabel>Telegram Username <span className="text-muted-foreground">(Optional)</span></FormLabel>
                     <FormControl>
-                      <Input placeholder="masalan, johndoe" {...field} />
+                      <Input placeholder="e.g., johndoe" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Hisob yaratilmoqda...' : 'Ro\'yxatdan o\'tish'}
+                {form.formState.isSubmitting ? 'Creating Account...' : 'Sign Up'}
               </Button>
             </form>
           </Form>
           <div className="mt-4 text-center text-sm">
-            Hisobingiz bormi?{' '}
+            Already have an account?{' '}
             <Link href="/login" className="underline">
-              Kirish
+              Log In
             </Link>
           </div>
         </CardContent>
