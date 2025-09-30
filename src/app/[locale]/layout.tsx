@@ -1,20 +1,16 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider, useMessages } from 'next-intl';
-import { Inter, Noto_Sans_Display as NotoSansDisplay } from 'next/font/google';
+import { PT_Sans as PTSans } from 'next/font/google';
 import { AuthProvider } from '@/context/auth-context';
 
 import '../globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 
-const fontSans = Inter({
+const fontSans = PTSans({
   subsets: ['latin'],
+  weight: ['400', '700'],
   variable: '--font-sans',
-});
-
-const fontDisplay = NotoSansDisplay({
-  subsets: ['latin'],
-  variable: '--font-display',
 });
 
 export const metadata: Metadata = {
@@ -35,7 +31,7 @@ export default function RootLayout({
 
   return (
     <html lang={locale} suppressHydrationWarning>
-       <body className={cn('min-h-screen bg-background font-sans antialiased', fontSans.variable, fontDisplay.variable)}>
+       <body className={cn('min-h-screen bg-background font-sans antialiased', fontSans.variable)}>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <AuthProvider>
             {children}
