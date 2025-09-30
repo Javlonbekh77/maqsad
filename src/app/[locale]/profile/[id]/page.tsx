@@ -39,13 +39,14 @@ export default function ProfilePage() {
         return;
     }
     
-    if (userId && !authLoading && currentUser) {
-      async function fetchData() {
-        setLoadingPage(true);
+    async function fetchData() {
+      if (!userId) return;
+      setLoadingPage(true);
+      try {
         const [userData, groupsData, usersData] = await Promise.all([
           getUserById(userId),
           getGroupsByUserId(userId),
-          getUsers(), // To populate group member avatars in GroupCard
+          getUsers(),
         ]);
 
         if (!userData) {
@@ -55,8 +56,16 @@ export default function ProfilePage() {
           setUserGroups(groupsData);
           setAllUsers(usersData);
         }
+      } catch (error) {
+        console.error("Failed to fetch profile data:", error);
+        setUser(null);
+      } finally {
         setLoadingPage(false);
       }
+    }
+    
+    // Fetch data only when auth is resolved and we have a user.
+    if (!authLoading) {
       fetchData();
     }
   }, [userId, authLoading, currentUser, router]);
@@ -83,7 +92,11 @@ export default function ProfilePage() {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <Skeleton className="h-40 w-full" />
+                        <Separator className="my-6" />
+                        <div className="space-y-6">
+                          <Skeleton className="h-24 w-full" />
+                          <Skeleton className="h-24 w-full" />
+                        </div>
                     </CardContent>
                 </Card>
                 <Skeleton className="h-64 w-full" />

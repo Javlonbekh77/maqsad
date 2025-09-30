@@ -2,7 +2,7 @@
 'use client';
 
 import Image from 'next/image';
-import { notFound, useParams } from 'next/navigation';
+import { useParams, notFound } from 'next/navigation';
 import AppLayout from '@/components/layout/app-layout';
 import { getGroupById, getUserById, getTasksByGroupId, addUserToGroup, getMeetingsByGroupId } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -55,8 +55,10 @@ export default function GroupDetailPage() {
       }
       setGroup(groupData);
       
+      const memberPromises = (groupData.members || []).map(id => getUserById(id));
+      
       const [membersData, tasksData, meetingsData] = await Promise.all([
-          Promise.all((groupData.members || []).map(id => getUserById(id))),
+          Promise.all(memberPromises),
           getTasksByGroupId(groupData.id),
           getMeetingsByGroupId(groupData.id)
       ]);
@@ -77,14 +79,13 @@ export default function GroupDetailPage() {
       return;
     }
 
-    if (id && !authLoading && currentUser) {
+    if (id && currentUser) {
       fetchGroupData(id as string);
     }
   }, [id, authLoading, currentUser, router, fetchGroupData]);
 
   const handleJoinGroup = useCallback(async () => {
     if (!currentUser || !group) return;
-    // In a real app, you would pass selected task IDs
     await addUserToGroup(currentUser.id, group.id);
     setJoinDialogOpen(false);
     await fetchGroupData(id as string); 
@@ -98,18 +99,28 @@ export default function GroupDetailPage() {
             <div className="space-y-8">
                 <GoBackButton />
                 <Skeleton className="w-full h-64 rounded-xl" />
-                <Skeleton className="h-12 w-full mt-4 rounded-md" />
-                <div className="mt-4">
-                  <Card>
-                      <CardHeader>
-                          <Skeleton className="h-8 w-1/3" />
-                          <Skeleton className="h-4 w-1/2" />
-                      </CardHeader>
-                      <CardContent>
-                          <Skeleton className="h-40 w-full" />
-                      </CardContent>
-                  </Card>
+                <div className="mt-8 flex items-center justify-between">
+                    <Skeleton className="h-10 w-1/3" />
+                    <Skeleton className="h-10 w-28" />
                 </div>
+
+                <div className="border-b">
+                  <div className="flex h-10 items-center space-x-4">
+                    <Skeleton className="h-8 w-24" />
+                    <Skeleton className="h-8 w-24" />
+                    <Skeleton className="h-8 w-24" />
+                  </div>
+                </div>
+
+                <Card>
+                    <CardHeader>
+                        <Skeleton className="h-8 w-1/4" />
+                        <Skeleton className="h-4 w-1/2" />
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-40 w-full" />
+                    </CardContent>
+                </Card>
             </div>
         </AppLayout>
     );
@@ -239,5 +250,3 @@ export default function GroupDetailPage() {
     </AppLayout>
   );
 }
-
-    

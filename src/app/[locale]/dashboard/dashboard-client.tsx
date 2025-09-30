@@ -32,23 +32,26 @@ export default function DashboardClient() {
       setTasks(userTasks);
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
+      // Optional: Show a toast or error message to the user
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
+    // Redirect if auth is done and there's no user
     if (!authLoading && !authUser) {
       router.push('/login');
       return;
     }
-
+    
+    // Fetch data only if we have an authenticated user's ID
     if (authUser?.id) {
       fetchData(authUser.id);
     }
   }, [authUser, authLoading, router, fetchData]);
 
-  const isLoading = authLoading || loading || !user;
+  const isLoading = authLoading || loading;
 
   if (isLoading) {
     return (
@@ -59,12 +62,24 @@ export default function DashboardClient() {
             <Skeleton className="h-4 w-3/4 mt-2" />
           </div>
           <div className="grid md:grid-cols-2 gap-8 items-start">
-            <Skeleton className="h-64 w-full" />
-            <Skeleton className="h-64 w-full" />
+            <Skeleton className="h-96 w-full" />
+            <Skeleton className="h-96 w-full" />
           </div>
         </div>
       </AppLayout>
     );
+  }
+
+  if (!user) {
+    // This can happen if fetching user data fails
+    return (
+      <AppLayout>
+         <div className="text-center">
+            <p className="text-lg text-destructive">{t('userNotFound')}</p>
+            <p className="text-muted-foreground">Could not load user data. Please try again later.</p>
+        </div>
+      </AppLayout>
+    )
   }
 
   return (
@@ -77,7 +92,7 @@ export default function DashboardClient() {
 
         <div className="grid md:grid-cols-2 gap-8 items-start">
           <div>
-            <TodoList initialTasks={tasks} userId={user.id} onTaskCompletion={fetchData} />
+            <TodoList initialTasks={tasks} userId={user.id} onTaskCompletion={() => fetchData(user.id)} />
           </div>
           <div>
             <HabitTracker user={user} />

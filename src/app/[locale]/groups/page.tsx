@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/auth-context";
 import { useRouter } from "@/navigation";
 
-type GroupWithMembers = Group & { memberUsers: User[] };
+type GroupWithMembers = Group & { memberDetails: User[] };
 
 export default function GroupsPage() {
   const t = useTranslations('groups');
@@ -24,6 +24,7 @@ export default function GroupsPage() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     if (!authLoading && !authUser) {
@@ -31,31 +32,39 @@ export default function GroupsPage() {
       return;
     }
 
-    if (!authLoading && authUser) {
-        async function fetchGroupsAndMembers() {
-            setLoading(true);
-            const [groupsData, usersData] = await Promise.all([
-              getGroups(),
-              getUsers()
-            ]);
-            setGroups(groupsData);
-            setUsers(usersData);
-            setLoading(false);
+    async function fetchGroupsAndMembers() {
+        setLoading(true);
+        try {
+          const [groupsData, usersData] = await Promise.all([
+            getGroups(),
+            getUsers()
+          ]);
+          setGroups(groupsData);
+          setUsers(usersData);
+        } catch (error) {
+          console.error("Failed to fetch groups and users:", error);
+        } finally {
+          setLoading(false);
         }
-        fetchGroupsAndMembers();
+    }
+    
+    if (authUser) {
+      fetchGroupsAndMembers();
     }
   }, [authUser, authLoading, router]);
 
   const userMap = useMemo(() => new Map(users.map(u => [u.id, u])), [users]);
 
-  const groupsWithMembers = useMemo(() => {
-    return groups.map(group => {
-      const memberUsers = group.members
-        .map(memberId => userMap.get(memberId))
-        .filter(Boolean) as User[];
-      return { ...group, memberUsers };
-    });
-  }, [groups, userMap]);
+  const filteredGroupsWithMembers = useMemo(() => {
+    return groups
+      .filter(group => group.name.toLowerCase().includes(searchTerm.toLowerCase()))
+      .map(group => {
+        const memberDetails = group.members
+          .map(memberId => userMap.get(memberId))
+          .filter(Boolean) as User[];
+        return { ...group, memberDetails };
+      });
+  }, [groups, userMap, searchTerm]);
 
   const isLoading = authLoading || loading;
 
@@ -74,6 +83,8 @@ export default function GroupsPage() {
                 type="search"
                 placeholder={t('searchPlaceholder')}
                 className="pl-8 w-full"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             <Button>
@@ -90,8 +101,8 @@ export default function GroupsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {groupsWithMembers.map((group) => (
-              <GroupCard key={group.id} group={group} members={group.memberUsers} />
+            {filteredGroupsWithMembers.map((group) => (
+              <GroupCard key={group.id} group={group} members={group.memberDetails} />
             ))}
           </div>
         )}
