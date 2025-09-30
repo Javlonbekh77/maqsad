@@ -10,8 +10,6 @@ import {
   updateDoc,
   arrayUnion,
   writeBatch,
-  addDoc,
-  Timestamp,
   setDoc,
   DocumentReference,
 } from 'firebase/firestore';
@@ -19,20 +17,20 @@ import {
 import type { User, Group, Task, TaskHistory, WeeklyMeeting, UserTask } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 import { format } from 'date-fns';
+import type { User as FirebaseUser } from 'firebase/auth';
 
-// --- Data Access Functions ---
-
-export const createUserProfile = async (uid: string, data: Partial<User>) => {
-    const userDocRef = doc(db, 'users', uid);
+// --- Data Creation Functions ---
+export const createUserProfile = async (firebaseUser: FirebaseUser, data: Partial<User>) => {
+    const userDocRef = doc(db, 'users', firebaseUser.uid);
     
     const fullName = `${data.firstName || ''} ${data.lastName || ''}`.trim();
     const newUser: User = {
-        id: uid,
-        firebaseId: uid, 
+        id: firebaseUser.uid,
+        firebaseId: firebaseUser.uid, 
         firstName: data.firstName || 'Test',
         lastName: data.lastName || 'User',
         fullName: fullName || 'Test User',
-        email: data.email || '',
+        email: data.email || firebaseUser.email || '',
         avatarUrl: PlaceHolderImages.find(p => p.id === 'user3')?.imageUrl || '',
         coins: 0,
         goals: 'Finish my side project and run a 5k marathon by the end of the year.',
@@ -47,6 +45,9 @@ export const createUserProfile = async (uid: string, data: Partial<User>) => {
     };
     await setDoc(userDocRef, newUser);
 };
+
+
+// --- Data Access Functions (Getters) ---
 
 export const getGroups = async (): Promise<Group[]> => {
   const querySnapshot = await getDocs(collection(db, 'groups'));
@@ -198,7 +199,7 @@ export const getGoalMates = async (userId: string): Promise<User[]> => {
 };
 
 
-// --- Mutation functions (Firestore) ---
+// --- Mutation functions (Setters/Updaters) ---
 
 export const addUserToGroup = async (userId: string, groupId: string, taskIds: string[]): Promise<void> => {
     const userDocRef = doc(db, "users", userId);

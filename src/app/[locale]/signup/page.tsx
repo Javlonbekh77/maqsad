@@ -62,7 +62,7 @@ export default function SignupPage() {
       if (err.code === 'auth/email-already-in-use') {
         setError('This email is already registered. Please log in or use a different email.');
       } else if (err.code === 'auth/network-request-failed') {
-        setError('Network error. Please check your internet connection and ensure this domain is allowed in your Firebase console.');
+        setError('Network error. Please check your internet connection.');
       } else {
         setError(`An unexpected error occurred: ${err.message}`);
       }
