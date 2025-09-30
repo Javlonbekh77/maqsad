@@ -42,15 +42,15 @@ export default function GroupDetailClient() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [meetings, setMeetings] = useState<WeeklyMeeting[]>([]);
   const [isJoinDialogOpen, setJoinDialogOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loadingData, setLoadingData] = useState(true);
 
   const fetchGroupData = useCallback(async (groupId: string) => {
-    setLoading(true);
+    setLoadingData(true);
     try {
       const groupData = await getGroupById(groupId);
       if (!groupData) {
         setGroup(null);
-        setLoading(false);
+        setLoadingData(false);
         return;
       }
       setGroup(groupData);
@@ -69,7 +69,7 @@ export default function GroupDetailClient() {
     } catch (error) {
       console.error("Failed to fetch group data:", error);
     } finally {
-      setLoading(false);
+      setLoadingData(false);
     }
   }, []);
 
@@ -88,14 +88,13 @@ export default function GroupDetailClient() {
     try {
       await addUserToGroup(currentUser.id, group.id, selectedTaskIds);
       setJoinDialogOpen(false);
-      // Re-fetch data to reflect the new member
       await fetchGroupData(id as string); 
     } catch(error) {
       console.error("Failed to join group:", error);
     }
   }, [currentUser, group, id, fetchGroupData]);
   
-  const isLoading = authLoading || loading;
+  const isLoading = authLoading || loadingData;
 
   if (isLoading) {
     return (

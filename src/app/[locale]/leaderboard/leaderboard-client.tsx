@@ -29,11 +29,8 @@ export default function LeaderboardClient() {
               <Skeleton className="h-10 w-1/3" />
               <Skeleton className="h-4 w-1/2 mt-2" />
           </div>
-          <div className="w-full md:w-96">
-            <Skeleton className="h-10 w-full" />
-          </div>
           <Card>
-            <CardContent className="p-0">
+            <CardContent className="p-6">
                <Skeleton className="h-96 w-full" />
             </CardContent>
           </Card>

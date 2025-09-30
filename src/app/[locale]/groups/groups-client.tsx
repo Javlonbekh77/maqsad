@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PlusCircle, Search } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import type { Group, User } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/auth-context";
@@ -23,33 +23,34 @@ export default function GroupsClient() {
 
   const [groups, setGroups] = useState<Group[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingData, setLoadingData] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+
+  const fetchData = useCallback(async () => {
+    setLoadingData(true);
+    try {
+      const [groupsData, usersData] = await Promise.all([
+        getGroups(),
+        getUsers()
+      ]);
+      setGroups(groupsData);
+      setUsers(usersData);
+    } catch (error) {
+      console.error("Failed to fetch groups and users:", error);
+    } finally {
+      setLoadingData(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!authLoading) {
       if (!authUser) {
         router.push('/login');
       } else {
-        async function fetchGroupsAndMembers() {
-            setLoading(true);
-            try {
-              const [groupsData, usersData] = await Promise.all([
-                getGroups(),
-                getUsers()
-              ]);
-              setGroups(groupsData);
-              setUsers(usersData);
-            } catch (error) {
-              console.error("Failed to fetch groups and users:", error);
-            } finally {
-              setLoading(false);
-            }
-        }
-        fetchGroupsAndMembers();
+        fetchData();
       }
     }
-  }, [authUser, authLoading, router]);
+  }, [authUser, authLoading, router, fetchData]);
 
   const userMap = useMemo(() => new Map(users.map(u => [u.id, u])), [users]);
 
@@ -64,7 +65,7 @@ export default function GroupsClient() {
       });
   }, [groups, userMap, searchTerm]);
 
-  const isLoading = authLoading || loading;
+  const isLoading = authLoading || loadingData;
 
   return (
     <AppLayout>

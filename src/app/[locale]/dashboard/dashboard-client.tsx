@@ -17,23 +17,19 @@ export default function DashboardClient() {
   const { user: authUser, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  const [user, setUser] = useState<User | null>(null);
   const [tasks, setTasks] = useState<UserTask[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingData, setLoadingData] = useState(true);
 
   const fetchData = useCallback(async (userId: string) => {
-    setLoading(true);
+    setLoadingData(true);
     try {
-      const [userData, userTasks] = await Promise.all([
-        getUserById(userId),
-        getUserTasks(userId)
-      ]);
-      setUser(userData || null);
+      // Auth context already provides the user, so we only need to fetch tasks
+      const userTasks = await getUserTasks(userId);
       setTasks(userTasks);
     } catch (error) {
-      console.error("Failed to fetch dashboard data:", error);
+      console.error("Failed to fetch dashboard tasks:", error);
     } finally {
-      setLoading(false);
+      setLoadingData(false);
     }
   }, []);
 
@@ -47,9 +43,9 @@ export default function DashboardClient() {
     }
   }, [authUser, authLoading, router, fetchData]);
 
-  const isLoading = authLoading || loading;
+  const isLoading = authLoading || loadingData;
 
-  if (isLoading) {
+  if (isLoading || !authUser) {
     return (
       <AppLayout>
         <div className="grid gap-8">
@@ -66,31 +62,20 @@ export default function DashboardClient() {
     );
   }
 
-  if (!user) {
-    return (
-      <AppLayout>
-         <div className="text-center">
-            <p className="text-lg text-destructive">{t('userNotFound')}</p>
-            <p className="text-muted-foreground">Could not load user data. Please try again later.</p>
-        </div>
-      </AppLayout>
-    )
-  }
-
   return (
     <AppLayout>
       <div className="grid gap-8">
         <div>
-          <h1 className="text-3xl font-bold font-display">{t('welcome', { name: user.firstName })}</h1>
+          <h1 className="text-3xl font-bold font-display">{t('welcome', { name: authUser.firstName })}</h1>
           <p className="text-muted-foreground">{t('welcomeSubtitle')}</p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 items-start">
           <div>
-            <TodoList initialTasks={tasks} userId={user.id} onTaskCompletion={() => fetchData(user.id)} />
+            <TodoList initialTasks={tasks} userId={authUser.id} onTaskCompletion={() => fetchData(authUser.id)} />
           </div>
           <div>
-            <HabitTracker user={user} />
+            <HabitTracker user={authUser} />
           </div>
         </div>
       </div>

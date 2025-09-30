@@ -31,31 +31,39 @@ export default function ProfileClient() {
   const [user, setUser] = useState<User | null>(null);
   const [userGroups, setUserGroups] = useState<Group[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
-  const [loadingPage, setLoadingPage] = useState(true);
+  const [loadingData, setLoadingData] = useState(true);
 
   const fetchData = useCallback(async (uid: string) => {
-    setLoadingPage(true);
+    setLoadingData(true);
     try {
-      const [userData, groupsData, usersData] = await Promise.all([
-        getUserById(uid),
+      // If we are viewing the current user's profile, we can use the data from auth context
+      if (currentUser && uid === currentUser.id) {
+        setUser(currentUser);
+      } else {
+        const userData = await getUserById(uid);
+         if (!userData) {
+          setUser(null);
+          setLoadingData(false);
+          return;
+        }
+        setUser(userData);
+      }
+      
+      // Fetch groups and all users regardless
+      const [groupsData, usersData] = await Promise.all([
         getGroupsByUserId(uid),
         getUsers(),
       ]);
+      setUserGroups(groupsData);
+      setAllUsers(usersData);
 
-      if (!userData) {
-        setUser(null);
-      } else {
-        setUser(userData);
-        setUserGroups(groupsData);
-        setAllUsers(usersData);
-      }
     } catch (error) {
       console.error("Failed to fetch profile data:", error);
       setUser(null);
     } finally {
-      setLoadingPage(false);
+      setLoadingData(false);
     }
-  }, []);
+  }, [currentUser]);
 
   useEffect(() => {
      if (!authLoading) {
@@ -69,7 +77,7 @@ export default function ProfileClient() {
   
   const userMap = useMemo(() => new Map(allUsers.map(u => [u.id, u])), [allUsers]);
 
-  const isLoading = authLoading || loadingPage;
+  const isLoading = authLoading || loadingData;
   const isCurrentUserProfile = userId === currentUser?.id;
 
   if (isLoading) {

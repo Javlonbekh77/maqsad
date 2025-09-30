@@ -21,7 +21,6 @@ import { Link } from '@/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { Skeleton } from '../ui/skeleton';
 import { useAuth } from '@/context/auth-context';
-import { useRouter } from '@/navigation';
 
 const RankIcon = ({ rank }: { rank: number }) => {
   if (rank === 1) return <Medal className="h-5 w-5 text-yellow-500" />;
@@ -31,45 +30,32 @@ const RankIcon = ({ rank }: { rank: number }) => {
 };
 
 const LoadingSkeleton = () => (
-    <CardContent className="p-0">
-        <Table>
-            <TableHeader>
-                <TableRow>
-                    <TableHead className="w-16 text-center"><Skeleton className="h-5 w-10 mx-auto" /></TableHead>
-                    <TableHead><Skeleton className="h-5 w-24" /></TableHead>
-                    <TableHead className="text-right"><Skeleton className="h-5 w-16 ml-auto" /></TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i}>
-                        <TableCell><Skeleton className="h-6 w-6 rounded-full mx-auto" /></TableCell>
-                        <TableCell>
-                            <div className="flex items-center gap-3">
-                                <Skeleton className="h-10 w-10 rounded-full" />
-                                <Skeleton className="h-5 w-32" />
-                            </div>
-                        </TableCell>
-                        <TableCell><Skeleton className="h-5 w-12 ml-auto" /></TableCell>
-                    </TableRow>
-                ))}
-            </TableBody>
-        </Table>
-    </CardContent>
+    <div className="space-y-4 p-1">
+        {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4">
+                <Skeleton className="h-6 w-6" />
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-4 w-24" />
+                </div>
+                <Skeleton className="h-5 w-12 ml-auto" />
+            </div>
+        ))}
+    </div>
 );
 
 
 export default function LeaderboardTabs() {
   const t = useTranslations('leaderboard');
   const { user: authUser, loading: authLoading } = useAuth();
-  const router = useRouter();
 
   const [topUsers, setTopUsers] = useState<User[]>([]);
   const [topGroups, setTopGroups] = useState<(Group & { coins: number })[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingData, setLoadingData] = useState(true);
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
+    setLoadingData(true);
     try {
       const [users, groups] = await Promise.all([
           getTopUsers(),
@@ -80,18 +66,17 @@ export default function LeaderboardTabs() {
     } catch (error) {
       console.error("Failed to fetch leaderboard data:", error);
     } finally {
-      setLoading(false);
+      setLoadingData(false);
     }
   }, []);
 
   useEffect(() => {
-    // We only fetch data if auth is not loading and a user exists.
     if (!authLoading && authUser) {
         fetchData();
     }
   }, [authLoading, authUser, fetchData]);
 
-  const isLoading = authLoading || loading;
+  const isLoading = authLoading || loadingData;
 
   return (
     <Tabs defaultValue="users">
@@ -105,7 +90,7 @@ export default function LeaderboardTabs() {
       </TabsList>
       <TabsContent value="users">
         <Card>
-            {isLoading ? <LoadingSkeleton /> : (
+            {isLoading ? <CardContent className="p-6"><LoadingSkeleton /></CardContent> : (
                 <CardContent className="p-0">
                     <Table>
                     <TableHeader>
@@ -148,7 +133,7 @@ export default function LeaderboardTabs() {
       </TabsContent>
       <TabsContent value="groups">
         <Card>
-          {isLoading ? <LoadingSkeleton /> : (
+          {isLoading ? <CardContent className="p-6"><LoadingSkeleton /></CardContent> : (
               <CardContent className="p-0">
                 <Table>
                 <TableHeader>
