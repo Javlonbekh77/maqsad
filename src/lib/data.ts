@@ -16,6 +16,7 @@ import {
   addDoc,
   Timestamp,
   setDoc,
+  DocumentReference,
 } from 'firebase/firestore';
 
 import type { User, Group, Task, TaskHistory, WeeklyMeeting, UserTask } from './types';
@@ -27,29 +28,24 @@ import { format } from 'date-fns';
 // A helper to safely stringify and parse to avoid object reference issues.
 const deepCopy = <T>(obj: T): T => JSON.parse(JSON.stringify(obj));
 
-// --- Data Access Functions (Firestore) ---
-
-async function getDocByCustomId<T>(collectionName: string, id: string): Promise<(T & { firebaseId: string }) | undefined> {
+// Generic function to get a document reference by a custom 'id' field.
+// This DOES NOT fetch the document.
+const getDocRefByCustomId = async (collectionName: string, id: string): Promise<DocumentReference | undefined> => {
   const q = query(collection(db, collectionName), where('id', '==', id), limit(1));
   const querySnapshot = await getDocs(q);
   if (querySnapshot.empty) {
     return undefined;
   }
-  const docSnap = querySnapshot.docs[0];
-  return { ...docSnap.data() as T, firebaseId: docSnap.id };
+  return querySnapshot.docs[0].ref;
 }
 
-// Generic function to get all documents from a collection
-async function getCollection<T>(collectionName: string): Promise<T[]> {
-  const querySnapshot = await getDocs(collection(db, collectionName));
-  return querySnapshot.docs.map(doc => ({ ...doc.data() as T, firebaseId: doc.id }));
-}
+// --- Data Access Functions (CLIENT-SIDE SAFE) ---
 
 export const createUserProfile = async (uid: string, data: Partial<User>) => {
     const fullName = `${data.firstName || ''} ${data.lastName || ''}`.trim();
     const newUser: User = {
         id: uid,
-        firebaseId: uid, // In users collection, firebaseId and id are the same (UID)
+        firebaseId: uid, 
         firstName: data.firstName || '',
         lastName: data.lastName || '',
         fullName: fullName,
@@ -67,16 +63,21 @@ export const createUserProfile = async (uid: string, data: Partial<User>) => {
         telegram: data.telegram,
     };
     // Use setDoc with the user's UID as the document ID for direct lookup
-    await setDoc(doc(db, 'users', uid), newUser);
+    const userDocRef = doc(db, 'users', uid);
+    await setDoc(userDocRef, newUser);
     return newUser;
 };
 
 export const getGroups = async (): Promise<Group[]> => {
-  return getCollection<Group>('groups');
+  const querySnapshot = await getDocs(collection(db, 'groups'));
+  return querySnapshot.docs.map(doc => ({ ...doc.data() as Group, firebaseId: doc.id }));
 };
 
 export const getGroupById = async (id: string): Promise<Group | undefined> => {
-  return getDocByCustomId<Group>('groups', id);
+  const groupRef = await getDocRefByCustomId('groups', id);
+  if (!groupRef) return undefined;
+  const docSnap = await getDoc(groupRef);
+  return docSnap.exists() ? { ...docSnap.data() as Group, firebaseId: docSnap.id } : undefined;
 };
 
 export const getGroupsByUserId = async (userId: string): Promise<Group[]> => {
@@ -84,7 +85,12 @@ export const getGroupsByUserId = async (userId: string): Promise<Group[]> => {
   const user = await getUserById(userId);
   if (!user || !user.groups || user.groups.length === 0) return [];
 
-  const groupsQuery = query(collection(db, 'groups'), where('id', 'in', user.groups));
+  // Firestore 'in' queries are limited to 30 items. 
+  // If a user can be in more than 30 groups, this will need chunking.
+  if (user.groups.length > 30) {
+      console.warn("User is in more than 30 groups, query may be incomplete.");
+  }
+  const groupsQuery = query(collection(db, 'groups'), where('id', 'in', user.groups.slice(0, 30)));
   const querySnapshot = await getDocs(groupsQuery);
   return querySnapshot.docs.map(doc => doc.data() as Group);
 };
@@ -92,7 +98,7 @@ export const getGroupsByUserId = async (userId: string): Promise<Group[]> => {
 export const getTasksByGroupId = async (groupId: string): Promise<Task[]> => {
   const tasksQuery = query(collection(db, 'tasks'), where('groupId', '==', groupId));
   const querySnapshot = await getDocs(tasksQuery);
-  return querySnapshot.docs.map(doc => doc.data() as Task);
+  return querySnapshot.docs.map(doc => ({...doc.data() as Task, id: doc.id}));
 };
 
 export const getMeetingsByGroupId = async (groupId: string): Promise<WeeklyMeeting[]> => {
@@ -102,34 +108,35 @@ export const getMeetingsByGroupId = async (groupId: string): Promise<WeeklyMeeti
 };
 
 export const getUsers = async (): Promise<User[]> => {
-  return getCollection<User>('users');
+  const querySnapshot = await getDocs(collection(db, 'users'));
+  return querySnapshot.docs.map(doc => ({ ...doc.data() as User, id: doc.id, firebaseId: doc.id }));
 };
 
 export const getUserById = async (id: string): Promise<User | undefined> => {
   if (!id) return undefined;
-  // In the 'users' collection, the document ID is the Firebase Auth UID, allowing direct access.
   const docRef = doc(db, "users", id);
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
-    return docSnap.data() as User;
+    // Ensure the returned object has the ID consistent with other functions
+    return { ...docSnap.data() as User, id: docSnap.id, firebaseId: docSnap.id };
   }
-  // Fallback to query if direct lookup fails (e.g., if IDs don't match)
-  return getDocByCustomId<User>('users', id);
+  return undefined;
 };
 
 export const getTopUsers = async (): Promise<User[]> => {
   const usersQuery = query(collection(db, 'users'), where('coins', '>', 0));
-  const users = (await getDocs(usersQuery)).docs.map(d => d.data() as User);
+  const usersSnapshot = await getDocs(usersQuery);
+  const users = usersSnapshot.docs.map(d => d.data() as User);
   return [...users].sort((a, b) => b.coins - a.coins).slice(0, 10);
 };
 
 export const getTopGroups = async (): Promise<(Group & { coins: number })[]> => {
-  const groups = await getGroups();
-  const usersSnapshot = await getDocs(query(collection(db, 'users'), where('coins', '>', 0)));
-  const userMap = new Map(usersSnapshot.docs.map(d => {
-      const u = d.data() as User;
-      return [u.id, u];
-  }));
+  const [groups, users] = await Promise.all([
+    getGroups(),
+    getUsers()
+  ]);
+  
+  const userMap = new Map(users.map(u => [u.id, u]));
 
   return groups.map(group => {
     const groupCoins = group.members.reduce((total, memberId) => {
@@ -149,6 +156,8 @@ export const getUserTasks = async (userId: string): Promise<UserTask[]> => {
       return [];
     }
 
+    // This is inefficient. A better data model would be to have tasks as a subcollection on groups.
+    // For now, we query all tasks and filter.
     const tasksQuery = query(collection(db, 'tasks'), where('groupId', 'in', user.groups));
     const tasksSnapshot = await getDocs(tasksQuery);
     const tasksForUser = tasksSnapshot.docs.map(doc => doc.data() as Task);
@@ -168,7 +177,7 @@ export const getUserTasks = async (userId: string): Promise<UserTask[]> => {
 
 export const getGoalMates = async (userId: string): Promise<User[]> => {
     const currentUser = await getUserById(userId);
-    if (!currentUser || !currentUser.groups || currentUser.groups.length === 0) return [];
+    if (!currentUser || !currentUser.groups || !currentUser.groups.length === 0) return [];
 
     const groupsSnapshot = await getDocs(query(collection(db, 'groups'), where('id', 'in', currentUser.groups)));
     const memberIds = new Set<string>();
@@ -193,26 +202,22 @@ export const getGoalMates = async (userId: string): Promise<User[]> => {
 // --- Mutation functions (Firestore) ---
 
 export const addUserToGroup = async (userId: string, groupId: string): Promise<void> => {
-    const userDocSnap = await getDoc(doc(db, "users", userId));
-    const groupDocRef = await getDocByCustomId('groups', groupId);
+    const userDocRef = doc(db, "users", userId);
+    
+    // We need the document's actual Firestore ID, not the custom one.
+    const groupsQuery = query(collection(db, 'groups'), where('id', '==', groupId), limit(1));
+    const groupSnapshot = await getDocs(groupsQuery);
 
-    if (userDocSnap.exists() && groupDocRef) {
-        const userFirestoreDoc = doc(db, 'users', userDocSnap.id);
-        const groupFirestoreDoc = doc(db, 'groups', groupDocRef.firebaseId);
+    if (!groupSnapshot.empty) {
+        const groupDocRef = groupSnapshot.docs[0].ref;
 
         const batch = writeBatch(db);
-        
-        batch.update(userFirestoreDoc, {
-            groups: arrayUnion(groupId)
-        });
-        
-        batch.update(groupFirestoreDoc, {
-            members: arrayUnion(userId)
-        });
-        
+        batch.update(userDocRef, { groups: arrayUnion(groupId) });
+        batch.update(groupDocRef, { members: arrayUnion(userId) });
         await batch.commit();
     } else {
-        console.error("User or Group not found by custom ID");
+        console.error(`Group with custom ID ${groupId} not found`);
+        throw new Error("Group not found");
     }
 };
 
@@ -221,7 +226,7 @@ export const completeUserTask = async (userId: string, taskId: string, coins: nu
     const userDocSnap = await getDoc(userDocRef);
 
     if (!userDocSnap.exists()) {
-        console.error("User not found by custom ID");
+        console.error("User not found by ID:", userId);
         return;
     }
     const user = userDocSnap.data() as User;
@@ -245,12 +250,5 @@ export const completeUserTask = async (userId: string, taskId: string, coins: nu
 
 export const updateUserProfile = async (userId: string, data: { goals?: string; habits?: string }): Promise<void> => {
     const userDocRef = doc(db, 'users', userId);
-    const userDocSnap = await getDoc(userDocRef);
-
-    if (userDocSnap.exists()) {
-        await updateDoc(userDocRef, data);
-    } else {
-        console.error("User not found for update");
-        throw new Error("User not found");
-    }
+    await updateDoc(userDocRef, data);
 };

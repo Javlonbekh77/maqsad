@@ -27,21 +27,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      setLoading(true); // Start loading when auth state changes
       if (fbUser) {
         setFirebaseUser(fbUser);
-        const appUser = await getUserById(fbUser.uid);
-        if (appUser) {
-          setUser(appUser);
-        } else {
-            // This case might happen if the Firestore doc creation fails after signup
+        try {
+          const appUser = await getUserById(fbUser.uid);
+          if (appUser) {
+            setUser(appUser);
+          } else {
             console.error("User document not found in Firestore for UID:", fbUser.uid);
+            setUser(null);
+          }
+        } catch (error) {
+            console.error("Failed to fetch user profile:", error);
             setUser(null);
         }
       } else {
         setFirebaseUser(null);
         setUser(null);
       }
-      setLoading(false);
+      setLoading(false); // Stop loading once everything is resolved
     });
 
     return () => unsubscribe();
@@ -59,12 +64,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     const { password, ...profileData } = data;
 
-    // Create user profile in Firestore
+    // This might fail if Firestore rules are not set up correctly.
     await createUserProfile(userCredential.user.uid, profileData);
+    
+    // Manually set the user state after signup to avoid waiting for onAuthStateChanged
+    const newUser = await getUserById(userCredential.user.uid);
+    if (newUser) {
+      setUser(newUser);
+    }
+    
     return userCredential;
   };
 
   const logout = () => {
+    // Clear local state immediately for faster UI response
+    setFirebaseUser(null);
+    setUser(null);
     router.push('/login');
     return signOut(auth);
   };
