@@ -85,14 +85,11 @@ export default function LeaderboardTabs() {
   }, []);
 
   useEffect(() => {
-    if (!authLoading) {
-      if (!authUser) {
-        router.push('/login');
-      } else {
+    // We only fetch data if auth is not loading and a user exists.
+    if (!authLoading && authUser) {
         fetchData();
-      }
     }
-  }, [authLoading, authUser, router, fetchData]);
+  }, [authLoading, authUser, fetchData]);
 
   const isLoading = authLoading || loading;
 
