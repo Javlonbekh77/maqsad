@@ -1,3 +1,4 @@
+
 import { db } from './firebase';
 import {
   collection,
@@ -12,6 +13,7 @@ import {
   writeBatch,
   setDoc,
   DocumentReference,
+  orderBy,
 } from 'firebase/firestore';
 
 import type { User, Group, Task, TaskHistory, WeeklyMeeting, UserTask } from './types';
@@ -20,6 +22,12 @@ import { format } from 'date-fns';
 import type { User as FirebaseUser } from 'firebase/auth';
 
 // --- Data Creation Functions ---
+
+/**
+ * Creates a user profile document in Firestore.
+ * IMPORTANT: This function performs a write operation and should only be called from client-side code
+ * after a user has been successfully created in Firebase Authentication.
+ */
 export const createUserProfile = async (firebaseUser: FirebaseUser, data: Partial<User>) => {
     const userDocRef = doc(db, 'users', firebaseUser.uid);
     
@@ -48,6 +56,8 @@ export const createUserProfile = async (firebaseUser: FirebaseUser, data: Partia
 
 
 // --- Data Access Functions (Getters) ---
+// All these functions perform read operations. They are safe to be called from the client-side
+// and should be wrapped in useEffect hooks within components to avoid server-side execution.
 
 export const getGroups = async (): Promise<Group[]> => {
   const querySnapshot = await getDocs(collection(db, 'groups'));
@@ -55,6 +65,7 @@ export const getGroups = async (): Promise<Group[]> => {
 };
 
 const getDocRefByCustomId = async (collectionName: string, id: string): Promise<DocumentReference | undefined> => {
+  // This function is inefficient but necessary if we query by a field 'id' instead of the document ID.
   const q = query(collection(db, collectionName), where('id', '==', id), limit(1));
   const querySnapshot = await getDocs(q);
   if (querySnapshot.empty) {
@@ -73,9 +84,10 @@ export const getGroupById = async (id: string): Promise<Group | undefined> => {
 
 export const getGroupsByUserId = async (userId: string): Promise<Group[]> => {
   if (!userId) return [];
+  // Firestore 'in' queries are limited to 30 elements.
   const user = await getUserById(userId);
   if (!user || !user.groups || user.groups.length === 0) return [];
-
+  
   const groupIds = user.groups.slice(0, 30);
   if(groupIds.length === 0) return [];
 
@@ -112,10 +124,9 @@ export const getUserById = async (id: string): Promise<User | undefined> => {
 
 
 export const getTopUsers = async (): Promise<User[]> => {
-  const usersQuery = query(collection(db, 'users'), where('coins', '>', 0));
+  const usersQuery = query(collection(db, 'users'), orderBy('coins', 'desc'), limit(10));
   const usersSnapshot = await getDocs(usersQuery);
-  const users = usersSnapshot.docs.map(d => d.data() as User);
-  return [...users].sort((a, b) => b.coins - a.coins).slice(0, 10);
+  return usersSnapshot.docs.map(d => d.data() as User);
 };
 
 export const getTopGroups = async (): Promise<(Group & { coins: number })[]> => {
@@ -142,6 +153,7 @@ export const getUserTasks = async (userId: string): Promise<UserTask[]> => {
 
     const today = format(new Date(), 'yyyy-MM-dd');
     
+    // Firestore 'in' queries are limited to 30 elements.
     const groupIds = user.groups.slice(0, 30);
     if(groupIds.length === 0) return [];
 
@@ -166,6 +178,7 @@ export const getGoalMates = async (userId: string): Promise<User[]> => {
     const currentUser = await getUserById(userId);
     if (!currentUser || !currentUser.groups || currentUser.groups.length === 0) return [];
 
+    // Firestore 'in' queries are limited to 30 elements.
     const groupIds = currentUser.groups.slice(0, 30);
     if(groupIds.length === 0) return [];
 
@@ -182,6 +195,7 @@ export const getGoalMates = async (userId: string): Promise<User[]> => {
     
     if (memberIds.size === 0) return [];
     
+    // Chunk the member IDs to handle Firestore's limitation of 30 items in an 'in' query.
     const memberIdChunks = [];
     const ids = Array.from(memberIds);
     for (let i = 0; i < ids.length; i += 30) {
@@ -200,6 +214,8 @@ export const getGoalMates = async (userId: string): Promise<User[]> => {
 
 
 // --- Mutation functions (Setters/Updaters) ---
+// These functions perform write operations and should only be called from client-side code,
+// typically in response to a user action (e.g., a button click).
 
 export const addUserToGroup = async (userId: string, groupId: string, taskIds: string[]): Promise<void> => {
     const userDocRef = doc(db, "users", userId);
@@ -207,20 +223,22 @@ export const addUserToGroup = async (userId: string, groupId: string, taskIds: s
     const groupsQuery = query(collection(db, 'groups'), where('id', '==', groupId), limit(1));
     const groupSnapshot = await getDocs(groupsQuery);
 
-    if (!groupSnapshot.empty) {
-        const groupDocRef = groupSnapshot.docs[0].ref;
-
-        const batch = writeBatch(db);
-        batch.update(userDocRef, { groups: arrayUnion(groupId) });
-        batch.update(groupDocRef, { members: arrayUnion(userId) });
-        
-        console.log(`User ${userId} joined group ${groupId} and committed to tasks: ${taskIds.join(', ')}`);
-
-        await batch.commit();
-    } else {
+    if (groupSnapshot.empty) {
         console.error(`Group with custom ID ${groupId} not found`);
         throw new Error("Group not found");
     }
+
+    const groupDocRef = groupSnapshot.docs[0].ref;
+
+    const batch = writeBatch(db);
+    batch.update(userDocRef, { groups: arrayUnion(groupId) });
+    batch.update(groupDocRef, { members: arrayUnion(userId) });
+    
+    // Note: The 'taskIds' parameter is received but not used in this function logic.
+    // This could be a point for future feature extension, e.g., tracking committed tasks.
+    console.log(`User ${userId} joined group ${groupId} and committed to tasks: ${taskIds.join(', ')}`);
+
+    await batch.commit();
 };
 
 export const completeUserTask = async (userId: string, taskId: string, coins: number): Promise<void> => {
@@ -229,7 +247,7 @@ export const completeUserTask = async (userId: string, taskId: string, coins: nu
 
     if (!userDocSnap.exists()) {
         console.error("User not found by ID:", userId);
-        return;
+        throw new Error("User not found");
     }
     const user = userDocSnap.data() as User;
     
@@ -239,14 +257,16 @@ export const completeUserTask = async (userId: string, taskId: string, coins: nu
     );
 
     if (alreadyCompleted) {
-        console.log("Task already completed today.");
-        return;
+        console.warn("Task already completed today.");
+        return; // Don't throw an error, just don't award points twice.
     }
 
     const newCoins = (user.coins || 0) + coins;
+    const newTaskHistory = { taskId, date: today };
+
     await updateDoc(userDocRef, {
         coins: newCoins,
-        taskHistory: arrayUnion({ taskId, date: today }),
+        taskHistory: arrayUnion(newTaskHistory),
     });
 };
 

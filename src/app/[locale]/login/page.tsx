@@ -48,11 +48,11 @@ export default function LoginPage() {
     } catch (err: any) {
       console.error("Login failed with code:", err.code, "and message:", err.message);
       if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
-          setError('Invalid email or password. Please try again.');
+          setError('Invalid email or password. Please check your credentials and try again.');
       } else if (err.code === 'auth/network-request-failed') {
-        setError('Network error. Please check your internet connection.');
+        setError('Network error. Please check your internet connection and try again.');
       } else {
-          setError(`An unexpected error occurred: ${err.message}`);
+          setError(`An unexpected error occurred. Please try again later.`);
       }
     }
   }

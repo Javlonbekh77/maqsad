@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, type User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { getUserById, createUserProfile } from '@/lib/data';
@@ -25,39 +25,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      setLoading(true);
-      if (fbUser) {
-        setFirebaseUser(fbUser);
-        try {
-          const appUser = await getUserById(fbUser.uid);
-          if (appUser) {
-            setUser(appUser);
-          } else {
-             console.warn(`User document not found for UID: ${fbUser.uid}. This might be a delay after signup.`);
-             // Retry after a short delay, in case of DB replication lag
-             setTimeout(async () => {
-                const retryUser = await getUserById(fbUser.uid);
-                setUser(retryUser || null);
-                setLoading(false);
-             }, 1500);
-             return; // Avoid setting loading to false immediately
-          }
-        } catch (error) {
-          console.error("Failed to fetch user profile:", error);
-          setUser(null);
+  const fetchAppData = useCallback(async (fbUser: FirebaseUser | null) => {
+    if (fbUser) {
+      setFirebaseUser(fbUser);
+      try {
+        const appUser = await getUserById(fbUser.uid);
+        if (appUser) {
+          setUser(appUser);
+        } else {
+          // This can happen if the user record is not yet created in Firestore after signup.
+          // We will retry once after a short delay.
+           console.warn(`User document not found for UID: ${fbUser.uid}. Retrying...`);
+           setTimeout(async () => {
+              const retryUser = await getUserById(fbUser.uid);
+              setUser(retryUser || null);
+              if (!retryUser) console.error("Retry failed. User document not found.");
+              setLoading(false);
+           }, 2000);
+           return; // Keep loading true until retry is complete
         }
-      } else {
-        setFirebaseUser(null);
-        setUser(null);
+      } catch (error) {
+        console.error("Failed to fetch user profile:", error);
+        setUser(null); // Ensure user is null on error
       }
-      setLoading(false);
+    } else {
+      setFirebaseUser(null);
+      setUser(null);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
+      setLoading(true); // Always set loading to true when auth state changes
+      fetchAppData(fbUser);
     });
 
     return () => unsubscribe();
-  }, []);
-
+  }, [fetchAppData]);
+  
   const login = (email: string, password: string) => {
      return signInWithEmailAndPassword(auth, email, password);
   };
@@ -70,21 +76,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { password, ...profileData } = data;
 
     try {
+        // This function MUST NOT be called from the server.
+        // The signup flow happens on the client, so this is safe.
         await createUserProfile(userCredential.user, profileData);
         // The onAuthStateChanged listener will handle setting the user state.
     } catch (dbError) {
         console.error("Failed to create user profile in Firestore:", dbError);
-        // Rollback Firebase auth user if DB profile creation fails
-        await userCredential.user.delete();
+        // Best effort to roll back Firebase auth user if DB profile creation fails
+        try {
+           await userCredential.user.delete();
+        } catch (deleteError) {
+            console.error("Failed to rollback (delete) Firebase Auth user:", deleteError);
+        }
         throw new Error("User creation failed. Could not save profile to database.");
     }
     
     return userCredential;
   };
 
-
   const logout = async () => {
     await signOut(auth);
+    // The onAuthStateChanged listener will handle clearing user state
+    // and the router.push will happen in components that protect routes.
     router.push('/login');
   };
 
