@@ -13,7 +13,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Search, Bell, Coins } from 'lucide-react';
 import { Input } from '../ui/input';
-import { Link, usePathname } from '@/navigation';
+import { Link, usePathname, useRouter } from '@/navigation';
 import { useTranslations } from 'next-intl';
 import LanguageSwitcher from '../language-switcher';
 import { useAuth } from '@/context/auth-context';
@@ -21,9 +21,11 @@ import { useAuth } from '@/context/auth-context';
 export default function AppHeader() {
   const t = useTranslations();
   const { user, loading, logout } = useAuth();
+  const router = useRouter();
 
   const handleLogout = async () => {
     await logout();
+    router.push('/login');
   };
 
   if (loading) {

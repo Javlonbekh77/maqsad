@@ -23,7 +23,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
@@ -65,15 +64,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     await signOut(auth);
-    router.push('/login');
+    // The redirection will be handled by the component that calls logout
+    // or by a protecting component/hook that reacts to the auth state change.
+    // For example, in AppHeader:
+    // const handleLogout = async () => { await logout(); router.push('/login'); };
   };
 
   const value = { user, firebaseUser, loading, login, signup, logout };
 
   return (
-    <>
+    <AuthContext.Provider value={value}>
       {children}
-    </>
+    </AuthContext.Provider>
   );
 };
 
@@ -84,4 +86,3 @@ export const useAuth = () => {
   }
   return context;
 };
-
