@@ -47,6 +47,7 @@ export default function JoinGroupDialog({
   const handleConfirm = () => {
     onConfirm(selectedTaskIds);
     setSelectedTaskIds([]); // Reset for next time
+    onClose(); // Close the dialog on confirmation
   };
 
   return (
@@ -61,7 +62,7 @@ export default function JoinGroupDialog({
         
         <ScrollArea className="max-h-72">
             <div className="space-y-4 p-1">
-            {tasks.map((task) => (
+            {tasks.length > 0 ? tasks.map((task) => (
                 <div key={task.id} className="flex items-start gap-4 rounded-lg border p-4">
                     <Checkbox
                         id={`task-${task.id}`}
@@ -85,7 +86,9 @@ export default function JoinGroupDialog({
                         </p>
                     </div>
                 </div>
-            ))}
+            )) : (
+              <p className="text-muted-foreground text-center py-4">This group has no tasks yet.</p>
+            )}
             </div>
         </ScrollArea>
 

@@ -51,7 +51,7 @@ export const createUserProfile = async (uid: string, data: Partial<User>) => {
 
 export const getGroups = async (): Promise<Group[]> => {
   const querySnapshot = await getDocs(collection(db, 'groups'));
-  return querySnapshot.docs.map(doc => ({ ...doc.data() as Group, firebaseId: doc.id }));
+  return querySnapshot.docs.map(doc => ({ ...doc.data() as Group, id: doc.data().id, firebaseId: doc.id }));
 };
 
 const getDocRefByCustomId = async (collectionName: string, id: string): Promise<DocumentReference | undefined> => {
@@ -67,7 +67,7 @@ export const getGroupById = async (id: string): Promise<Group | undefined> => {
   const groupRef = await getDocRefByCustomId('groups', id);
   if (!groupRef) return undefined;
   const docSnap = await getDoc(groupRef);
-  return docSnap.exists() ? { ...docSnap.data() as Group, firebaseId: docSnap.id } : undefined;
+  return docSnap.exists() ? { ...docSnap.data() as Group, id: docSnap.data().id, firebaseId: docSnap.id } : undefined;
 };
 
 export const getGroupsByUserId = async (userId: string): Promise<Group[]> => {
@@ -87,7 +87,7 @@ export const getGroupsByUserId = async (userId: string): Promise<Group[]> => {
 export const getTasksByGroupId = async (groupId: string): Promise<Task[]> => {
   const tasksQuery = query(collection(db, 'tasks'), where('groupId', '==', groupId));
   const querySnapshot = await getDocs(tasksQuery);
-  return querySnapshot.docs.map(doc => ({...doc.data() as Task, id: doc.id}));
+  return querySnapshot.docs.map(doc => ({...doc.data() as Task, id: doc.data().id }));
 };
 
 export const getMeetingsByGroupId = async (groupId: string): Promise<WeeklyMeeting[]> => {
@@ -205,7 +205,7 @@ export const getGoalMates = async (userId: string): Promise<User[]> => {
 
 // --- Mutation functions (Firestore) ---
 
-export const addUserToGroup = async (userId: string, groupId: string): Promise<void> => {
+export const addUserToGroup = async (userId: string, groupId: string, taskIds: string[]): Promise<void> => {
     const userDocRef = doc(db, "users", userId);
     
     const groupsQuery = query(collection(db, 'groups'), where('id', '==', groupId), limit(1));
@@ -217,6 +217,11 @@ export const addUserToGroup = async (userId: string, groupId: string): Promise<v
         const batch = writeBatch(db);
         batch.update(userDocRef, { groups: arrayUnion(groupId) });
         batch.update(groupDocRef, { members: arrayUnion(userId) });
+        
+        // This part is a placeholder for assigning tasks. 
+        // In a real app you might create user-specific task documents.
+        console.log(`User ${userId} joined group ${groupId} and committed to tasks: ${taskIds.join(', ')}`);
+
         await batch.commit();
     } else {
         console.error(`Group with custom ID ${groupId} not found`);

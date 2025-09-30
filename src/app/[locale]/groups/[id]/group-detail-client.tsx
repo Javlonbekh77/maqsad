@@ -83,11 +83,12 @@ export default function GroupDetailClient() {
     }
   }, [id, authLoading, currentUser, router, fetchGroupData]);
 
-  const handleJoinGroup = useCallback(async () => {
+  const handleJoinGroup = useCallback(async (selectedTaskIds: string[]) => {
     if (!currentUser || !group) return;
     try {
-      await addUserToGroup(currentUser.id, group.id);
+      await addUserToGroup(currentUser.id, group.id, selectedTaskIds);
       setJoinDialogOpen(false);
+      // Re-fetch data to reflect the new member
       await fetchGroupData(id as string); 
     } catch(error) {
       console.error("Failed to join group:", error);
@@ -194,7 +195,7 @@ export default function GroupDetailClient() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {tasks.map(task => (
+                    {tasks.length > 0 ? tasks.map(task => (
                       <TableRow key={task.id}>
                         <TableCell>
                           <div className="font-medium">{task.title}</div>
@@ -207,7 +208,13 @@ export default function GroupDetailClient() {
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))}
+                    )) : (
+                      <TableRow>
+                        <TableCell colSpan={2} className="text-center text-muted-foreground h-24">
+                          This group has no tasks yet.
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </CardContent>
