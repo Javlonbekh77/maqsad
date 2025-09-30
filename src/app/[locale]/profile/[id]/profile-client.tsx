@@ -74,7 +74,7 @@ export default function ProfileClient() {
   const isLoading = authLoading || loadingData;
   const isCurrentUserProfile = userId === currentUser?.id;
 
-  if (isLoading) {
+  if (isLoading || !currentUser) {
     return (
         <AppLayout>
             <div className="space-y-8">

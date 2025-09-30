@@ -27,30 +27,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      setLoading(true); // Always start with loading state
+      setLoading(true); // Always start with a loading state on auth change
       if (fbUser) {
         setFirebaseUser(fbUser);
         try {
+          // Fetch the application-specific user profile from Firestore
           const appUser = await getUserById(fbUser.uid);
           if (appUser) {
             setUser(appUser);
           } else {
-             // This case might happen if Firestore profile creation failed or is delayed.
-             // For now, we'll treat it as not logged in to the app.
-             console.warn("User is authenticated with Firebase but no profile found in Firestore.");
+             // This can happen if the Firestore document creation is delayed or failed.
+             // We treat this as not fully logged in.
+             console.warn("User authenticated but no Firestore profile found.");
              setUser(null);
           }
         } catch (error) {
           console.error("Failed to fetch user profile:", error);
-          setUser(null); // Clear user on error
+          setUser(null); // Clear app user on error
         }
       } else {
+        // No Firebase user, so clear all user data
         setFirebaseUser(null);
         setUser(null);
       }
-      setLoading(false); // End loading state after all async operations are done
+      // Only set loading to false after all async operations are complete
+      setLoading(false);
     });
 
+    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
   
@@ -65,24 +69,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
     const { password, ...profileData } = data;
 
-    // The onAuthStateChanged listener will handle fetching the user data after creation,
-    // but we still need to create the profile document.
     await createUserProfile(userCredential.user, profileData);
     
-    // The listener will automatically update the state, no need to call fetchAppData here.
+    // The onAuthStateChanged listener will automatically handle setting the user state.
     return userCredential;
   };
 
   const logout = async () => {
     await signOut(auth);
-    setUser(null);
-    setFirebaseUser(null);
+    // The onAuthStateChanged listener will handle clearing the user state.
     router.push('/login');
   };
 
+  const value = { user, firebaseUser, loading, login, signup, logout };
+
   return (
-    <AuthContext.Provider value={{ user, firebaseUser, loading, login, signup, logout }}>
-      {children}
+    <AuthContext.Provider value={value}>
+      {!loading && children}
     </AuthContext.Provider>
   );
 };

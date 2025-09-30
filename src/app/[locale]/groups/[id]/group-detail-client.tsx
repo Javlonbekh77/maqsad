@@ -96,7 +96,7 @@ export default function GroupDetailClient() {
   
   const isLoading = authLoading || loadingData;
 
-  if (isLoading) {
+  if (isLoading || !currentUser) {
     return (
         <AppLayout>
             <div className="space-y-8">
