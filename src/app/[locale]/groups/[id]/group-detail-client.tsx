@@ -184,7 +184,7 @@ export default function GroupDetailClient() {
                   <CardTitle>{t('tasksTitle')}</CardTitle>
                   <CardDescription>{t('tasksDescription')}</CardDescription>
                 </div>
-                {isAdmin && <CreateTaskDialog />}
+                {isAdmin && <CreateTaskDialog groupId={group.id} onTaskCreated={() => fetchGroupData(group.id)} />}
               </CardHeader>
               <CardContent>
                  {tasks.length > 0 ? (

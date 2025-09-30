@@ -4,9 +4,9 @@
 import AppLayout from "@/components/layout/app-layout";
 import { getGroups, getUsers } from "@/lib/data";
 import GroupCard from "@/components/groups/group-card";
-import { Button } from "@/components/ui/button";
+import CreateGroupDialog from "@/components/groups/create-group-dialog";
 import { Input } from "@/components/ui/input";
-import { PlusCircle, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import type { Group, User } from "@/lib/types";
@@ -101,10 +101,7 @@ export default function GroupsClient() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              {t('createGroup')}
-            </Button>
+            <CreateGroupDialog onGroupCreated={fetchData} />
           </div>
         </div>
         

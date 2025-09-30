@@ -14,59 +14,60 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { PlusCircle, Coins } from 'lucide-react';
+import { PlusCircle } from 'lucide-react';
 import { useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
-import { createTask } from '@/lib/data';
+import { createGroup } from '@/lib/data';
+import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
 
-const taskSchema = z.object({
-  title: z.string().min(3, { message: "Title must be at least 3 characters." }),
+const groupSchema = z.object({
+  name: z.string().min(3, { message: "Name must be at least 3 characters." }),
   description: z.string().min(10, { message: "Description must be at least 10 characters." }),
-  coins: z.coerce.number().min(1, { message: "Coins must be at least 1." }),
 });
 
-interface CreateTaskDialogProps {
-  groupId: string;
-  onTaskCreated: () => void;
+interface CreateGroupDialogProps {
+    onGroupCreated: () => void;
 }
 
-export default function CreateTaskDialog({ groupId, onTaskCreated }: CreateTaskDialogProps) {
-  const t = useTranslations('createTaskDialog');
+export default function CreateGroupDialog({ onGroupCreated }: CreateGroupDialogProps) {
+  const t = useTranslations('groups');
   const tActions = useTranslations('actions');
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const { user } = useAuth();
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof taskSchema>>({
-    resolver: zodResolver(taskSchema),
+  const form = useForm<z.infer<typeof groupSchema>>({
+    resolver: zodResolver(groupSchema),
     defaultValues: {
-      title: "",
+      name: "",
       description: "",
-      coins: 10,
     },
   });
 
-  const onSubmit = (values: z.infer<typeof taskSchema>) => {
+  const onSubmit = (values: z.infer<typeof groupSchema>) => {
+    if (!user) return;
+    
     startTransition(async () => {
       try {
-        await createTask({ ...values, groupId });
+        await createGroup({ ...values, adminId: user.id }, user.id);
         toast({
-            title: "Task Created!",
-            description: "The new task has been added to the group.",
+            title: "Group Created!",
+            description: "Your new group is ready. Invite others to join!",
         });
-        onTaskCreated();
+        onGroupCreated();
         setOpen(false);
         form.reset();
       } catch (error) {
-        console.error("Failed to create task", error);
+        console.error("Failed to create group", error);
         toast({
             title: "Error",
-            description: "Failed to create the task. Please try again.",
+            description: "Failed to create the group. Please try again.",
             variant: "destructive",
         });
       }
@@ -78,24 +79,26 @@ export default function CreateTaskDialog({ groupId, onTaskCreated }: CreateTaskD
       <DialogTrigger asChild>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
-          {t('addTaskButton')}
+          {t('createGroup')}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{t('title')}</DialogTitle>
-          <DialogDescription>{t('description')}</DialogDescription>
+          <DialogTitle>{t('createGroup')}</DialogTitle>
+          <DialogDescription>
+            Create a new space for your team to collaborate and achieve goals.
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
             <FormField
               control={form.control}
-              name="title"
+              name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('titleLabel')}</FormLabel>
+                  <FormLabel>Group Name</FormLabel>
                   <FormControl>
-                    <Input placeholder={t('titlePlaceholder')} {...field} />
+                    <Input placeholder="e.g., Morning Runners" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -106,22 +109,9 @@ export default function CreateTaskDialog({ groupId, onTaskCreated }: CreateTaskD
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('descriptionLabel')}</FormLabel>
+                  <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea placeholder={t('descriptionPlaceholder')} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="coins"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className='flex items-center gap-1'><Coins className="h-4 w-4 text-amber-500" /> {t('coinsLabel')}</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder={t('coinsPlaceholder')} {...field} />
+                    <Textarea placeholder="What is this group about?" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -132,7 +122,7 @@ export default function CreateTaskDialog({ groupId, onTaskCreated }: CreateTaskD
                     <Button variant="outline">{tActions('cancel')}</Button>
                 </DialogClose>
                 <Button type="submit" disabled={isPending}>
-                    {isPending ? "Creating..." : t('createTaskButton')}
+                    {isPending ? "Creating..." : t('createGroup')}
                 </Button>
             </DialogFooter>
           </form>

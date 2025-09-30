@@ -14,6 +14,7 @@ import {
   setDoc,
   DocumentReference,
   orderBy,
+  addDoc,
 } from 'firebase/firestore';
 
 import type { User, Group, Task, TaskHistory, WeeklyMeeting, UserTask } from './types';
@@ -52,21 +53,56 @@ export const createUserProfile = async (firebaseUser: FirebaseUser, data: Partia
     await setDoc(userDocRef, newUser);
 };
 
+export const createGroup = async (groupData: Omit<Group, 'id' | 'firebaseId' | 'imageUrl' | 'imageHint' | 'members'>, adminId: string): Promise<string> => {
+    // Get a random placeholder image for the group
+    const groupImages = PlaceHolderImages.filter(p => p.id.startsWith('group'));
+    const randomImage = groupImages[Math.floor(Math.random() * groupImages.length)];
+
+    const newGroupRef = doc(collection(db, 'groups'));
+    
+    const newGroup: Group = {
+        ...groupData,
+        id: newGroupRef.id,
+        firebaseId: newGroupRef.id,
+        imageUrl: randomImage.imageUrl,
+        imageHint: randomImage.imageHint,
+        members: [adminId], // The creator is the first member and admin
+    };
+
+    await setDoc(newGroupRef, newGroup);
+    
+    // Also add this group to the user's list of groups
+    const userDocRef = doc(db, 'users', adminId);
+    await updateDoc(userDocRef, {
+        groups: arrayUnion(newGroup.id)
+    });
+    
+    return newGroup.id;
+};
+
+export const createTask = async (taskData: Omit<Task, 'id'>): Promise<string> => {
+    const newTaskRef = doc(collection(db, 'tasks'));
+    const newTask: Task = {
+        ...taskData,
+        id: newTaskRef.id,
+    };
+    await setDoc(newTaskRef, newTask);
+    return newTask.id;
+};
+
 
 // --- Data Access Functions (Getters) ---
 
 export const getGroups = async (): Promise<Group[]> => {
   const querySnapshot = await getDocs(collection(db, 'groups'));
-  return querySnapshot.docs.map(doc => ({ ...doc.data() as Group, id: doc.data().id, firebaseId: doc.id }));
+  return querySnapshot.docs.map(doc => ({ ...doc.data() as Group, id: doc.id, firebaseId: doc.id }));
 };
 
 const getDocRefByCustomId = async (collectionName: string, id: string): Promise<DocumentReference | undefined> => {
-  const q = query(collection(db, collectionName), where('id', '==', id), limit(1));
-  const querySnapshot = await getDocs(q);
-  if (querySnapshot.empty) {
-    return undefined;
-  }
-  return querySnapshot.docs[0].ref;
+  if (!id) return undefined;
+  const docRef = doc(db, collectionName, id);
+  const docSnap = await getDoc(docRef);
+  return docSnap.exists() ? docRef : undefined;
 }
 
 export const getGroupById = async (id: string): Promise<Group | undefined> => {
@@ -74,7 +110,7 @@ export const getGroupById = async (id: string): Promise<Group | undefined> => {
   const groupRef = await getDocRefByCustomId('groups', id);
   if (!groupRef) return undefined;
   const docSnap = await getDoc(groupRef);
-  return docSnap.exists() ? { ...docSnap.data() as Group, id: docSnap.data().id, firebaseId: docSnap.id } : undefined;
+  return docSnap.exists() ? { ...docSnap.data() as Group, id: docSnap.id, firebaseId: docSnap.id } : undefined;
 };
 
 export const getGroupsByUserId = async (userId: string): Promise<Group[]> => {
@@ -85,16 +121,16 @@ export const getGroupsByUserId = async (userId: string): Promise<Group[]> => {
   const groupIds = user.groups.slice(0, 30);
   if(groupIds.length === 0) return [];
 
-  const groupsQuery = query(collection(db, 'groups'), where('id', 'in', groupIds));
+  const groupsQuery = query(collection(db, 'groups'), where('__name__', 'in', groupIds));
   const querySnapshot = await getDocs(groupsQuery);
-  return querySnapshot.docs.map(doc => ({...doc.data() as Group, firebaseId: doc.id}));
+  return querySnapshot.docs.map(doc => ({...doc.data() as Group, id: doc.id, firebaseId: doc.id}));
 };
 
 export const getTasksByGroupId = async (groupId: string): Promise<Task[]> => {
   if (!groupId) return [];
   const tasksQuery = query(collection(db, 'tasks'), where('groupId', '==', groupId));
   const querySnapshot = await getDocs(tasksQuery);
-  return querySnapshot.docs.map(doc => ({...doc.data() as Task, id: doc.data().id }));
+  return querySnapshot.docs.map(doc => ({...doc.data() as Task, id: doc.id }));
 };
 
 export const getMeetingsByGroupId = async (groupId: string): Promise<WeeklyMeeting[]> => {
@@ -111,21 +147,17 @@ export const getUsers = async (): Promise<User[]> => {
 
 export const getUserById = async (id: string): Promise<User | undefined> => {
   if (!id) return undefined;
-  try {
-    const docRef = doc(db, 'users', id);
-    const docSnap = await getDoc(docRef);
-    return docSnap.exists() ? { ...docSnap.data() as User, id: docSnap.id, firebaseId: docSnap.id } : undefined;
-  } catch (error) {
-    console.error("FirebaseError: Failed to get document because the client is offline.", error);
-    return undefined;
-  }
+  const docRef = doc(db, 'users', id);
+  const docSnap = await getDoc(docRef);
+  return docSnap.exists() ? { ...docSnap.data() as User, id: docSnap.id, firebaseId: docSnap.id } : undefined;
+
 };
 
 
 export const getTopUsers = async (): Promise<User[]> => {
   const usersQuery = query(collection(db, 'users'), orderBy('coins', 'desc'), limit(10));
   const usersSnapshot = await getDocs(usersQuery);
-  return usersSnapshot.docs.map(d => d.data() as User);
+  return usersSnapshot.docs.map(d => ({ ...d.data() as User, id: d.id, firebaseId: d.id }));
 };
 
 export const getTopGroups = async (): Promise<(Group & { coins: number })[]> => {
@@ -159,8 +191,8 @@ export const getUserTasks = async (userId: string): Promise<UserTask[]> => {
     const tasksSnapshot = await getDocs(tasksQuery);
     const tasksForUser = tasksSnapshot.docs.map(doc => doc.data() as Task);
     
-    const allGroupsSnapshot = await getDocs(query(collection(db, 'groups'), where('id', 'in', groupIds)));
-    const groupMap = new Map(allGroupsSnapshot.docs.map(doc => [doc.data().id, doc.data().name]));
+    const allGroupsSnapshot = await getDocs(query(collection(db, 'groups'), where('__name__', 'in', groupIds)));
+    const groupMap = new Map(allGroupsSnapshot.docs.map(doc => [doc.id, doc.data().name]));
 
     return tasksForUser.map(task => {
         const isCompletedToday = user.taskHistory.some(h => h.taskId === task.id && h.date === today);
@@ -179,7 +211,7 @@ export const getGoalMates = async (userId: string): Promise<User[]> => {
     const groupIds = currentUser.groups.slice(0, 30);
     if(groupIds.length === 0) return [];
 
-    const groupsSnapshot = await getDocs(query(collection(db, 'groups'), where('id', 'in', groupIds)));
+    const groupsSnapshot = await getDocs(query(collection(db, 'groups'), where('__name__', 'in', groupIds)));
     const memberIds = new Set<string>();
     groupsSnapshot.forEach(doc => {
         const group = doc.data() as Group;
@@ -214,15 +246,14 @@ export const getGoalMates = async (userId: string): Promise<User[]> => {
 export const addUserToGroup = async (userId: string, groupId: string, taskIds: string[]): Promise<void> => {
     const userDocRef = doc(db, "users", userId);
     
-    const groupsQuery = query(collection(db, 'groups'), where('id', '==', groupId), limit(1));
-    const groupSnapshot = await getDocs(groupsQuery);
+    const groupDocRef = doc(db, "groups", groupId);
+    const groupSnapshot = await getDoc(groupDocRef);
 
-    if (groupSnapshot.empty) {
-        console.error(`Group with custom ID ${groupId} not found`);
+
+    if (!groupSnapshot.exists()) {
+        console.error(`Group with ID ${groupId} not found`);
         throw new Error("Group not found");
     }
-
-    const groupDocRef = groupSnapshot.docs[0].ref;
 
     const batch = writeBatch(db);
     batch.update(userDocRef, { groups: arrayUnion(groupId) });
