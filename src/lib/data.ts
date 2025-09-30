@@ -1,3 +1,4 @@
+
 import { db } from './firebase';
 import {
   collection,
@@ -74,10 +75,11 @@ export const getGroupsByUserId = async (userId: string): Promise<Group[]> => {
   const user = await getUserById(userId);
   if (!user || !user.groups || user.groups.length === 0) return [];
 
-  if (user.groups.length > 30) {
-      console.warn("User is in more than 30 groups, query may be incomplete.");
-  }
-  const groupsQuery = query(collection(db, 'groups'), where('id', 'in', user.groups.slice(0, 30)));
+  // Firestore 'in' query has a limit of 30 items.
+  const groupIds = user.groups.slice(0, 30);
+  if(groupIds.length === 0) return [];
+
+  const groupsQuery = query(collection(db, 'groups'), where('id', 'in', groupIds));
   const querySnapshot = await getDocs(groupsQuery);
   return querySnapshot.docs.map(doc => doc.data() as Group);
 };
@@ -142,7 +144,11 @@ export const getUserTasks = async (userId: string): Promise<UserTask[]> => {
       return [];
     }
 
-    const tasksQuery = query(collection(db, 'tasks'), where('groupId', 'in', user.groups));
+    // Firestore 'in' query has a limit of 30 items
+    const groupIds = user.groups.slice(0, 30);
+    if(groupIds.length === 0) return [];
+
+    const tasksQuery = query(collection(db, 'tasks'), where('groupId', 'in', groupIds));
     const tasksSnapshot = await getDocs(tasksQuery);
     const tasksForUser = tasksSnapshot.docs.map(doc => doc.data() as Task);
     
@@ -161,9 +167,12 @@ export const getUserTasks = async (userId: string): Promise<UserTask[]> => {
 
 export const getGoalMates = async (userId: string): Promise<User[]> => {
     const currentUser = await getUserById(userId);
-    if (!currentUser || !currentUser.groups || !currentUser.groups.length === 0) return [];
+    if (!currentUser || !currentUser.groups || currentUser.groups.length === 0) return [];
 
-    const groupsSnapshot = await getDocs(query(collection(db, 'groups'), where('id', 'in', currentUser.groups)));
+    const groupIds = currentUser.groups.slice(0, 30);
+    if(groupIds.length === 0) return [];
+
+    const groupsSnapshot = await getDocs(query(collection(db, 'groups'), where('id', 'in', groupIds)));
     const memberIds = new Set<string>();
     groupsSnapshot.forEach(doc => {
         const group = doc.data() as Group;

@@ -70,7 +70,7 @@ export default function ProfileClient() {
   const userMap = useMemo(() => new Map(allUsers.map(u => [u.id, u])), [allUsers]);
 
   const isLoading = authLoading || loadingPage;
-  const isCurrentUser = userId === currentUser?.id;
+  const isCurrentUserProfile = userId === currentUser?.id;
 
   if (isLoading) {
     return (
@@ -120,7 +120,7 @@ export default function ProfileClient() {
       <div className="space-y-8">
         <div className="flex items-center justify-between">
           <GoBackButton />
-          {isCurrentUser && (
+          {isCurrentUserProfile && (
             <Button variant="outline" onClick={() => router.push('/settings')}>
               <Settings className="mr-2 h-4 w-4" />
               {t('settings.title')}

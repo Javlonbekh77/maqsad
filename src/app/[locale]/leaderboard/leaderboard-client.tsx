@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { useRouter } from "@/navigation";
 import { useEffect } from 'react';
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function LeaderboardClient() {
@@ -28,7 +29,7 @@ export default function LeaderboardClient() {
               <Skeleton className="h-10 w-1/3" />
               <Skeleton className="h-4 w-1/2 mt-2" />
           </div>
-          <div className="grid w-full grid-cols-2 md:w-96">
+          <div className="w-full md:w-96">
             <Skeleton className="h-10 w-full" />
           </div>
           <Card>
