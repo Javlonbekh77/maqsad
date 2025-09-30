@@ -24,14 +24,7 @@ import { format } from 'date-fns';
 
 export const createUserProfile = async (uid: string, data: Partial<User>) => {
     const userDocRef = doc(db, 'users', uid);
-    const userDocSnap = await getDoc(userDocRef);
-
-    if (userDocSnap.exists()) {
-      console.log(`User with UID ${uid} already exists. Skipping creation.`);
-      return;
-    }
     
-    console.log(`Creating new user profile for UID: ${uid}`);
     const fullName = `${data.firstName || ''} ${data.lastName || ''}`.trim();
     const newUser: User = {
         id: uid,

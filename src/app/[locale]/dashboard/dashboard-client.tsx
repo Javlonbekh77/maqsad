@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from '@/navigation';
 import AppLayout from "@/components/layout/app-layout";
 import TodoList from "@/components/dashboard/todo-list";
-import type { User, UserTask } from "@/lib/types";
+import type { UserTask } from "@/lib/types";
 import { useTranslations } from "next-intl";
 import HabitTracker from "@/components/profile/habit-tracker";
 import { useAuth } from '@/context/auth-context';
@@ -18,17 +18,17 @@ export default function DashboardClient() {
   const router = useRouter();
 
   const [tasks, setTasks] = useState<UserTask[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
+  const [loadingTasks, setLoadingTasks] = useState(true);
 
   const fetchData = useCallback(async (userId: string) => {
-    setLoadingData(true);
+    setLoadingTasks(true);
     try {
       const userTasks = await getUserTasks(userId);
       setTasks(userTasks);
     } catch (error) {
       console.error("Failed to fetch dashboard tasks:", error);
     } finally {
-      setLoadingData(false);
+      setLoadingTasks(false);
     }
   }, []);
 
@@ -42,7 +42,7 @@ export default function DashboardClient() {
     }
   }, [authUser, authLoading, router, fetchData]);
 
-  const isLoading = authLoading || loadingData;
+  const isLoading = authLoading || loadingTasks;
 
   if (isLoading || !authUser) {
     return (

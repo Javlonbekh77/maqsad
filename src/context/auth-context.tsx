@@ -27,45 +27,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      setLoading(true);
       if (fbUser) {
         setFirebaseUser(fbUser);
-        try {
-          // Attempt to fetch the user profile from Firestore.
-          const appUser = await getUserById(fbUser.uid);
-          if (appUser) {
-            setUser(appUser);
-          } else {
-            // This case can happen if the Firestore document is not yet created after signup.
-            // We will not log the user out, but the 'user' state will remain null.
-            // Components should handle this state gracefully.
-             console.warn(`User document not found for UID: ${fbUser.uid}. The user might be new or data is still propagating.`);
-            setUser(null);
-          }
-        } catch (error) {
-          console.error("Failed to fetch user profile:", error);
-          // In case of error, reset user state and log out to be safe
-          setUser(null);
-          setFirebaseUser(null);
-          await signOut(auth);
-        } finally {
-           setLoading(false);
+        // Only fetch user profile if we haven't already.
+        if (!user || user.id !== fbUser.uid) {
+            try {
+              const appUser = await getUserById(fbUser.uid);
+              if (appUser) {
+                setUser(appUser);
+              } else {
+                 // This might happen right after signup before the DB document is created.
+                 // We will rely on the signup function to set the user manually.
+                 console.warn(`User document not found for UID: ${fbUser.uid}. Awaiting creation...`);
+                 setUser(null);
+              }
+            } catch (error) {
+              console.error("Failed to fetch user profile:", error);
+              setUser(null);
+            }
         }
       } else {
         setFirebaseUser(null);
         setUser(null);
-        setLoading(false);
       }
+      setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, []); // Empty dependency array ensures this runs only once.
 
   const login = async (email: string, password: string) => {
+     setLoading(true);
      return signInWithEmailAndPassword(auth, email, password);
   };
 
   const signup = async (data: Omit<User, 'id' | 'firebaseId' | 'avatarUrl' | 'coins' | 'goals' | 'habits' | 'groups' | 'taskHistory' | 'fullName' | 'occupation'> & { password?: string }) => {
+    setLoading(true);
     if (!data.email || !data.password) {
       throw new Error("Email and password are required for signup.");
     }
@@ -74,16 +71,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
         await createUserProfile(userCredential.user.uid, profileData);
-        // Manually set the user state after signup to avoid waiting for onAuthStateChanged
+        // After creating the profile, fetch the new user data to update the context
         const newUser = await getUserById(userCredential.user.uid);
         if (newUser) {
           setUser(newUser);
+        } else {
+            throw new Error("Failed to retrieve newly created user profile.");
         }
     } catch (dbError) {
         console.error("Failed to create user profile in Firestore:", dbError);
-        // Optional: Delete the created Firebase Auth user to allow re-signup
+        // Rollback Firebase auth user if DB profile creation fails
         await userCredential.user.delete();
-        throw new Error("User created in Auth, but failed to save profile to database. The user has been rolled back.");
+        setUser(null);
+        setFirebaseUser(null);
+        throw new Error("User creation failed. Could not save profile to database.");
+    } finally {
+        setLoading(false);
     }
     
     return userCredential;
@@ -91,10 +94,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     await signOut(auth);
-    // Reset state immediately
+    // Reset state immediately and redirect
     setUser(null);
     setFirebaseUser(null);
-    setLoading(false); // No longer loading as we are logged out
+    setLoading(true); // Set to loading until redirection is complete
     router.push('/login');
   };
 
