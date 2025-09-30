@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from '@/navigation';
 import AppLayout from "@/components/layout/app-layout";
 import TodoList from "@/components/dashboard/todo-list";
@@ -21,34 +21,36 @@ export default function DashboardClient() {
   const [tasks, setTasks] = useState<UserTask[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchData = useCallback(async (userId: string) => {
+    setLoading(true);
+    try {
+      const [userData, userTasks] = await Promise.all([
+        getUserById(userId),
+        getUserTasks(userId)
+      ]);
+      setUser(userData || null);
+      setTasks(userTasks);
+    } catch (error) {
+      console.error("Failed to fetch dashboard data:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!authLoading && !authUser) {
       router.push('/login');
       return;
     }
 
-    if (authUser) {
-      const fetchData = async () => {
-        setLoading(true);
-        // Ensure authUser has a valid ID before fetching
-        if (authUser.id) {
-          const [userData, userTasks] = await Promise.all([
-            getUserById(authUser.id),
-            getUserTasks(authUser.id)
-          ]);
-          setUser(userData || null);
-          setTasks(userTasks);
-        }
-        setLoading(false);
-      };
-
-      fetchData();
+    if (authUser?.id) {
+      fetchData(authUser.id);
     }
-  }, [authUser, authLoading, router]);
+  }, [authUser, authLoading, router, fetchData]);
 
-  const isLoading = authLoading || loading;
+  const isLoading = authLoading || loading || !user;
 
-  if (isLoading || !user) {
+  if (isLoading) {
     return (
       <AppLayout>
         <div className="grid gap-8">
@@ -75,7 +77,7 @@ export default function DashboardClient() {
 
         <div className="grid md:grid-cols-2 gap-8 items-start">
           <div>
-            <TodoList initialTasks={tasks} userId={user.id} />
+            <TodoList initialTasks={tasks} userId={user.id} onTaskCompletion={fetchData} />
           </div>
           <div>
             <HabitTracker user={user} />

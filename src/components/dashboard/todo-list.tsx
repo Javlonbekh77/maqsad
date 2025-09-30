@@ -1,23 +1,30 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { UserTask } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Check, Coins, Info } from 'lucide-react';
 import TaskCompletionDialog from './task-completion-dialog';
-import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { completeUserTask } from '@/lib/data';
-import { useRouter } from '@/navigation';
 
-export default function TodoList({ initialTasks, userId }: { initialTasks: UserTask[], userId?: string }) {
+interface TodoListProps {
+  initialTasks: UserTask[];
+  userId: string;
+  onTaskCompletion: (userId: string) => void;
+}
+
+export default function TodoList({ initialTasks, userId, onTaskCompletion }: TodoListProps) {
   const t = useTranslations('todoList');
   const [tasks, setTasks] = useState(initialTasks);
   const [selectedTask, setSelectedTask] = useState<UserTask | null>(null);
-  const router = useRouter();
+  
+  useEffect(() => {
+    setTasks(initialTasks);
+  }, [initialTasks]);
 
   const handleCompleteClick = (task: UserTask) => {
     setSelectedTask(task);
@@ -28,10 +35,8 @@ export default function TodoList({ initialTasks, userId }: { initialTasks: UserT
     
     await completeUserTask(userId, selectedTask.id, selectedTask.coins);
 
-    setTasks(tasks.map(t => t.id === selectedTask.id ? { ...t, isCompleted: true } : t));
     setSelectedTask(null);
-
-    router.refresh();
+    onTaskCompletion(userId); // Re-fetch all data to ensure consistency
   };
 
   const activeTasks = tasks.filter(t => !t.isCompleted);
@@ -45,11 +50,7 @@ export default function TodoList({ initialTasks, userId }: { initialTasks: UserT
           <CardDescription>{t('description')}</CardDescription>
         </CardHeader>
         <CardContent>
-          {!userId ? (
-             <div className="text-center py-8 text-muted-foreground">
-                <p>Please log in to see your tasks.</p>
-            </div>
-          ) : activeTasks.length > 0 ? (
+          {activeTasks.length > 0 ? (
             <ul className="space-y-4">
               <AnimatePresence>
                 {activeTasks.map((task, index) => (
@@ -91,7 +92,7 @@ export default function TodoList({ initialTasks, userId }: { initialTasks: UserT
             </div>
           )}
 
-          {userId && completedTasks.length > 0 && (
+          {completedTasks.length > 0 && (
             <div className="mt-8">
               <h3 className="text-lg font-semibold mb-4">{t('completedTasksTitle')}</h3>
               <ul className="space-y-3">
