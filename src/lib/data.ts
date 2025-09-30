@@ -111,15 +111,9 @@ export const getUsers = async (): Promise<User[]> => {
 
 export const getUserById = async (id: string): Promise<User | undefined> => {
   if (!id) return undefined;
-
-  const docRef = doc(db, "users", id);
+  const docRef = doc(db, 'users', id);
   const docSnap = await getDoc(docRef);
-
-  if (docSnap.exists()) {
-    return { ...docSnap.data() as User, id: docSnap.id, firebaseId: docSnap.id };
-  } 
-  
-  return undefined;
+  return docSnap.exists() ? { ...docSnap.data() as User, id: docSnap.id, firebaseId: docSnap.id } : undefined;
 };
 
 

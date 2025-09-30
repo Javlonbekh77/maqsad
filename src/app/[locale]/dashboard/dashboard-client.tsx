@@ -10,7 +10,7 @@ import { useTranslations } from "next-intl";
 import HabitTracker from "@/components/profile/habit-tracker";
 import { useAuth } from '@/context/auth-context';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getUserById, getUserTasks } from '@/lib/data';
+import { getUserTasks } from '@/lib/data';
 
 export default function DashboardClient() {
   const t = useTranslations('dashboard');
@@ -23,7 +23,6 @@ export default function DashboardClient() {
   const fetchData = useCallback(async (userId: string) => {
     setLoadingData(true);
     try {
-      // Auth context already provides the user, so we only need to fetch tasks
       const userTasks = await getUserTasks(userId);
       setTasks(userTasks);
     } catch (error) {

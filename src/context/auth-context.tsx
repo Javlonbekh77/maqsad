@@ -27,33 +27,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      setLoading(true); 
+      setLoading(true);
       if (fbUser) {
         setFirebaseUser(fbUser);
         try {
+          // Attempt to fetch the user profile from Firestore.
           const appUser = await getUserById(fbUser.uid);
           if (appUser) {
             setUser(appUser);
           } else {
-            // This can happen briefly after signup before the Firestore doc is created.
-            // Let's try to create it if it doesn't exist, as a fallback.
-            console.warn("User document not found, attempting to create...");
-            if (fbUser.email) {
-                // We don't have all the signup data here, so create a minimal profile
-                await createUserProfile(fbUser.uid, { email: fbUser.email, firstName: 'New', lastName: 'User' });
-                const newUser = await getUserById(fbUser.uid);
-                setUser(newUser || null);
-            }
+            // This case can happen if the Firestore document is not yet created after signup.
+            // We will not log the user out, but the 'user' state will remain null.
+            // Components should handle this state gracefully.
+             console.warn(`User document not found for UID: ${fbUser.uid}. The user might be new or data is still propagating.`);
+            setUser(null);
           }
         } catch (error) {
-            console.error("Failed to fetch user profile:", error);
-            setUser(null);
+          console.error("Failed to fetch user profile:", error);
+          // In case of error, reset user state and log out to be safe
+          setUser(null);
+          setFirebaseUser(null);
+          await signOut(auth);
+        } finally {
+           setLoading(false);
         }
       } else {
         setFirebaseUser(null);
         setUser(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -79,7 +81,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     } catch (dbError) {
         console.error("Failed to create user profile in Firestore:", dbError);
-        throw new Error("User created in Auth, but failed to save profile to database.");
+        // Optional: Delete the created Firebase Auth user to allow re-signup
+        await userCredential.user.delete();
+        throw new Error("User created in Auth, but failed to save profile to database. The user has been rolled back.");
     }
     
     return userCredential;
@@ -87,8 +91,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     await signOut(auth);
+    // Reset state immediately
     setUser(null);
     setFirebaseUser(null);
+    setLoading(false); // No longer loading as we are logged out
     router.push('/login');
   };
 
