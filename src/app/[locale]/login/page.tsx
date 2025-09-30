@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -46,8 +45,14 @@ export default function LoginPage() {
       await login(values.email, values.password);
       router.push('/dashboard');
     } catch (err: any) {
-      console.error(err.message);
-      setError('Invalid email or password. Please try again.');
+      console.error(err);
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
+          setError('Invalid email or password. Please try again.');
+      } else if (err.code === 'auth/network-request-failed') {
+        setError('Network error. Please check your internet connection.');
+      } else {
+          setError(`An unexpected error occurred: ${err.message}`);
+      }
     }
   }
 
@@ -78,7 +83,7 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="name@example.com" {...field} />
+                      <Input placeholder="test@example.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

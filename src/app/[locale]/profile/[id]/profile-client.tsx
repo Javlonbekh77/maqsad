@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -36,20 +35,14 @@ export default function ProfileClient() {
   const fetchData = useCallback(async (uid: string) => {
     setLoadingData(true);
     try {
-      // If we are viewing the current user's profile, we can use the data from auth context
-      if (currentUser && uid === currentUser.id) {
-        setUser(currentUser);
-      } else {
-        const userData = await getUserById(uid);
-         if (!userData) {
-          setUser(null);
-          setLoadingData(false);
-          return;
-        }
-        setUser(userData);
+      const userData = await getUserById(uid);
+      if (!userData) {
+        setUser(null);
+        setLoadingData(false);
+        return;
       }
+      setUser(userData);
       
-      // Fetch groups and all users regardless
       const [groupsData, usersData] = await Promise.all([
         getGroupsByUserId(uid),
         getUsers(),
@@ -63,7 +56,7 @@ export default function ProfileClient() {
     } finally {
       setLoadingData(false);
     }
-  }, [currentUser]);
+  }, []);
 
   useEffect(() => {
      if (!authLoading) {

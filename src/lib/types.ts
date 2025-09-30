@@ -41,7 +41,7 @@ export type WeeklyMeeting = {
 }
 
 export type Group = {
-  firebaseId?: string; // Firestore document ID
+  firebaseId: string; // Firestore document ID
   id: string;
   name: string;
   description: string;

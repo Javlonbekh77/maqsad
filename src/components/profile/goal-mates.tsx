@@ -1,4 +1,3 @@
-
 'use client';
 
 import { getGoalMates } from "@/lib/data";
@@ -6,9 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Link } from "@/navigation";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import type { User } from "@/lib/types";
 import { Skeleton } from "../ui/skeleton";
+import { useAuth } from "@/context/auth-context";
 
 interface GoalMatesProps {
     userId: string;
@@ -16,21 +16,32 @@ interface GoalMatesProps {
 
 export default function GoalMates({ userId }: GoalMatesProps) {
     const t = useTranslations('profile');
+    const { user: authUser, loading: authLoading } = useAuth();
     const [goalMates, setGoalMates] = useState<User[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loadingData, setLoadingData] = useState(true);
+
+    const fetchMates = useCallback(async (uid: string) => {
+        setLoadingData(true);
+        try {
+            const mates = await getGoalMates(uid);
+            setGoalMates(mates);
+        } catch (error) {
+            console.error("Failed to fetch goal mates:", error);
+            setGoalMates([]);
+        } finally {
+            setLoadingData(false);
+        }
+    }, []);
 
     useEffect(() => {
-        async function fetchGoalMates() {
-            setLoading(true);
-            const mates = await getGoalMates(userId);
-            setGoalMates(mates);
-            setLoading(false);
+        if (!authLoading && authUser) {
+            fetchMates(userId);
         }
-        fetchGoalMates();
-    }, [userId]);
+    }, [userId, authUser, authLoading, fetchMates]);
 
+    const isLoading = authLoading || loadingData;
 
-    if (loading) {
+    if (isLoading) {
        return (
          <Card>
             <CardHeader>

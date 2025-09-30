@@ -1,8 +1,7 @@
-
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, type User as FirebaseUser, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, type User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { getUserById, createUserProfile } from '@/lib/data';
 import type { User } from '@/lib/types';
@@ -35,20 +34,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (appUser) {
             setUser(appUser);
           } else {
-             // This is a critical point. If the user is in Auth but not in Firestore,
-             // it means profile creation might have failed or is pending.
-             // We'll create it now to be safe.
-            console.warn("User document not found in Firestore for UID:", fbUser.uid, "Attempting to create it.");
-            const profileData = {
-                email: fbUser.email || '',
-                firstName: fbUser.displayName?.split(' ')[0] || 'New',
-                lastName: fbUser.displayName?.split(' ')[1] || 'User',
-            };
-            const newAppUser = await createUserProfile(fbUser.uid, profileData);
-            setUser(newAppUser);
+            console.warn("User document not found in Firestore for UID:", fbUser.uid, "This can happen on first login after signup.");
+            // If the user exists in Auth but not Firestore, it's likely a fresh signup.
+            // We can attempt to create the profile, but it's better to ensure signup flow is robust.
+            // For now, we will let signup handle profile creation.
+            setUser(null); 
           }
         } catch (error) {
-            console.error("Failed to fetch or create user profile:", error);
+            console.error("Failed to fetch user profile:", error);
             setUser(null);
         }
       } else {
@@ -62,17 +55,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = (email: string, password: string) => {
-    // To ensure the test user exists in Firebase Auth for the demo
-    if (email === 'test@example.com') {
-      return signInWithEmailAndPassword(auth, email, password).catch(error => {
-        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-          console.log('Test user not found, creating it...');
-          return createUserWithEmailAndPassword(auth, email, password);
-        }
-        throw error;
-      });
-    }
-    return signInWithEmailAndPassword(auth, email, password);
+    return signInWithEmailAndPassword(auth, email, password).catch(async (error) => {
+      if (email === 'test@example.com' && (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential')) {
+        console.log('Test user not found, creating it...');
+        const userCredential = await createUserWithEmailAndPassword(auth, email, "123456");
+        const profileData = {
+          email: userCredential.user.email || '',
+          firstName: 'Asadbek',
+          lastName: 'Anvarov',
+          specialization: 'Frontend Developer',
+        };
+        await createUserProfile(userCredential.user.uid, profileData);
+        return userCredential;
+      }
+      throw error;
+    });
   };
 
   const signup = async (data: Omit<User, 'id' | 'firebaseId' | 'avatarUrl' | 'coins' | 'goals' | 'habits' | 'groups' | 'taskHistory' | 'fullName' | 'occupation'> & { password?: string }) => {
@@ -80,15 +77,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error("Email and password are required for signup.");
     }
     const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-    
     const { password, ...profileData } = data;
 
-    await createUserProfile(userCredential.user.uid, profileData);
-    
-    // Manually set the user state after signup to avoid waiting for onAuthStateChanged
-    const newUser = await getUserById(userCredential.user.uid);
-    if (newUser) {
-      setUser(newUser);
+    try {
+        await createUserProfile(userCredential.user.uid, profileData);
+        // Manually set the user state after signup to avoid waiting for onAuthStateChanged
+        const newUser = await getUserById(userCredential.user.uid);
+        if (newUser) {
+          setUser(newUser);
+        }
+    } catch (dbError) {
+        console.error("Failed to create user profile in Firestore:", dbError);
+        // This is critical. The user is in Auth but not in the DB.
+        // We should ideally delete the auth user or have a retry mechanism.
+        // For now, we'll throw a more specific error.
+        throw new Error("User created in Auth, but failed to save profile to database. Please contact support.");
     }
     
     return userCredential;

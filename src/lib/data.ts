@@ -1,4 +1,3 @@
-
 import { db } from './firebase';
 import {
   collection,
@@ -24,7 +23,6 @@ import { format } from 'date-fns';
 // --- Data Access Functions ---
 
 export const createUserProfile = async (uid: string, data: Partial<User>) => {
-    // Check if user already exists
     const userDocRef = doc(db, 'users', uid);
     const userDocSnap = await getDoc(userDocRef);
 
@@ -58,40 +56,6 @@ export const createUserProfile = async (uid: string, data: Partial<User>) => {
     return newUser;
 };
 
-// Seed a default user for login
-export const seedDefaultUser = async () => {
-    const defaultUser = {
-        id: "default-user-id", // Use a predictable ID for the default user
-        firebaseId: "default-user-id",
-        firstName: 'Asadbek',
-        lastName: 'Anvarov',
-        fullName: 'Asadbek Anvarov',
-        email: 'test@example.com',
-        avatarUrl: PlaceHolderImages.find(p => p.id === 'user2')?.imageUrl || '',
-        coins: 1250,
-        goals: 'To become a proficient full-stack developer and launch a successful side-project.',
-        habits: 'Code for at least 2 hours every day. Read one technical article per day. Workout 3 times a week.',
-        groups: ['group1', 'group3'],
-        occupation: 'Frontend Developer',
-        taskHistory: [
-            { taskId: 't1_g1', date: format(new Date(), 'yyyy-MM-dd') },
-            { taskId: 't2_g1', date: format(new Date(Date.now() - 86400000), 'yyyy-MM-dd') },
-            { taskId: 't1_g3', date: format(new Date(), 'yyyy-MM-dd') },
-        ],
-        university: 'Tashkent University of Information Technologies',
-        specialization: 'Software Engineering',
-        course: '4',
-        telegram: 'asadbek_anvarov'
-    };
-    
-    // We need to use the email to find the user in auth, but ID for firestore
-    // For this seed, we assume we know the UID from auth. 
-    // In a real scenario, you'd have a script to create auth user and then get UID.
-    // For now, let's just assume we can't know the real UID and can't seed firestore this way.
-    // So this function won't be called. Instead we handle it in getuserbyid.
-};
-
-
 export const getGroups = async (): Promise<Group[]> => {
   const querySnapshot = await getDocs(collection(db, 'groups'));
   return querySnapshot.docs.map(doc => ({ ...doc.data() as Group, id: doc.data().id, firebaseId: doc.id }));
@@ -107,6 +71,7 @@ const getDocRefByCustomId = async (collectionName: string, id: string): Promise<
 }
 
 export const getGroupById = async (id: string): Promise<Group | undefined> => {
+  if (!id) return undefined;
   const groupRef = await getDocRefByCustomId('groups', id);
   if (!groupRef) return undefined;
   const docSnap = await getDoc(groupRef);
@@ -123,16 +88,18 @@ export const getGroupsByUserId = async (userId: string): Promise<Group[]> => {
 
   const groupsQuery = query(collection(db, 'groups'), where('id', 'in', groupIds));
   const querySnapshot = await getDocs(groupsQuery);
-  return querySnapshot.docs.map(doc => doc.data() as Group);
+  return querySnapshot.docs.map(doc => ({...doc.data() as Group, firebaseId: doc.id}));
 };
 
 export const getTasksByGroupId = async (groupId: string): Promise<Task[]> => {
+  if (!groupId) return [];
   const tasksQuery = query(collection(db, 'tasks'), where('groupId', '==', groupId));
   const querySnapshot = await getDocs(tasksQuery);
   return querySnapshot.docs.map(doc => ({...doc.data() as Task, id: doc.data().id }));
 };
 
 export const getMeetingsByGroupId = async (groupId: string): Promise<WeeklyMeeting[]> => {
+    if (!groupId) return [];
     const meetingsQuery = query(collection(db, 'meetings'), where('groupId', '==', groupId));
     const querySnapshot = await getDocs(meetingsQuery);
     return querySnapshot.docs.map(doc => doc.data() as WeeklyMeeting);
@@ -151,14 +118,9 @@ export const getUserById = async (id: string): Promise<User | undefined> => {
 
   if (docSnap.exists()) {
     return { ...docSnap.data() as User, id: docSnap.id, firebaseId: docSnap.id };
-  } else {
-    // If the user is not found, maybe it's the default test user.
-    // In a real app, this is not a good practice.
-    // We are doing this to ensure the user can log in with test credentials.
-    // Check if there's an auth user with email test@example.com
-    // This is a workaround and should be removed in production.
-    return undefined; // We will handle profile creation on signup
-  }
+  } 
+  
+  return undefined;
 };
 
 
@@ -187,14 +149,12 @@ export const getTopGroups = async (): Promise<(Group & { coins: number })[]> => 
 
 export const getUserTasks = async (userId: string): Promise<UserTask[]> => {
     const user = await getUserById(userId);
-    if (!user) return [];
-
-    const today = format(new Date(), 'yyyy-MM-dd');
-    
-    if (!user.groups || user.groups.length === 0) {
+    if (!user || !user.groups || user.groups.length === 0) {
       return [];
     }
 
+    const today = format(new Date(), 'yyyy-MM-dd');
+    
     const groupIds = user.groups.slice(0, 30);
     if(groupIds.length === 0) return [];
 
@@ -242,7 +202,7 @@ export const getGoalMates = async (userId: string): Promise<User[]> => {
     }
 
     const matesPromises = memberIdChunks.map(chunk => 
-      getDocs(query(collection(db, 'users'), where('id', 'in', chunk)))
+      getDocs(query(collection(db, 'users'), where('firebaseId', 'in', chunk)))
     );
 
     const snapshots = await Promise.all(matesPromises);
