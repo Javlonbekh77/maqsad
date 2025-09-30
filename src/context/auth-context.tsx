@@ -25,6 +25,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      setLoading(true);
       setFirebaseUser(fbUser);
       if (fbUser) {
         try {
@@ -51,11 +52,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
     const { password, ...profileData } = data;
     await createUserProfile(userCredential.user, profileData);
+    // After signup, we need to make sure the user state is updated
+    const appUser = await getUserById(userCredential.user.uid);
+    setUser(appUser || null);
     return userCredential;
   };
 
   const logout = async () => {
-    return await signOut(auth);
+    await signOut(auth);
+    setUser(null);
+    setFirebaseUser(null);
   };
 
   const value = { user, firebaseUser, loading, login, signup, logout };

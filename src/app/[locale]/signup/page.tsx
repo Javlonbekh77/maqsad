@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -34,7 +34,7 @@ const formSchema = z.object({
 });
 
 export default function SignupPage() {
-  const { signup } = useAuth();
+  const { signup, user, loading } = useAuth();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
 
@@ -51,14 +51,20 @@ export default function SignupPage() {
       telegram: '',
     },
   });
+  
+  useEffect(() => {
+    if (!loading && user) {
+      router.push('/dashboard');
+    }
+  }, [user, loading, router]);
+
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setError(null);
     try {
       await signup(values);
-      router.push('/dashboard');
+      // The useEffect will handle redirection
     } catch (err: any) {
-      console.error("Signup failed with code:", err.code, "and message:", err.message);
       if (err.code === 'auth/email-already-in-use') {
         setError('This email is already registered. Please log in or use a different email.');
       } else if (err.code === 'auth/network-request-failed') {
@@ -67,6 +73,14 @@ export default function SignupPage() {
         setError(`An unexpected error occurred: ${err.message}`);
       }
     }
+  }
+
+    if (loading || user) {
+    return (
+        <div className="flex items-center justify-center min-h-screen bg-secondary">
+          <p>Loading...</p>
+        </div>
+    );
   }
 
   return (

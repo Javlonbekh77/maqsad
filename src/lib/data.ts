@@ -111,9 +111,14 @@ export const getUsers = async (): Promise<User[]> => {
 
 export const getUserById = async (id: string): Promise<User | undefined> => {
   if (!id) return undefined;
-  const docRef = doc(db, 'users', id);
-  const docSnap = await getDoc(docRef);
-  return docSnap.exists() ? { ...docSnap.data() as User, id: docSnap.id, firebaseId: docSnap.id } : undefined;
+  try {
+    const docRef = doc(db, 'users', id);
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists() ? { ...docSnap.data() as User, id: docSnap.id, firebaseId: docSnap.id } : undefined;
+  } catch (error) {
+    console.error("FirebaseError: Failed to get document because the client is offline.", error);
+    return undefined;
+  }
 };
 
 
@@ -154,9 +159,7 @@ export const getUserTasks = async (userId: string): Promise<UserTask[]> => {
     const tasksSnapshot = await getDocs(tasksQuery);
     const tasksForUser = tasksSnapshot.docs.map(doc => doc.data() as Task);
     
-    // Avoid re-fetching all groups if possible. A better approach would be to have groupName on the task.
-    // For now, fetching all groups to create a map.
-    const allGroupsSnapshot = await getDocs(collection(db, 'groups'));
+    const allGroupsSnapshot = await getDocs(query(collection(db, 'groups'), where('id', 'in', groupIds)));
     const groupMap = new Map(allGroupsSnapshot.docs.map(doc => [doc.data().id, doc.data().name]));
 
     return tasksForUser.map(task => {
