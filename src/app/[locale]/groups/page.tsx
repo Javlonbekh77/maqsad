@@ -1,3 +1,4 @@
+'use client';
 
 import GroupsClient from './groups-client';
 
