@@ -1,28 +1,21 @@
 import { db } from './firebase';
 import {
   collection,
-  getDocs,
-  query,
-  where,
-  limit,
   doc,
-  getDoc,
   updateDoc,
   arrayUnion,
   writeBatch,
   setDoc,
-  DocumentReference,
-  orderBy,
   addDoc,
   serverTimestamp,
 } from 'firebase/firestore';
 
-import type { User, Group, Task, TaskHistory, WeeklyMeeting, UserTask } from './types';
+import type { User, Group, Task } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 import { format } from 'date-fns';
 import type { User as FirebaseUser } from 'firebase/auth';
 
-// --- Data Creation Functions ---
+// --- Data Creation and Mutation Functions ---
 
 /**
  * Creates a user profile document in Firestore.
@@ -55,7 +48,6 @@ export const createUserProfile = async (firebaseUser: FirebaseUser, data: Partia
 };
 
 export const createGroup = async (groupData: Omit<Group, 'id' | 'firebaseId' | 'imageUrl' | 'imageHint' | 'members'>, adminId: string): Promise<string> => {
-    // Get a random placeholder image for the group
     const groupImages = PlaceHolderImages.filter(p => p.id.startsWith('group'));
     const randomImage = groupImages[Math.floor(Math.random() * groupImages.length)];
 
@@ -67,12 +59,11 @@ export const createGroup = async (groupData: Omit<Group, 'id' | 'firebaseId' | '
         firebaseId: newGroupRef.id,
         imageUrl: randomImage.imageUrl,
         imageHint: randomImage.imageHint,
-        members: [adminId], // The creator is the first member and admin
+        members: [adminId],
     };
 
     await setDoc(newGroupRef, newGroup);
     
-    // Also add this group to the user's list of groups
     const userDocRef = doc(db, 'users', adminId);
     await updateDoc(userDocRef, {
         groups: arrayUnion(newGroup.id)
@@ -82,53 +73,37 @@ export const createGroup = async (groupData: Omit<Group, 'id' | 'firebaseId' | '
 };
 
 export const createTask = async (taskData: Omit<Task, 'id'>): Promise<string> => {
-    const newTaskRef = doc(collection(db, 'tasks'));
-    const newTask: Task = {
-        ...taskData,
-        id: newTaskRef.id,
-    };
-    await setDoc(newTaskRef, newTask);
-    return newTask.id;
+    const newTaskRef = collection(db, 'tasks');
+    const docRef = await addDoc(newTaskRef, taskData);
+    await updateDoc(docRef, { id: docRef.id });
+    return docRef.id;
 };
-
-// --- This file no longer contains data fetching functions (getters) ---
-// --- All data fetching is now done directly in the client components ---
-// --- to ensure they only run on the client-side. ---
 
 export const addUserToGroup = async (userId: string, groupId: string, taskIds: string[]): Promise<void> => {
     const userDocRef = doc(db, "users", userId);
-    
     const groupDocRef = doc(db, "groups", groupId);
-    const groupSnapshot = await getDoc(groupDocRef);
-
-
-    if (!groupSnapshot.exists()) {
-        console.error(`Group with ID ${groupId} not found`);
-        throw new Error("Group not found");
-    }
 
     const batch = writeBatch(db);
     batch.update(userDocRef, { groups: arrayUnion(groupId) });
     batch.update(groupDocRef, { members: arrayUnion(userId) });
-    
-    console.log(`User ${userId} joined group ${groupId} and committed to tasks: ${taskIds.join(', ')}`);
 
     await batch.commit();
 };
 
 export const completeUserTask = async (userId: string, taskId: string, coins: number): Promise<void> => {
     const userDocRef = doc(db, 'users', userId);
-    const userDocSnap = await getDoc(userDocRef);
-
-    if (!userDocSnap.exists()) {
-        console.error("User not found by ID:", userId);
+    
+    // We get the latest user data within a transaction to avoid race conditions
+    // but for this simplified app, we'll just read and then write.
+    const userSnap = await getDoc(userDocRef);
+    if (!userSnap.exists()) {
         throw new Error("User not found");
     }
-    const user = userDocSnap.data() as User;
-    
+    const user = userSnap.data();
+
     const today = format(new Date(), 'yyyy-MM-dd');
     const alreadyCompleted = user.taskHistory.some(
-        h => h.taskId === taskId && h.date === today
+        (h: { taskId: string; date: string; }) => h.taskId === taskId && h.date === today
     );
 
     if (alreadyCompleted) {

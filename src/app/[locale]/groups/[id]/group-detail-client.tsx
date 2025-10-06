@@ -61,6 +61,7 @@ export default function GroupDetailClient() {
       setGroup(groupData);
       
       const memberPromises = (groupData.members || []).map(async (memberId) => {
+        // Firestore where 'in' query has a limit of 30. We are not hitting that here but good to know.
         const userDocRef = doc(db, 'users', memberId);
         const userSnap = await getDoc(userDocRef);
         return userSnap.exists() ? { ...userSnap.data(), id: userSnap.id, firebaseId: userSnap.id } as User : null;
@@ -101,7 +102,7 @@ export default function GroupDetailClient() {
     try {
       await addUserToGroup(currentUser.id, group.id, selectedTaskIds);
       setJoinDialogOpen(false);
-      await fetchGroupData(id as string); 
+      await fetchGroupData(id as string); // Re-fetch data to show the user as a new member
     } catch(error) {
       console.error("Failed to join group:", error);
     }

@@ -38,6 +38,7 @@ export default function GoalMates({ userId }: GoalMatesProps) {
                  return;
             }
 
+            // Firestore 'in' query has a limit of 30 elements in the array.
             const groupIds = currentUser.groups.slice(0, 30);
             if(groupIds.length === 0) {
                  setGoalMates([]);
@@ -62,6 +63,7 @@ export default function GoalMates({ userId }: GoalMatesProps) {
                 return;
             };
             
+            // Chunk memberIds to handle Firestore 'in' query limit of 30
             const memberIdChunks: string[][] = [];
             const ids = Array.from(memberIds);
             for (let i = 0; i < ids.length; i += 30) {

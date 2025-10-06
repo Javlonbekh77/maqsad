@@ -28,6 +28,7 @@ export default function DashboardClient() {
 
     const today = format(new Date(), 'yyyy-MM-dd');
     
+    // Firestore 'in' query has a limit of 30 elements in the array.
     const groupIds = user.groups.slice(0, 30);
     if(groupIds.length === 0) return [];
 

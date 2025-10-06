@@ -53,6 +53,7 @@ export default function ProfileClient() {
       
       let groupsPromise: Promise<Group[]> = Promise.resolve([]);
       if (userData.groups && userData.groups.length > 0) {
+        // Firestore 'in' query has a limit of 30 elements in the array.
         const groupIds = userData.groups.slice(0, 30);
         const groupsQuery = query(collection(db, 'groups'), where('__name__', 'in', groupIds));
         groupsPromise = getDocs(groupsQuery).then(snap => snap.docs.map(d => ({...d.data() as Group, id: d.id, firebaseId: d.id})));
