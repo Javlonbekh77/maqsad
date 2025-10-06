@@ -1,9 +1,7 @@
-
 'use client';
 
 import { useParams } from 'next/navigation';
 import AppLayout from "@/components/layout/app-layout";
-import { getUserById, getGroupsByUserId, getUsers } from "@/lib/data";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -19,6 +17,8 @@ import GroupCard from '@/components/groups/group-card';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from '@/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 
 export default function ProfileClient() {
   const t = useTranslations('profile');
@@ -37,20 +37,34 @@ export default function ProfileClient() {
     if (!uid) return;
     setLoadingData(true);
     try {
-      const userData = await getUserById(uid);
-      if (!userData) {
+      const userDocRef = doc(db, 'users', uid);
+      const userSnap = await getDoc(userDocRef);
+
+      if (!userSnap.exists()) {
         setUser(null);
         setLoadingData(false);
         return;
       }
+      const userData = { ...userSnap.data(), id: userSnap.id, firebaseId: userSnap.id } as User;
       setUser(userData);
       
-      const [groupsData, usersData] = await Promise.all([
-        getGroupsByUserId(uid),
-        getUsers(),
+      const usersQuery = collection(db, 'users');
+      const usersPromise = getDocs(usersQuery);
+      
+      let groupsPromise: Promise<Group[]> = Promise.resolve([]);
+      if (userData.groups && userData.groups.length > 0) {
+        const groupIds = userData.groups.slice(0, 30);
+        const groupsQuery = query(collection(db, 'groups'), where('__name__', 'in', groupIds));
+        groupsPromise = getDocs(groupsQuery).then(snap => snap.docs.map(d => ({...d.data() as Group, id: d.id, firebaseId: d.id})));
+      }
+      
+      const [groupsData, usersSnapshot] = await Promise.all([
+        groupsPromise,
+        usersPromise,
       ]);
+
       setUserGroups(groupsData);
-      setAllUsers(usersData);
+      setAllUsers(usersSnapshot.docs.map(d => ({...d.data() as User, id: d.id, firebaseId: d.id})));
 
     } catch (error) {
       console.error("Failed to fetch profile data:", error);

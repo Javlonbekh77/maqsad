@@ -1,8 +1,6 @@
-
 'use client';
 
 import AppLayout from "@/components/layout/app-layout";
-import { getGroups, getUsers } from "@/lib/data";
 import GroupCard from "@/components/groups/group-card";
 import CreateGroupDialog from "@/components/groups/create-group-dialog";
 import { Input } from "@/components/ui/input";
@@ -13,6 +11,8 @@ import type { Group, User } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/auth-context";
 import { useRouter } from "@/navigation";
+import { db } from '@/lib/firebase';
+import { collection, getDocs } from 'firebase/firestore';
 
 export default function GroupsClient() {
   const t = useTranslations('groups');
@@ -27,10 +27,17 @@ export default function GroupsClient() {
   const fetchData = useCallback(async () => {
     setLoadingData(true);
     try {
-      const [groupsData, usersData] = await Promise.all([
-        getGroups(),
-        getUsers()
+      const groupsQuery = collection(db, 'groups');
+      const usersQuery = collection(db, 'users');
+
+      const [groupsSnapshot, usersSnapshot] = await Promise.all([
+        getDocs(groupsQuery),
+        getDocs(usersQuery)
       ]);
+
+      const groupsData = groupsSnapshot.docs.map(doc => ({ ...doc.data() as Group, id: doc.id, firebaseId: doc.id }));
+      const usersData = usersSnapshot.docs.map(doc => ({ ...doc.data() as User, id: doc.id, firebaseId: doc.id }));
+      
       setGroups(groupsData);
       setUsers(usersData);
     } catch (error) {

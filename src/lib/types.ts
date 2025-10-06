@@ -1,3 +1,5 @@
+import { FieldValue } from "firebase/firestore";
+
 export type Task = {
   id: string;
   title: string;
@@ -29,6 +31,7 @@ export type User = {
   specialization?: string;
   course?: string;
   telegram?: string;
+  createdAt: FieldValue;
 };
 
 export type WeeklyMeeting = {

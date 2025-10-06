@@ -1,14 +1,14 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { getTasksByGroupId } from "@/lib/data";
 import type { Task, User } from "@/lib/types";
 import { format, subDays, isSameDay } from 'date-fns';
 import { Check, X } from "lucide-react";
 import { useMemo, useEffect, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
 interface HabitTrackerProps {
   user: User;
@@ -34,15 +34,19 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
     async function fetchUserTasks() {
       setLoading(true);
       if (user.groups && user.groups.length > 0) {
-        const taskPromises = user.groups.map(groupId => getTasksByGroupId(groupId));
-        const tasksByGroup = await Promise.all(taskPromises);
-        setUserTasks(tasksByGroup.flat());
+        const groupIds = user.groups.slice(0, 30);
+        const tasksQuery = query(collection(db, 'tasks'), where('groupId', 'in', groupIds));
+        const tasksSnapshot = await getDocs(tasksQuery);
+        const tasks = tasksSnapshot.docs.map(doc => ({ ...doc.data() as Task, id: doc.id }));
+        setUserTasks(tasks);
       } else {
         setUserTasks([]);
       }
       setLoading(false);
     }
-    fetchUserTasks();
+    if (user?.groups) {
+      fetchUserTasks();
+    }
   }, [user.groups]);
   
   const handleTaskSelectionChange = (taskId: string) => {
