@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 import withNextIntl from 'next-intl/plugin';
  
