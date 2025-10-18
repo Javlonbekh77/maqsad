@@ -2,10 +2,10 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, type User as FirebaseUser } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { createUserProfile } from '@/lib/data';
 import type { User } from '@/lib/types';
+import { auth, db } from '@/lib/firebase'; // Import auth and db here
 
 interface AuthContextType {
   user: User | null;
@@ -18,7 +18,11 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+interface AuthProviderProps {
+  children: React.ReactNode;
+}
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,8 +39,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const appUser = { ...docSnap.data(), id: docSnap.id, firebaseId: docSnap.id } as User;
             setUser(appUser);
           } else {
-            // This case can happen if user exists in Auth but not in Firestore.
-            // For this app's logic, we can treat it as logged out.
             setUser(null);
           }
         } catch (error) {
@@ -59,10 +61,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signup = async (data: Omit<User, 'id' | 'firebaseId' | 'avatarUrl' | 'coins' | 'goals' | 'habits' | 'groups' | 'taskHistory' | 'fullName' | 'occupation' | 'createdAt'> & { password: string }) => {
     const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
     const { password, ...profileData } = data;
-    // CRITICAL FIX: Added await to ensure profile creation finishes
     await createUserProfile(userCredential.user, profileData);
     
-    // After signup, we need to make sure the user state is updated
     const userDocRef = doc(db, 'users', userCredential.user.uid);
     const docSnap = await getDoc(userDocRef);
     if(docSnap.exists()){

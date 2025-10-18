@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { NextIntlClientProvider, useMessages } from 'next-intl';
 import { PT_Sans as PTSans } from 'next/font/google';
 import { AuthProvider } from '@/context/auth-context';
+import { auth, db } from '@/lib/firebase';
 
 import '../globals.css';
 import { Toaster } from '@/components/ui/toaster';
