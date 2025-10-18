@@ -290,12 +290,16 @@ export const completeUserTask = async (userId: string, taskId: string, coins: nu
     });
 };
 
-export const updateUserProfile = async (userId: string, data: { goals?: string; habits?: string; avatarFile?: File }): Promise<void> => {
+export const updateUserProfile = async (userId: string, data: { goals?: string | null; habits?: string | null; avatarFile?: File | null }): Promise<void> => {
     const userDocRef = doc(db, 'users', userId);
-    const updateData: { [key: string]: any } = {
-        goals: data.goals,
-        habits: data.habits
-    };
+    const updateData: { [key: string]: any } = {};
+
+    if (data.goals !== undefined && data.goals !== null) {
+        updateData.goals = data.goals;
+    }
+    if (data.habits !== undefined && data.habits !== null) {
+        updateData.habits = data.habits;
+    }
 
     if (data.avatarFile) {
         const storageRef = ref(storage, `avatars/${userId}/${data.avatarFile.name}`);
@@ -304,5 +308,7 @@ export const updateUserProfile = async (userId: string, data: { goals?: string; 
         updateData.avatarUrl = downloadURL;
     }
     
-    await updateDoc(userDocRef, updateData);
+    if (Object.keys(updateData).length > 0) {
+      await updateDoc(userDocRef, updateData);
+    }
 };
