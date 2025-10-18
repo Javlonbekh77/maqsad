@@ -35,6 +35,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const appUser = { ...docSnap.data(), id: docSnap.id, firebaseId: docSnap.id } as User;
             setUser(appUser);
           } else {
+            // This case can happen if user exists in Auth but not in Firestore.
+            // For this app's logic, we can treat it as logged out.
             setUser(null);
           }
         } catch (error) {
@@ -57,7 +59,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signup = async (data: Omit<User, 'id' | 'firebaseId' | 'avatarUrl' | 'coins' | 'goals' | 'habits' | 'groups' | 'taskHistory' | 'fullName' | 'occupation' | 'createdAt'> & { password: string }) => {
     const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
     const { password, ...profileData } = data;
+    // CRITICAL FIX: Added await to ensure profile creation finishes
     await createUserProfile(userCredential.user, profileData);
+    
     // After signup, we need to make sure the user state is updated
     const userDocRef = doc(db, 'users', userCredential.user.uid);
     const docSnap = await getDoc(userDocRef);
