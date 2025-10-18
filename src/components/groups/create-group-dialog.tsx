@@ -24,10 +24,18 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { createGroup } from '@/lib/data';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/hooks/use-toast';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
+import Image from 'next/image';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import { cn } from '@/lib/utils';
+import { Label } from '../ui/label';
+
+const groupImages = PlaceHolderImages.filter(p => p.id.startsWith('group'));
 
 const groupSchema = z.object({
   name: z.string().min(3, { message: "Name must be at least 3 characters." }),
   description: z.string().min(10, { message: "Description must be at least 10 characters." }),
+  imageUrl: z.string().min(1, { message: "Please select an image for the group." }),
 });
 
 interface CreateGroupDialogProps {
@@ -47,6 +55,7 @@ export default function CreateGroupDialog({ onGroupCreated }: CreateGroupDialogP
     defaultValues: {
       name: "",
       description: "",
+      imageUrl: "",
     },
   });
 
@@ -55,7 +64,20 @@ export default function CreateGroupDialog({ onGroupCreated }: CreateGroupDialogP
     
     startTransition(async () => {
       try {
-        await createGroup({ ...values, adminId: user.id }, user.id);
+        const selectedImage = groupImages.find(img => img.imageUrl === values.imageUrl);
+        if (!selectedImage) {
+            throw new Error("Selected image not found.");
+        }
+
+        const groupData = { 
+            name: values.name, 
+            description: values.description, 
+            imageUrl: selectedImage.imageUrl,
+            imageHint: selectedImage.imageHint,
+            adminId: user.id 
+        };
+
+        await createGroup(groupData, user.id);
         toast({
             title: "Group Created!",
             description: "Your new group is ready. Invite others to join!",
@@ -82,7 +104,7 @@ export default function CreateGroupDialog({ onGroupCreated }: CreateGroupDialogP
           {t('createGroup')}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{t('createGroup')}</DialogTitle>
           <DialogDescription>
@@ -91,6 +113,48 @@ export default function CreateGroupDialog({ onGroupCreated }: CreateGroupDialogP
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+             <FormField
+              control={form.control}
+              name="imageUrl"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel>Choose Group Image</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="grid grid-cols-2 gap-4"
+                    >
+                      {groupImages.map(image => (
+                          <FormItem key={image.id} className="flex items-center justify-center">
+                            <FormControl>
+                              <RadioGroupItem value={image.imageUrl} id={image.id} className="sr-only" />
+                            </FormControl>
+                            <Label
+                              htmlFor={image.id}
+                              className={cn(
+                                "cursor-pointer rounded-lg overflow-hidden w-full h-32 border-4 border-transparent transition-all relative",
+                                field.value === image.imageUrl && "ring-4 ring-primary ring-offset-2 border-primary"
+                              )}
+                            >
+                              <Image
+                                src={image.imageUrl}
+                                alt={image.description}
+                                fill
+                                className="object-cover"
+                              />
+                               <div className="absolute inset-0 bg-black/30 flex items-end p-2">
+                                <p className="text-white text-sm font-semibold">{image.description.replace("Image for '", "").replace("' group", "")}</p>
+                               </div>
+                            </Label>
+                          </FormItem>
+                      ))}
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="name"

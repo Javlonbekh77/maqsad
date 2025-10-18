@@ -25,12 +25,13 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
 const avatarPlaceholders = PlaceHolderImages.filter(p => p.id.startsWith('user'));
 
 const formSchema = z.object({
-  firstName: z.string().min(2, { message: 'Ism kamida 2 harfdan iborat bo\'lishi kerak.' }),
-  lastName: z.string().min(2, { message: 'Familiya kamida 2 harfdan iborat bo\'lishi kerak.' }),
+  firstName: z.string().min(2, { message: "Ism kamida 2 harfdan iborat bo'lishi kerak." }),
+  lastName: z.string().min(2, { message: "Familiya kamida 2 harfdan iborat bo'lishi kerak." }),
   email: z.string().email({ message: 'Yaroqsiz email manzili.' }),
   password: z.string().min(6, { message: 'Parol kamida 6 belgidan iborat bo\'lishi kerak.' }),
   avatarUrl: z.string().min(1, { message: "Iltimos, avatarni tanlang." }),
@@ -133,7 +134,7 @@ export default function SignupPage() {
                         {avatarPlaceholders.map(avatar => (
                             <FormItem key={avatar.id} className="flex items-center justify-center">
                               <FormControl>
-                                <RadioGroupItem value={avatar.imageUrl} className="sr-only" />
+                                <RadioGroupItem value={avatar.imageUrl} id={avatar.id} className="sr-only" />
                               </FormControl>
                                <Label
                                 htmlFor={avatar.id}

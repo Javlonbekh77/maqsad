@@ -224,18 +224,13 @@ export const createUserProfile = async (firebaseUser: FirebaseUser, data: Partia
     return newUser;
 };
 
-export const createGroup = async (groupData: Omit<Group, 'id' | 'firebaseId' | 'imageUrl' | 'imageHint' | 'members'>, adminId: string): Promise<string> => {
-    const groupImages = PlaceHolderImages.filter(p => p.id.startsWith('group'));
-    const randomImage = groupImages[Math.floor(Math.random() * groupImages.length)];
-
+export const createGroup = async (groupData: Omit<Group, 'id' | 'firebaseId' | 'members'>, adminId: string): Promise<string> => {
     const newGroupRef = doc(collection(db, 'groups'));
     
     const newGroup: Group = {
         ...groupData,
         id: newGroupRef.id,
         firebaseId: newGroupRef.id,
-        imageUrl: randomImage.imageUrl,
-        imageHint: randomImage.imageHint,
         members: [adminId],
     };
 
