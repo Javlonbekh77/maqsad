@@ -75,7 +75,7 @@ export default function GoalMates({ userId }: GoalMatesProps) {
             );
 
             const snapshots = await Promise.all(matesPromises);
-            const mates = snapshots.flatMap(snapshot => snapshot.docs.map(doc => doc.data() as User));
+            const mates = snapshots.flatMap(snapshot => snapshot.docs.map(doc => ({...doc.data() as User, id: doc.id, firebaseId: doc.id})));
             setGoalMates(mates);
         } catch (error) {
             console.error("Failed to fetch goal mates:", error);
