@@ -1,4 +1,4 @@
-import { db } from './firebase';
+import { db, storage } from './firebase';
 import {
   collection,
   doc,
@@ -15,6 +15,7 @@ import {
   orderBy,
   limit
 } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 import type { User, Group, Task, UserTask, WeeklyMeeting } from './types';
 import { PlaceHolderImages } from './placeholder-images';
@@ -289,7 +290,19 @@ export const completeUserTask = async (userId: string, taskId: string, coins: nu
     });
 };
 
-export const updateUserProfile = async (userId: string, data: { goals?: string; habits?: string }): Promise<void> => {
+export const updateUserProfile = async (userId: string, data: { goals?: string; habits?: string; avatarFile?: File }): Promise<void> => {
     const userDocRef = doc(db, 'users', userId);
-    await updateDoc(userDocRef, data);
+    const updateData: { [key: string]: any } = {
+        goals: data.goals,
+        habits: data.habits
+    };
+
+    if (data.avatarFile) {
+        const storageRef = ref(storage, `avatars/${userId}/${data.avatarFile.name}`);
+        const snapshot = await uploadBytes(storageRef, data.avatarFile);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        updateData.avatarUrl = downloadURL;
+    }
+    
+    await updateDoc(userDocRef, updateData);
 };

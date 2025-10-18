@@ -21,7 +21,10 @@ import { Separator } from '../ui/separator';
 import { useTranslations } from 'next-intl';
 import { updateUserProfile } from '@/lib/data';
 import { useRouter } from '@/navigation';
-import { useTransition } from 'react';
+import { useTransition, useState, useRef } from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Input } from '../ui/input';
+import { Edit } from 'lucide-react';
 
 const profileFormSchema = z.object({
   goals: z
@@ -32,6 +35,7 @@ const profileFormSchema = z.object({
     .string()
     .max(300, { message: 'Habits must not be longer than 300 characters.' })
     .min(10, { message: 'Please describe your habits in at least 10 characters.'}).optional().or(z.literal('')),
+  avatar: z.any().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -41,6 +45,8 @@ export default function ProfileForm({ user }: { user: User }) {
   const { toast } = useToast();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -51,16 +57,38 @@ export default function ProfileForm({ user }: { user: User }) {
     mode: 'onChange',
   });
 
+  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      form.setValue('avatar', file);
+    }
+  };
+
   function onSubmit(data: ProfileFormValues) {
     startTransition(async () => {
       try {
-        await updateUserProfile(user.id, data);
+        await updateUserProfile(user.id, {
+          goals: data.goals,
+          habits: data.habits,
+          avatarFile: data.avatar,
+        });
         toast({
           title: t('toast.title'),
           description: t('toast.description'),
         });
-        router.refresh();
+        router.refresh(); // Refresh to show the new avatar in the layout
+        setAvatarPreview(null);
+        form.reset({
+          ...form.getValues(),
+          avatar: null,
+        });
       } catch (error) {
+         console.error("Failed to update profile:", error);
          toast({
           title: 'Error',
           description: 'Failed to update profile.',
@@ -73,6 +101,39 @@ export default function ProfileForm({ user }: { user: User }) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <FormField
+          control={form.control}
+          name="avatar"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-lg">Avatar</FormLabel>
+              <FormControl>
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-24 w-24">
+                    <AvatarImage src={avatarPreview || user.avatarUrl} alt={user.fullName} />
+                    <AvatarFallback>{user.firstName.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Edit className="mr-2 h-4 w-4" />
+                    Change Photo
+                  </Button>
+                  <Input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept="image/png, image/jpeg, image/gif"
+                    onChange={handleAvatarChange}
+                  />
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <Separator className="my-6" />
         <FormField
           control={form.control}
