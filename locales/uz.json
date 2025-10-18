@@ -115,7 +115,10 @@
             "description": "Sizning maqsadlaringiz va odatlaringiz muvaffaqiyatli saqlandi."
         },
         "goalMates": "Maqsaddoshlar",
-        "goalMatesDescription": "Guruhlaringizdagi jamoa a'zolari."
+        "goalMatesDescription": "Guruhlaringizdagi jamoa a'zolari.",
+        "settings": {
+            "title": "Sozlamalar"
+        }
     },
     "settings": {
         "title": "Sozlamalar",

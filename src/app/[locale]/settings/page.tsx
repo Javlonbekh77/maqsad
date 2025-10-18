@@ -11,7 +11,6 @@ import { useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SettingsPage() {
-    const t = useTranslations('profile');
     const tSettings = useTranslations('settings');
     const { user, loading } = useAuth();
     const router = useRouter();
@@ -54,8 +53,8 @@ export default function SettingsPage() {
                 </div>
                 <Card>
                     <CardHeader>
-                        <CardTitle>{t('title')}</CardTitle>
-                        <CardDescription>{t('subtitle')}</CardDescription>
+                        <CardTitle>{tSettings('title')}</CardTitle>
+                        <CardDescription>{tSettings('subtitle')}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <ProfileForm user={user} />

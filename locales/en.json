@@ -115,7 +115,10 @@
             "description": "Your goals and habits have been saved successfully."
         },
         "goalMates": "Goal Mates",
-        "goalMatesDescription": "Teammates from your groups."
+        "goalMatesDescription": "Teammates from your groups.",
+        "settings": {
+            "title": "Settings"
+        }
     },
     "settings": {
         "title": "Settings",
