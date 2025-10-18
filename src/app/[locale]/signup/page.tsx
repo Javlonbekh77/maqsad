@@ -27,9 +27,9 @@ const formSchema = z.object({
   lastName: z.string().min(2, { message: 'Familiya kamida 2 harfdan iborat bo\'lishi kerak.' }),
   email: z.string().email({ message: 'Yaroqsiz email manzili.' }),
   password: z.string().min(6, { message: 'Parol kamida 6 belgidan iborat bo\'lishi kerak.' }),
-  university: z.string().min(2, { message: 'Iltimos, universitetingizni kiriting.' }),
-  specialization: z.string().min(2, { message: 'Iltimos, mutaxassisligingizni kiriting.' }),
-  course: z.string().min(1, { message: 'Iltimos, o\'qish yilingizni kiriting.' }),
+  university: z.string().optional(),
+  specialization: z.string().optional(),
+  course: z.string().optional(),
   telegram: z.string().optional(),
 });
 
@@ -69,7 +69,10 @@ export default function SignupPage() {
         setError('This email is already registered. Please log in or use a different email.');
       } else if (err.code === 'auth/network-request-failed') {
         setError('Network error. Please check your internet connection.');
-      } else {
+      } else if (err.code === 'auth/configuration-not-found') {
+         setError('Firebase configuration is missing or incorrect. Please contact support.');
+      }
+      else {
         setError(`An unexpected error occurred: ${err.message}`);
       }
     }
@@ -162,7 +165,7 @@ export default function SignupPage() {
                 name="university"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>University</FormLabel>
+                    <FormLabel>University <span className="text-muted-foreground">(Optional)</span></FormLabel>
                     <FormControl>
                       <Input placeholder="e.g., TUIT" {...field} />
                     </FormControl>
@@ -175,7 +178,7 @@ export default function SignupPage() {
                 name="specialization"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Specialization</FormLabel>
+                    <FormLabel>Specialization <span className="text-muted-foreground">(Optional)</span></FormLabel>
                     <FormControl>
                       <Input placeholder="e.g., Software Engineering" {...field} />
                     </FormControl>
@@ -188,7 +191,7 @@ export default function SignupPage() {
                 name="course"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Course Year</FormLabel>
+                    <FormLabel>Course Year <span className="text-muted-foreground">(Optional)</span></FormLabel>
                     <FormControl>
                       <Input type="number" placeholder="e.g., 3" {...field} />
                     </FormControl>
