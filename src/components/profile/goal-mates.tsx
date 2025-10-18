@@ -5,11 +5,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Link } from "@/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useState, useCallback } from "react";
-import type { User, Group } from "@/lib/types";
+import type { User } from "@/lib/types";
 import { Skeleton } from "../ui/skeleton";
 import { useAuth } from "@/context/auth-context";
-import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { getGoalMates } from "@/lib/data";
 
 interface GoalMatesProps {
     userId: string;
@@ -24,58 +23,7 @@ export default function GoalMates({ userId }: GoalMatesProps) {
     const fetchMates = useCallback(async (uid: string) => {
         setLoadingData(true);
         try {
-            const userDocRef = doc(db, 'users', uid);
-            const userSnap = await getDoc(userDocRef);
-            if (!userSnap.exists()) {
-                setGoalMates([]);
-                setLoadingData(false);
-                return;
-            }
-            const currentUser = userSnap.data() as User;
-            if (!currentUser.groups || currentUser.groups.length === 0) {
-                 setGoalMates([]);
-                 setLoadingData(false);
-                 return;
-            }
-
-            // Firestore 'in' query has a limit of 30 elements in the array.
-            const groupIds = currentUser.groups.slice(0, 30);
-            if(groupIds.length === 0) {
-                 setGoalMates([]);
-                 setLoadingData(false);
-                 return;
-            }
-
-            const groupsSnapshot = await getDocs(query(collection(db, 'groups'), where('__name__', 'in', groupIds)));
-            const memberIds = new Set<string>();
-            groupsSnapshot.forEach(doc => {
-                const group = doc.data() as Group;
-                group.members.forEach(memberId => {
-                    if (memberId !== uid) {
-                        memberIds.add(memberId);
-                    }
-                });
-            });
-            
-            if (memberIds.size === 0) {
-                setGoalMates([]);
-                setLoadingData(false);
-                return;
-            };
-            
-            // Chunk memberIds to handle Firestore 'in' query limit of 30
-            const memberIdChunks: string[][] = [];
-            const ids = Array.from(memberIds);
-            for (let i = 0; i < ids.length; i += 30) {
-              memberIdChunks.push(ids.slice(i, i + 30));
-            }
-
-            const matesPromises = memberIdChunks.map(chunk => 
-              getDocs(query(collection(db, 'users'), where('firebaseId', 'in', chunk)))
-            );
-
-            const snapshots = await Promise.all(matesPromises);
-            const mates = snapshots.flatMap(snapshot => snapshot.docs.map(doc => ({...doc.data() as User, id: doc.id, firebaseId: doc.id})));
+            const mates = await getGoalMates(uid);
             setGoalMates(mates);
         } catch (error) {
             console.error("Failed to fetch goal mates:", error);

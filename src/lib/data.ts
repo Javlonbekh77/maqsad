@@ -2,24 +2,199 @@ import { db } from './firebase';
 import {
   collection,
   doc,
+  getDoc,
+  getDocs,
   updateDoc,
   arrayUnion,
   writeBatch,
   setDoc,
   addDoc,
   serverTimestamp,
+  query,
+  where,
+  orderBy,
+  limit
 } from 'firebase/firestore';
 
-import type { User, Group, Task } from './types';
+import type { User, Group, Task, UserTask, WeeklyMeeting } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 import { format } from 'date-fns';
 import type { User as FirebaseUser } from 'firebase/auth';
 
-// --- Data Creation and Mutation Functions ---
+// --- Read Functions ---
 
-/**
- * Creates a user profile document in Firestore.
- */
+export const getUser = async (userId: string): Promise<User | null> => {
+  const userDocRef = doc(db, 'users', userId);
+  const userSnap = await getDoc(userDocRef);
+  if (userSnap.exists()) {
+    return { ...userSnap.data(), id: userSnap.id, firebaseId: userSnap.id } as User;
+  }
+  return null;
+}
+
+export const getAllUsers = async (): Promise<User[]> => {
+    const usersQuery = collection(db, 'users');
+    const snapshot = await getDocs(usersQuery);
+    return snapshot.docs.map(doc => ({ ...doc.data() as User, id: doc.id, firebaseId: doc.id }));
+}
+
+export const getAllGroups = async (): Promise<Group[]> => {
+    const groupsQuery = collection(db, 'groups');
+    const snapshot = await getDocs(groupsQuery);
+    return snapshot.docs.map(doc => ({ ...doc.data() as Group, id: doc.id, firebaseId: doc.id }));
+}
+
+export const getUserTasks = async (user: User): Promise<UserTask[]> => {
+    if (!user || !user.groups || user.groups.length === 0) {
+      return [];
+    }
+
+    const today = format(new Date(), 'yyyy-MM-dd');
+    
+    // Firestore 'in' query has a limit of 30 elements in the array.
+    const groupIds = user.groups.slice(0, 30);
+    if(groupIds.length === 0) return [];
+
+    const tasksQuery = query(collection(db, 'tasks'), where('groupId', 'in', groupIds));
+    const tasksSnapshot = await getDocs(tasksQuery);
+    const tasksForUser = tasksSnapshot.docs.map(doc => doc.data() as Task);
+    
+    const allGroupsSnapshot = await getDocs(query(collection(db, 'groups'), where('__name__', 'in', groupIds)));
+    const groupMap = new Map(allGroupsSnapshot.docs.map(doc => [doc.id, doc.data().name]));
+
+    return tasksForUser.map(task => {
+        const isCompletedToday = user.taskHistory.some(h => h.taskId === task.id && h.date === today);
+        return {
+            ...task,
+            groupName: groupMap.get(task.groupId) || 'Unknown Group',
+            isCompleted: isCompletedToday,
+        };
+    });
+};
+
+export const getTasksForUserGroups = async (groupIds: string[]): Promise<Task[]> => {
+  if (groupIds.length === 0) return [];
+  const chunkedGroupIds = groupIds.slice(0, 30); // Firestore 'in' query limit
+  const tasksQuery = query(collection(db, 'tasks'), where('groupId', 'in', chunkedGroupIds));
+  const tasksSnapshot = await getDocs(tasksQuery);
+  return tasksSnapshot.docs.map(doc => ({ ...doc.data() as Task, id: doc.id }));
+}
+
+export const getGroupAndDetails = async (groupId: string): Promise<{ group: Group, members: User[], tasks: Task[], meetings: WeeklyMeeting[] } | null> => {
+    const groupDocRef = doc(db, 'groups', groupId);
+    const groupSnap = await getDoc(groupDocRef);
+
+    if (!groupSnap.exists()) {
+        return null;
+    }
+    const groupData = { ...groupSnap.data(), id: groupSnap.id, firebaseId: groupSnap.id } as Group;
+
+    const memberPromises = (groupData.members || []).slice(0,30).map(memberId => getUser(memberId));
+    
+    const tasksQuery = query(collection(db, 'tasks'), where('groupId', '==', groupId));
+    const meetingsQuery = query(collection(db, 'meetings'), where('groupId', '==', groupId));
+    
+    const [membersData, tasksSnapshot, meetingsSnapshot] = await Promise.all([
+        Promise.all(memberPromises),
+        getDocs(tasksQuery),
+        getDocs(meetingsQuery)
+    ]);
+
+    const members = membersData.filter(Boolean) as User[];
+    const tasks = tasksSnapshot.docs.map(d => ({ ...d.data() as Task, id: d.id }));
+    const meetings = meetingsSnapshot.docs.map(d => d.data() as WeeklyMeeting);
+
+    return { group: groupData, members, tasks, meetings };
+};
+
+
+export const getLeaderboardData = async (): Promise<{ topUsers: User[], topGroups: (Group & { coins: number })[] }> => {
+    const usersQuery = query(collection(db, 'users'), orderBy('coins', 'desc'), limit(10));
+    const usersPromise = getDocs(usersQuery);
+    
+    const groupsPromise = getDocs(collection(db, 'groups'));
+    const allUsersPromise = getDocs(collection(db, 'users'));
+
+    const [usersSnapshot, groupsSnapshot, allUsersSnapshot] = await Promise.all([usersPromise, groupsPromise, allUsersPromise]);
+    
+    const topUsers = usersSnapshot.docs.map(d => ({ ...d.data() as User, id: d.id, firebaseId: d.id }));
+    const groups = groupsSnapshot.docs.map(d => ({ ...d.data() as Group, id: d.id, firebaseId: d.id }));
+    const allUsers = allUsersSnapshot.docs.map(d => ({ ...d.data() as User, id: d.id, firebaseId: d.id }));
+    
+    const userMap = new Map(allUsers.map(u => [u.id, u]));
+
+    const calculatedTopGroups = groups.map(group => {
+      const groupCoins = group.members.reduce((total, memberId) => {
+        return total + (userMap.get(memberId)?.coins || 0);
+      }, 0);
+      return { ...group, coins: groupCoins };
+    }).sort((a, b) => b.coins - a.coins).slice(0, 10);
+    
+    return { topUsers, topGroups: calculatedTopGroups };
+};
+
+export const getUserProfileData = async (userId: string): Promise<{user: User, userGroups: Group[], allUsers: User[]} | null> => {
+     const user = await getUser(userId);
+     if (!user) return null;
+
+     const allUsersPromise = getAllUsers();
+     
+     let groupsPromise: Promise<Group[]> = Promise.resolve([]);
+      if (user.groups && user.groups.length > 0) {
+        const groupIds = user.groups.slice(0, 30);
+        const groupsQuery = query(collection(db, 'groups'), where('__name__', 'in', groupIds));
+        groupsPromise = getDocs(groupsQuery).then(snap => snap.docs.map(d => ({...d.data() as Group, id: d.id, firebaseId: d.id})));
+      }
+      
+      const [userGroups, allUsers] = await Promise.all([
+        groupsPromise,
+        allUsersPromise,
+      ]);
+
+      return { user, userGroups, allUsers };
+}
+
+export const getGoalMates = async (userId: string): Promise<User[]> => {
+    const currentUser = await getUser(userId);
+    if (!currentUser || !currentUser.groups || currentUser.groups.length === 0) {
+        return [];
+    }
+
+    const groupIds = currentUser.groups.slice(0, 30);
+    if(groupIds.length === 0) return [];
+
+    const groupsSnapshot = await getDocs(query(collection(db, 'groups'), where('__name__', 'in', groupIds)));
+    const memberIds = new Set<string>();
+    groupsSnapshot.forEach(doc => {
+        const group = doc.data() as Group;
+        group.members.forEach(memberId => {
+            if (memberId !== userId) {
+                memberIds.add(memberId);
+            }
+        });
+    });
+    
+    if (memberIds.size === 0) return [];
+    
+    const memberIdChunks: string[][] = [];
+    const ids = Array.from(memberIds);
+    for (let i = 0; i < ids.length; i += 30) {
+      memberIdChunks.push(ids.slice(i, i + 30));
+    }
+
+    const matesPromises = memberIdChunks.map(async chunk => {
+        if (chunk.length === 0) return [];
+        const matesSnapshot = await getDocs(query(collection(db, 'users'), where('firebaseId', 'in', chunk)));
+        return matesSnapshot.docs.map(doc => ({...doc.data() as User, id: doc.id, firebaseId: doc.id}));
+    });
+    
+    const snapshots = await Promise.all(matesPromises);
+    return snapshots.flat();
+}
+
+
+// --- Write Functions ---
+
 export const createUserProfile = async (firebaseUser: FirebaseUser, data: Partial<User>) => {
     const userDocRef = doc(db, 'users', firebaseUser.uid);
     
@@ -93,13 +268,10 @@ export const addUserToGroup = async (userId: string, groupId: string, taskIds: s
 export const completeUserTask = async (userId: string, taskId: string, coins: number): Promise<void> => {
     const userDocRef = doc(db, 'users', userId);
     
-    // We get the latest user data within a transaction to avoid race conditions
-    // but for this simplified app, we'll just read and then write.
-    const userSnap = await getDoc(userDocRef);
-    if (!userSnap.exists()) {
+    const user = await getUser(userId);
+    if (!user) {
         throw new Error("User not found");
     }
-    const user = userSnap.data();
 
     const today = format(new Date(), 'yyyy-MM-dd');
     const alreadyCompleted = user.taskHistory.some(

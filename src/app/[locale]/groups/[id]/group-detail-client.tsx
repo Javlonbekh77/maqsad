@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import AppLayout from '@/components/layout/app-layout';
-import { addUserToGroup } from '@/lib/data';
+import { addUserToGroup, getGroupAndDetails } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,8 +28,6 @@ import WeeklyMeetings from '@/components/groups/weekly-meetings';
 import type { Group, Task, User, WeeklyMeeting } from '@/lib/types';
 import { useAuth } from '@/context/auth-context';
 import { Skeleton } from '@/components/ui/skeleton';
-import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 
 export default function GroupDetailClient() {
   const t = useTranslations('groupDetail');
@@ -49,39 +47,18 @@ export default function GroupDetailClient() {
     if (!groupId) return;
     setLoadingData(true);
     try {
-      const groupDocRef = doc(db, 'groups', groupId);
-      const groupSnap = await getDoc(groupDocRef);
-
-      if (!groupSnap.exists()) {
+      const data = await getGroupAndDetails(groupId);
+      if (data) {
+        setGroup(data.group);
+        setMembers(data.members);
+        setTasks(data.tasks);
+        setMeetings(data.meetings);
+      } else {
         setGroup(null);
-        setLoadingData(false);
-        return;
       }
-      const groupData = { ...groupSnap.data(), id: groupSnap.id, firebaseId: groupSnap.id } as Group;
-      setGroup(groupData);
-      
-      const memberPromises = (groupData.members || []).map(async (memberId) => {
-        // Firestore where 'in' query has a limit of 30. We are not hitting that here but good to know.
-        const userDocRef = doc(db, 'users', memberId);
-        const userSnap = await getDoc(userDocRef);
-        return userSnap.exists() ? { ...userSnap.data(), id: userSnap.id, firebaseId: userSnap.id } as User : null;
-      });
-
-      const tasksQuery = query(collection(db, 'tasks'), where('groupId', '==', groupId));
-      const meetingsQuery = query(collection(db, 'meetings'), where('groupId', '==', groupId));
-      
-      const [membersData, tasksSnapshot, meetingsSnapshot] = await Promise.all([
-          Promise.all(memberPromises),
-          getDocs(tasksQuery),
-          getDocs(meetingsQuery)
-      ]);
-
-      setMembers(membersData.filter(Boolean) as User[]);
-      setTasks(tasksSnapshot.docs.map(d => ({ ...d.data() as Task, id: d.id })));
-      setMeetings(meetingsSnapshot.docs.map(d => d.data() as WeeklyMeeting));
-
     } catch (error) {
       console.error("Failed to fetch group data:", error);
+      setGroup(null);
     } finally {
       setLoadingData(false);
     }

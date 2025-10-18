@@ -4,14 +4,12 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from '@/navigation';
 import AppLayout from "@/components/layout/app-layout";
 import TodoList from "@/components/dashboard/todo-list";
-import type { User, UserTask, Group, Task } from "@/lib/types";
+import type { User, UserTask } from "@/lib/types";
 import { useTranslations } from "next-intl";
 import HabitTracker from "@/components/profile/habit-tracker";
 import { useAuth } from '@/context/auth-context';
 import { Skeleton } from '@/components/ui/skeleton';
-import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
-import { format } from 'date-fns';
+import { getUser, getUserTasks } from '@/lib/data';
 
 export default function DashboardClient() {
   const t = useTranslations('dashboard');
@@ -20,34 +18,6 @@ export default function DashboardClient() {
 
   const [tasks, setTasks] = useState<UserTask[]>([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
-
-  const getUserTasks = useCallback(async (user: User): Promise<UserTask[]> => {
-    if (!user || !user.groups || user.groups.length === 0) {
-      return [];
-    }
-
-    const today = format(new Date(), 'yyyy-MM-dd');
-    
-    // Firestore 'in' query has a limit of 30 elements in the array.
-    const groupIds = user.groups.slice(0, 30);
-    if(groupIds.length === 0) return [];
-
-    const tasksQuery = query(collection(db, 'tasks'), where('groupId', 'in', groupIds));
-    const tasksSnapshot = await getDocs(tasksQuery);
-    const tasksForUser = tasksSnapshot.docs.map(doc => doc.data() as Task);
-    
-    const allGroupsSnapshot = await getDocs(query(collection(db, 'groups'), where('__name__', 'in', groupIds)));
-    const groupMap = new Map(allGroupsSnapshot.docs.map(doc => [doc.id, doc.data().name]));
-
-    return tasksForUser.map(task => {
-        const isCompletedToday = user.taskHistory.some(h => h.taskId === task.id && h.date === today);
-        return {
-            ...task,
-            groupName: groupMap.get(task.groupId) || 'Unknown Group',
-            isCompleted: isCompletedToday,
-        };
-    });
-  }, []);
 
   const fetchData = useCallback(async (user: User) => {
     if (!user) return;
@@ -60,7 +30,7 @@ export default function DashboardClient() {
     } finally {
       setLoadingTasks(false);
     }
-  }, [getUserTasks]);
+  }, []);
 
   useEffect(() => {
     if (!authLoading) {
@@ -74,16 +44,13 @@ export default function DashboardClient() {
 
   const isLoading = authLoading || loadingTasks;
 
-  const handleTaskCompletion = () => {
+  const handleTaskCompletion = async () => {
     if(authUser) {
       // We need to re-fetch the authUser to get the latest taskHistory, then fetch tasks
-      const userDocRef = doc(db, 'users', authUser.id);
-      getDoc(userDocRef).then(docSnap => {
-        if (docSnap.exists()) {
-          const freshUser = { ...docSnap.data(), id: docSnap.id, firebaseId: docSnap.id } as User;
-          fetchData(freshUser);
-        }
-      });
+      const freshUser = await getUser(authUser.id);
+      if (freshUser) {
+        fetchData(freshUser);
+      }
     }
   }
 

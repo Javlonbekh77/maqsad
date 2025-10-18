@@ -11,8 +11,7 @@ import type { Group, User } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/auth-context";
 import { useRouter } from "@/navigation";
-import { db } from '@/lib/firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { getAllGroups, getAllUsers } from "@/lib/data";
 
 export default function GroupsClient() {
   const t = useTranslations('groups');
@@ -27,17 +26,10 @@ export default function GroupsClient() {
   const fetchData = useCallback(async () => {
     setLoadingData(true);
     try {
-      const groupsQuery = collection(db, 'groups');
-      const usersQuery = collection(db, 'users');
-
-      const [groupsSnapshot, usersSnapshot] = await Promise.all([
-        getDocs(groupsQuery),
-        getDocs(usersQuery)
+      const [groupsData, usersData] = await Promise.all([
+        getAllGroups(),
+        getAllUsers(),
       ]);
-
-      const groupsData = groupsSnapshot.docs.map(doc => ({ ...doc.data() as Group, id: doc.id, firebaseId: doc.id }));
-      const usersData = usersSnapshot.docs.map(doc => ({ ...doc.data() as User, id: doc.id, firebaseId: doc.id }));
-      
       setGroups(groupsData);
       setUsers(usersData);
     } catch (error) {

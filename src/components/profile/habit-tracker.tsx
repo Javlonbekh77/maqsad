@@ -7,8 +7,7 @@ import { format, subDays, isSameDay } from 'date-fns';
 import { Check, X } from "lucide-react";
 import { useMemo, useEffect, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { getTasksForUserGroups } from "@/lib/data";
 
 interface HabitTrackerProps {
   user: User;
@@ -34,19 +33,14 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
     async function fetchUserTasks() {
       setLoading(true);
       if (user.groups && user.groups.length > 0) {
-        const groupIds = user.groups.slice(0, 30);
-        const tasksQuery = query(collection(db, 'tasks'), where('groupId', 'in', groupIds));
-        const tasksSnapshot = await getDocs(tasksQuery);
-        const tasks = tasksSnapshot.docs.map(doc => ({ ...doc.data() as Task, id: doc.id }));
+        const tasks = await getTasksForUserGroups(user.groups);
         setUserTasks(tasks);
       } else {
         setUserTasks([]);
       }
       setLoading(false);
     }
-    if (user?.groups) {
-      fetchUserTasks();
-    }
+    fetchUserTasks();
   }, [user.groups]);
   
   const handleTaskSelectionChange = (taskId: string) => {

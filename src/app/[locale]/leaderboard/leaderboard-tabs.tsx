@@ -19,8 +19,7 @@ import { Link } from '@/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { Skeleton } from '../ui/skeleton';
 import { useAuth } from '@/context/auth-context';
-import { db } from '@/lib/firebase';
-import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { getLeaderboardData } from '@/lib/data';
 
 
 const RankIcon = ({ rank }: { rank: number }) => {
@@ -58,30 +57,9 @@ export default function LeaderboardTabs() {
   const fetchData = useCallback(async () => {
     setLoadingData(true);
     try {
-      const usersQuery = query(collection(db, 'users'), orderBy('coins', 'desc'), limit(10));
-      const usersPromise = getDocs(usersQuery);
-      
-      const groupsPromise = getDocs(collection(db, 'groups'));
-      const allUsersPromise = getDocs(collection(db, 'users'));
-
-      const [usersSnapshot, groupsSnapshot, allUsersSnapshot] = await Promise.all([usersPromise, groupsPromise, allUsersPromise]);
-      
-      const users = usersSnapshot.docs.map(d => ({ ...d.data() as User, id: d.id, firebaseId: d.id }));
-      setTopUsers(users);
-
-      const groups = groupsSnapshot.docs.map(d => ({ ...d.data() as Group, id: d.id, firebaseId: d.id }));
-      const allUsers = allUsersSnapshot.docs.map(d => ({ ...d.data() as User, id: d.id, firebaseId: d.id }));
-      
-      const userMap = new Map(allUsers.map(u => [u.id, u]));
-
-      const calculatedTopGroups = groups.map(group => {
-        const groupCoins = group.members.reduce((total, memberId) => {
-          return total + (userMap.get(memberId)?.coins || 0);
-        }, 0);
-        return { ...group, coins: groupCoins };
-      }).sort((a, b) => b.coins - a.coins).slice(0, 10);
-      setTopGroups(calculatedTopGroups);
-
+      const { topUsers, topGroups } = await getLeaderboardData();
+      setTopUsers(topUsers);
+      setTopGroups(topGroups);
     } catch (error) {
       console.error("Failed to fetch leaderboard data:", error);
     } finally {

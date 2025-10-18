@@ -17,8 +17,7 @@ import GroupCard from '@/components/groups/group-card';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from '@/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
-import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { getUserProfileData } from '@/lib/data';
 
 export default function ProfileClient() {
   const t = useTranslations('profile');
@@ -37,36 +36,14 @@ export default function ProfileClient() {
     if (!uid) return;
     setLoadingData(true);
     try {
-      const userDocRef = doc(db, 'users', uid);
-      const userSnap = await getDoc(userDocRef);
-
-      if (!userSnap.exists()) {
+      const profileData = await getUserProfileData(uid);
+      if (profileData) {
+        setUser(profileData.user);
+        setUserGroups(profileData.userGroups);
+        setAllUsers(profileData.allUsers);
+      } else {
         setUser(null);
-        setLoadingData(false);
-        return;
       }
-      const userData = { ...userSnap.data(), id: userSnap.id, firebaseId: userSnap.id } as User;
-      setUser(userData);
-      
-      const usersQuery = collection(db, 'users');
-      const usersPromise = getDocs(usersQuery);
-      
-      let groupsPromise: Promise<Group[]> = Promise.resolve([]);
-      if (userData.groups && userData.groups.length > 0) {
-        // Firestore 'in' query has a limit of 30 elements in the array.
-        const groupIds = userData.groups.slice(0, 30);
-        const groupsQuery = query(collection(db, 'groups'), where('__name__', 'in', groupIds));
-        groupsPromise = getDocs(groupsQuery).then(snap => snap.docs.map(d => ({...d.data() as Group, id: d.id, firebaseId: d.id})));
-      }
-      
-      const [groupsData, usersSnapshot] = await Promise.all([
-        groupsPromise,
-        usersPromise,
-      ]);
-
-      setUserGroups(groupsData);
-      setAllUsers(usersSnapshot.docs.map(d => ({...d.data() as User, id: d.id, firebaseId: d.id})));
-
     } catch (error) {
       console.error("Failed to fetch profile data:", error);
       setUser(null);
