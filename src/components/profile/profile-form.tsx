@@ -69,7 +69,8 @@ export default function ProfileForm({ user }: { user: User }) {
     }
   };
 
-  function onSubmit(data: ProfileFormValues) {
+  async function onSubmit(data: ProfileFormValues) {
+    let profileUpdated = false;
     startTransition(async () => {
       try {
         await updateUserProfile(user.id, {
@@ -77,16 +78,17 @@ export default function ProfileForm({ user }: { user: User }) {
           habits: data.habits,
           avatarFile: data.avatar,
         });
+        profileUpdated = true;
         toast({
           title: t('toast.title'),
           description: t('toast.description'),
         });
-        router.refresh(); // Refresh to show the new avatar in the layout
-        setAvatarPreview(null);
+        
         form.reset({
           ...form.getValues(),
           avatar: null,
         });
+
       } catch (error) {
          console.error("Failed to update profile:", error);
          toast({
@@ -94,6 +96,11 @@ export default function ProfileForm({ user }: { user: User }) {
           description: 'Failed to update profile.',
           variant: 'destructive',
         });
+      } finally {
+        setAvatarPreview(null);
+        if (profileUpdated) {
+          router.refresh();
+        }
       }
     });
   }
@@ -176,7 +183,9 @@ export default function ProfileForm({ user }: { user: User }) {
           )}
         />
         <div className="flex justify-end">
-            <Button type="submit" disabled={isPending}>{t('updateButton')}</Button>
+            <Button type="submit" disabled={isPending}>
+              {isPending ? "Yangilanmoqda..." : t('updateButton')}
+            </Button>
         </div>
       </form>
     </Form>
