@@ -24,11 +24,11 @@ interface RootLayoutProps {
   params: { locale: string };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
   params: {locale}
 }: Readonly<RootLayoutProps>) {
-  const messages = useMessages();
+  const messages = (await import(`../../../locales/${locale}.json`)).default;
 
   return (
     <html lang={locale} suppressHydrationWarning>

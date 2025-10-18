@@ -13,7 +13,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Search, Bell, Coins } from 'lucide-react';
 import { Input } from '../ui/input';
-import { Link, usePathname, useRouter } from '@/navigation';
+import { Link, useRouter } from '@/navigation';
 import { useTranslations } from 'next-intl';
 import LanguageSwitcher from '../language-switcher';
 import { useAuth } from '@/context/auth-context';
@@ -71,7 +71,7 @@ export default function AppHeader() {
             <DropdownMenuLabel>{t('header.myAccount')}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href={`/profile/${user?.id}`}>{t('nav.profile')}</Link>
+              <Link href={user ? { pathname: '/profile/[id]', params: { id: user.id } } : '/login'}>{t('nav.profile')}</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href="/settings">{t('header.settings')}</Link>

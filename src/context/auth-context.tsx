@@ -2,17 +2,18 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, type User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { createUserProfile } from '@/lib/data';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import type { User } from '@/lib/types';
-import { auth, db } from '@/lib/firebase'; // Import auth and db here
+import { auth, db } from '@/lib/firebase';
+
+type SignupData = Omit<User, 'id' | 'firebaseId' | 'coins' | 'goals' | 'habits' | 'groups' | 'taskHistory' | 'fullName' | 'occupation' | 'createdAt'> & { password: string; avatarUrl: string; };
 
 interface AuthContextType {
   user: User | null;
   firebaseUser: FirebaseUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<any>;
-  signup: (data: Omit<User, 'id' | 'firebaseId' | 'avatarUrl' | 'coins' | 'goals' | 'habits' | 'groups' | 'taskHistory' | 'fullName' | 'occupation' | 'createdAt'> & { password: string }) => Promise<any>;
+  signup: (data: SignupData) => Promise<any>;
   logout: () => Promise<void>;
 }
 
@@ -39,6 +40,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const appUser = { ...docSnap.data(), id: docSnap.id, firebaseId: docSnap.id } as User;
             setUser(appUser);
           } else {
+             // This might happen if user is created in auth but not in firestore yet
+             // The signup function should handle creating the user doc.
+             // We can attempt to fetch again after a short delay, or rely on signup to set the user.
             setUser(null);
           }
         } catch (error) {
@@ -58,17 +62,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
      return signInWithEmailAndPassword(auth, email, password);
   };
 
-  const signup = async (data: Omit<User, 'id' | 'firebaseId' | 'avatarUrl' | 'coins' | 'goals' | 'habits' | 'groups' | 'taskHistory' | 'fullName' | 'occupation' | 'createdAt'> & { password: string }) => {
+  const signup = async (data: SignupData) => {
     const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
     const { password, ...profileData } = data;
-    await createUserProfile(userCredential.user, profileData);
     
     const userDocRef = doc(db, 'users', userCredential.user.uid);
-    const docSnap = await getDoc(userDocRef);
-    if(docSnap.exists()){
-        const appUser = { ...docSnap.data(), id: docSnap.id, firebaseId: docSnap.id } as User;
-        setUser(appUser);
-    }
+    const fullName = `${data.firstName || ''} ${data.lastName || ''}`.trim();
+
+    const newUser: User = {
+      id: userCredential.user.uid,
+      firebaseId: userCredential.user.uid,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      fullName: fullName,
+      email: data.email,
+      avatarUrl: data.avatarUrl,
+      coins: 0,
+      goals: '',
+      habits: '',
+      groups: [],
+      occupation: data.specialization || '',
+      taskHistory: [],
+      university: data.university || '',
+      specialization: data.specialization || '',
+      course: data.course || '',
+      telegram: data.telegram || '',
+      createdAt: serverTimestamp(),
+    };
+    
+    await setDoc(userDocRef, newUser);
+    setUser(newUser); // Immediately set user state after creation
+    
     return userCredential;
   };
 

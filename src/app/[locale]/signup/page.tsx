@@ -21,12 +21,19 @@ import { Link, useRouter } from '@/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import Logo from '@/components/logo';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
+import Image from 'next/image';
+import { cn } from '@/lib/utils';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+
+const avatarPlaceholders = PlaceHolderImages.filter(p => p.id.startsWith('user'));
 
 const formSchema = z.object({
   firstName: z.string().min(2, { message: 'Ism kamida 2 harfdan iborat bo\'lishi kerak.' }),
   lastName: z.string().min(2, { message: 'Familiya kamida 2 harfdan iborat bo\'lishi kerak.' }),
   email: z.string().email({ message: 'Yaroqsiz email manzili.' }),
   password: z.string().min(6, { message: 'Parol kamida 6 belgidan iborat bo\'lishi kerak.' }),
+  avatarUrl: z.string().min(1, { message: "Iltimos, avatarni tanlang." }),
   university: z.string().optional(),
   specialization: z.string().optional(),
   course: z.string().optional(),
@@ -45,6 +52,7 @@ export default function SignupPage() {
       lastName: '',
       email: '',
       password: '',
+      avatarUrl: '',
       university: '',
       specialization: '',
       course: '',
@@ -63,11 +71,14 @@ export default function SignupPage() {
     setError(null);
     try {
       await signup(values);
-      // The useEffect will handle redirection
+      router.push('/dashboard');
     } catch (err: any) {
       if (err.code === 'auth/email-already-in-use') {
         setError('This email is already registered. Please log in or use a different email.');
-      } else if (err.code === 'auth/network-request-failed') {
+      } else if (err.code === 'auth/operation-not-allowed') {
+        setError('Email/password sign-up is not enabled. Please contact support.');
+      }
+      else if (err.code === 'auth/network-request-failed') {
         setError('Network error. Please check your internet connection.');
       } else if (err.code === 'auth/configuration-not-found') {
          setError('Firebase configuration is missing or incorrect. Please contact support.');
@@ -88,7 +99,7 @@ export default function SignupPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-secondary py-12">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-lg">
         <CardHeader className="text-center">
           <Link href="/" className="flex justify-center mb-4">
             <Logo />
@@ -106,6 +117,48 @@ export default function SignupPage() {
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
+
+              <FormField
+                control={form.control}
+                name="avatarUrl"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel>Choose Your Avatar</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="grid grid-cols-3 md:grid-cols-5 gap-4"
+                      >
+                        {avatarPlaceholders.map(avatar => (
+                            <FormItem key={avatar.id} className="flex items-center justify-center">
+                              <FormControl>
+                                <RadioGroupItem value={avatar.imageUrl} className="sr-only" />
+                              </FormControl>
+                               <Label
+                                htmlFor={avatar.id}
+                                className={cn(
+                                  "cursor-pointer rounded-full overflow-hidden w-20 h-20 border-4 border-transparent transition-all",
+                                  field.value === avatar.imageUrl && "ring-4 ring-primary ring-offset-2 border-primary"
+                                )}
+                              >
+                                <Image
+                                  src={avatar.imageUrl}
+                                  alt={avatar.description}
+                                  width={80}
+                                  height={80}
+                                  className="object-cover w-full h-full"
+                                />
+                              </Label>
+                            </FormItem>
+                        ))}
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}

@@ -5,22 +5,47 @@ import LeaderboardTabs from "@/components/leaderboard/leaderboard-tabs";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { useRouter } from "@/navigation";
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { User, Group } from '@/lib/types';
+import { getLeaderboardData } from '@/lib/data';
 
 export default function LeaderboardClient() {
   const t = useTranslations('leaderboard');
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-    }
-  }, [user, loading, router]);
+  const [topUsers, setTopUsers] = useState<User[]>([]);
+  const [topGroups, setTopGroups] = useState<(Group & { coins: number })[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
 
-  if (loading || !user) {
+  const fetchData = useCallback(async () => {
+    setLoadingData(true);
+    try {
+      const { topUsers, topGroups } = await getLeaderboardData();
+      setTopUsers(topUsers);
+      setTopGroups(topGroups);
+    } catch (error) {
+      console.error("Failed to fetch leaderboard data:", error);
+    } finally {
+      setLoadingData(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!authLoading) {
+      if (!user) {
+        router.push('/login');
+      } else {
+        fetchData();
+      }
+    }
+  }, [user, authLoading, router, fetchData]);
+
+  const isLoading = authLoading || loadingData;
+
+  if (isLoading || !user) {
     return (
       <AppLayout>
         <div className="space-y-8">
@@ -45,7 +70,7 @@ export default function LeaderboardClient() {
           <h1 className="text-3xl font-bold font-display">{t('title')}</h1>
           <p className="text-muted-foreground">{t('subtitle')}</p>
         </div>
-        <LeaderboardTabs />
+        <LeaderboardTabs topUsers={topUsers} topGroups={topGroups} isLoading={isLoading} />
       </div>
     </AppLayout>
   );

@@ -24,6 +24,7 @@ import type { User as FirebaseUser } from 'firebase/auth';
 // --- Read Functions ---
 
 export const getUser = async (userId: string): Promise<User | null> => {
+  if (!userId) return null;
   const userDocRef = doc(db, 'users', userId);
   const userSnap = await getDoc(userDocRef);
   if (userSnap.exists()) {
@@ -57,7 +58,7 @@ export const getUserTasks = async (user: User): Promise<UserTask[]> => {
 
     const tasksQuery = query(collection(db, 'tasks'), where('groupId', 'in', groupIds));
     const tasksSnapshot = await getDocs(tasksQuery);
-    const tasksForUser = tasksSnapshot.docs.map(doc => doc.data() as Task);
+    const tasksForUser = tasksSnapshot.docs.map(doc => ({ ...doc.data() as Task, id: doc.id }));
     
     const allGroupsSnapshot = await getDocs(query(collection(db, 'groups'), where('__name__', 'in', groupIds)));
     const groupMap = new Map(allGroupsSnapshot.docs.map(doc => [doc.id, doc.data().name]));
@@ -195,7 +196,7 @@ export const getGoalMates = async (userId: string): Promise<User[]> => {
 
 // --- Write Functions ---
 
-export const createUserProfile = async (firebaseUser: FirebaseUser, data: Partial<User>) => {
+export const createUserProfile = async (firebaseUser: FirebaseUser, data: Partial<User> & { avatarUrl: string }) => {
     const userDocRef = doc(db, 'users', firebaseUser.uid);
     
     const fullName = `${data.firstName || ''} ${data.lastName || ''}`.trim();
@@ -206,7 +207,7 @@ export const createUserProfile = async (firebaseUser: FirebaseUser, data: Partia
         lastName: data.lastName || 'User',
         fullName: fullName || 'Test User',
         email: data.email || firebaseUser.email || '',
-        avatarUrl: PlaceHolderImages.find(p => p.id === 'user3')?.imageUrl || '',
+        avatarUrl: data.avatarUrl,
         coins: 0,
         goals: '',
         habits: '',
@@ -220,6 +221,7 @@ export const createUserProfile = async (firebaseUser: FirebaseUser, data: Partia
         createdAt: serverTimestamp(),
     };
     await setDoc(userDocRef, newUser);
+    return newUser;
 };
 
 export const createGroup = async (groupData: Omit<Group, 'id' | 'firebaseId' | 'imageUrl' | 'imageHint' | 'members'>, adminId: string): Promise<string> => {

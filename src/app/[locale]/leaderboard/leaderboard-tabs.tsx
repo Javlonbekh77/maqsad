@@ -16,11 +16,7 @@ import { Coins, Crown, Medal, Trophy } from 'lucide-react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/navigation';
-import { useEffect, useState, useCallback } from 'react';
 import { Skeleton } from '../ui/skeleton';
-import { useAuth } from '@/context/auth-context';
-import { getLeaderboardData } from '@/lib/data';
-
 
 const RankIcon = ({ rank }: { rank: number }) => {
   if (rank === 1) return <Medal className="h-5 w-5 text-yellow-500" />;
@@ -45,35 +41,14 @@ const LoadingSkeleton = () => (
     </div>
 );
 
+interface LeaderboardTabsProps {
+  topUsers: User[];
+  topGroups: (Group & { coins: number })[];
+  isLoading: boolean;
+}
 
-export default function LeaderboardTabs() {
+export default function LeaderboardTabs({ topUsers, topGroups, isLoading }: LeaderboardTabsProps) {
   const t = useTranslations('leaderboard');
-  const { user: authUser, loading: authLoading } = useAuth();
-
-  const [topUsers, setTopUsers] = useState<User[]>([]);
-  const [topGroups, setTopGroups] = useState<(Group & { coins: number })[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoadingData(true);
-    try {
-      const { topUsers, topGroups } = await getLeaderboardData();
-      setTopUsers(topUsers);
-      setTopGroups(topGroups);
-    } catch (error) {
-      console.error("Failed to fetch leaderboard data:", error);
-    } finally {
-      setLoadingData(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!authLoading && authUser) {
-        fetchData();
-    }
-  }, [authLoading, authUser, fetchData]);
-
-  const isLoading = authLoading || loadingData;
 
   return (
     <Tabs defaultValue="users">
@@ -106,7 +81,7 @@ export default function LeaderboardTabs() {
                             </div>
                             </TableCell>
                             <TableCell>
-                            <Link href={`/profile/${user.id}`} className="flex items-center gap-3 hover:underline">
+                            <Link href={{pathname: '/profile/[id]', params: {id: user.id}}} className="flex items-center gap-3 hover:underline">
                                 <Avatar>
                                 <AvatarImage src={user.avatarUrl} alt={user.fullName} />
                                 <AvatarFallback>{user.firstName.charAt(0)}</AvatarFallback>
@@ -149,7 +124,7 @@ export default function LeaderboardTabs() {
                         </div>
                         </TableCell>
                         <TableCell>
-                        <Link href={`/groups/${group.id}`} className="flex items-center gap-3 hover:underline">
+                        <Link href={{pathname: '/groups/[id]', params: {id: group.id}}} className="flex items-center gap-3 hover:underline">
                             <div className="w-10 h-10 rounded-md overflow-hidden relative">
                                 <Image src={group.imageUrl} alt={group.name} fill className='object-cover' />
                             </div>
