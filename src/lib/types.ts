@@ -6,6 +6,7 @@ export type Task = {
   description: string;
   coins: number;
   groupId: string;
+  createdAt: FieldValue;
 };
 
 export type TaskHistory = {
@@ -60,6 +61,7 @@ export type Group = {
   imageHint: string;
   members: string[]; // array of user IDs
   adminId: string;
+  createdAt: FieldValue;
 };
 
 // Represents a user's specific task from a group they've joined

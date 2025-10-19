@@ -14,7 +14,6 @@ import {
   where,
   orderBy,
   limit,
-  or
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
@@ -32,7 +31,8 @@ export const getUser = async (userId: string): Promise<User | null> => {
     // Ensure taskHistory and groups are arrays
     const taskHistory = Array.isArray(userData.taskHistory) ? userData.taskHistory : [];
     const groups = Array.isArray(userData.groups) ? userData.groups : [];
-    return { ...userData, id: userSnap.id, firebaseId: userSnap.id, taskHistory, groups } as User;
+    const taskSchedules = Array.isArray(userData.taskSchedules) ? userData.taskSchedules : [];
+    return { ...userData, id: userSnap.id, firebaseId: userSnap.id, taskHistory, groups, taskSchedules } as User;
   }
   return null;
 }
@@ -55,7 +55,7 @@ export const getUserTasks = async (user: User): Promise<UserTask[]> => {
     }
 
     const today = format(new Date(), 'yyyy-MM-dd');
-    const dayOfWeek = format(new Date(), 'EEEE'); // e.g., "Monday"
+    const dayOfWeek = format(new Date(), 'EEEE') as DayOfWeek;
     
     const userSchedules = user.taskSchedules || [];
 
@@ -224,6 +224,7 @@ export const createGroup = async (groupData: Omit<Group, 'id' | 'firebaseId' | '
         id: newGroupRef.id,
         firebaseId: newGroupRef.id,
         members: [adminId],
+        createdAt: serverTimestamp(),
     };
 
     await setDoc(newGroupRef, newGroup);
@@ -238,7 +239,7 @@ export const createGroup = async (groupData: Omit<Group, 'id' | 'firebaseId' | '
 
 export const createTask = async (taskData: Omit<Task, 'id'>): Promise<string> => {
     const newTaskRef = collection(db, 'tasks');
-    const docRef = await addDoc(newTaskRef, taskData);
+    const docRef = await addDoc(newTaskRef, { ...taskData, createdAt: serverTimestamp() });
     await updateDoc(docRef, { id: docRef.id });
     return docRef.id;
 };
@@ -345,13 +346,23 @@ export const performSearch = async (searchTerm: string): Promise<{ users: User[]
     }
     const term = searchTerm.toLowerCase();
 
-    // For simplicity, we'll fetch all and filter client-side.
-    // For production, you would use a search service like Algolia or a more complex query.
-    const allUsers = await getAllUsers();
-    const allGroups = await getAllGroups();
+    // This is not efficient for large datasets, but fine for a demo.
+    // A real-world app would use a dedicated search service like Algolia or Elasticsearch.
+    
+    const usersQuery = getAllUsers();
+    const groupsQuery = getAllGroups();
 
-    const filteredUsers = allUsers.filter(u => u.fullName.toLowerCase().includes(term)).slice(0, 5);
-    const filteredGroups = allGroups.filter(g => g.name.toLowerCase().includes(term)).slice(0, 5);
+    const [allUsers, allGroups] = await Promise.all([usersQuery, groupsQuery]);
+
+
+    const filteredUsers = allUsers.filter(u => 
+        u.fullName.toLowerCase().includes(term) || 
+        u.email.toLowerCase().includes(term)
+    ).slice(0, 5);
+    
+    const filteredGroups = allGroups.filter(g => 
+        g.name.toLowerCase().includes(term)
+    ).slice(0, 5);
     
     return { users: filteredUsers, groups: filteredGroups };
 };

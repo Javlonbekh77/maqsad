@@ -40,6 +40,15 @@ export default function SettingsPage() {
                         <Skeleton className="h-64 w-full" />
                     </CardContent>
                 </Card>
+                 <Card>
+                    <CardHeader>
+                        <Skeleton className="h-8 w-1/4" />
+                        <Skeleton className="h-4 w-1/3 mt-1" />
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-10 w-48" />
+                    </CardContent>
+                </Card>
             </div>
         </AppLayout>
        );

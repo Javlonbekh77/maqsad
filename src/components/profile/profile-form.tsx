@@ -29,11 +29,11 @@ const profileFormSchema = z.object({
   goals: z
     .string()
     .max(300, { message: 'Goals must not be longer than 300 characters.' })
-    .min(10, { message: 'Please describe your goals in at least 10 characters.'}).optional().or(z.literal('')),
+    .optional().or(z.literal('')),
   habits: z
     .string()
     .max(300, { message: 'Habits must not be longer than 300 characters.' })
-    .min(10, { message: 'Please describe your habits in at least 10 characters.'}).optional().or(z.literal('')),
+    .optional().or(z.literal('')),
   avatar: z.any().optional(),
 });
 
@@ -45,7 +45,7 @@ export default function ProfileForm({ user }: { user: User }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -57,7 +57,6 @@ export default function ProfileForm({ user }: { user: User }) {
   });
   
   useEffect(() => {
-    // Reset form with new user data if user changes
     form.reset({
       goals: user.goals || '',
       habits: user.habits || '',
@@ -73,7 +72,7 @@ export default function ProfileForm({ user }: { user: User }) {
         setAvatarPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
-      form.setValue('avatar', file);
+      setAvatarFile(file);
     }
   };
 
@@ -84,20 +83,21 @@ export default function ProfileForm({ user }: { user: User }) {
         await updateUserProfile(user.id, {
           goals: data.goals,
           habits: data.habits,
-          avatarFile: data.avatar,
+          avatarFile: avatarFile,
         });
-        profileUpdated = true; // Mark as updated only on success
+        profileUpdated = true;
         toast({
           title: t('toast.title'),
           description: t('toast.description'),
         });
         
         form.reset({
-          ...form.getValues(),
-          avatar: null,
+            ...form.getValues(),
+            avatar: null,
         });
+        setAvatarFile(null);
+        setAvatarPreview(null);
         
-        // Refresh the page to show the new avatar after state transition
         if (profileUpdated) {
             router.refresh();
         }
@@ -109,8 +109,6 @@ export default function ProfileForm({ user }: { user: User }) {
           description: 'Failed to update profile.',
           variant: 'destructive',
         });
-      } finally {
-        setAvatarPreview(null);
       }
     });
   }
@@ -133,14 +131,14 @@ export default function ProfileForm({ user }: { user: User }) {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => document.getElementById('avatar-input')?.click()}
                   >
                     <Edit className="mr-2 h-4 w-4" />
                     Change Photo
                   </Button>
                   <Input
+                    id="avatar-input"
                     type="file"
-                    ref={fileInputRef}
                     className="hidden"
                     accept="image/png, image/jpeg, image/gif"
                     onChange={handleAvatarChange}
