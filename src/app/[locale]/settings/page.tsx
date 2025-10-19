@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SettingsPage() {
     const tSettings = useTranslations('settings');
+    const tProfile = useTranslations('profile');
     const { user, loading } = useAuth();
     const router = useRouter();
 
@@ -48,12 +49,12 @@ export default function SettingsPage() {
         <AppLayout>
             <div className="space-y-8">
                 <div>
-                    <h1 className="text-3xl font-bold font-display">{tSettings('title')}</h1>
+                    <h1 className="text-3xl font-bold font-display">{tProfile('settings.title')}</h1>
                     <p className="text-muted-foreground">{tSettings('subtitle')}</p>
                 </div>
                 <Card>
                     <CardHeader>
-                        <CardTitle>{tSettings('title')}</CardTitle>
+                        <CardTitle>{tProfile('settings.title')}</CardTitle>
                         <CardDescription>{tSettings('subtitle')}</CardDescription>
                     </CardHeader>
                     <CardContent>

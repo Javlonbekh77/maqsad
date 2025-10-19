@@ -54,8 +54,7 @@
         "integrityTitle": "A quick reminder on integrity:",
         "integrityDescription": "By confirming, you agree that you have completed this task to the best of your ability. Honesty is key to personal growth and community trust.",
         "earn": "You will earn",
-        "coins": "{count} coins",
-        "confirmButton": "Yes, I've completed it!"
+        "coins": "{count} coins"
     },
     "groups": {
         "title": "Discover Groups",

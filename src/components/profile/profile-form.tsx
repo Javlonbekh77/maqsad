@@ -72,36 +72,37 @@ export default function ProfileForm({ user }: { user: User }) {
   async function onSubmit(data: ProfileFormValues) {
     let profileUpdated = false;
     startTransition(async () => {
-      try {
-        await updateUserProfile(user.id, {
-          goals: data.goals,
-          habits: data.habits,
-          avatarFile: data.avatar,
-        });
-        profileUpdated = true;
-        toast({
-          title: t('toast.title'),
-          description: t('toast.description'),
-        });
-        
-        form.reset({
-          ...form.getValues(),
-          avatar: null,
-        });
-
-      } catch (error) {
-         console.error("Failed to update profile:", error);
-         toast({
-          title: 'Error',
-          description: 'Failed to update profile.',
-          variant: 'destructive',
-        });
-      } finally {
-        setAvatarPreview(null);
-        if (profileUpdated) {
-          router.refresh();
-        }
-      }
+        try {
+            await updateUserProfile(user.id, {
+              goals: data.goals,
+              habits: data.habits,
+              avatarFile: data.avatar,
+            });
+            profileUpdated = true; // Mark as updated only on success
+            toast({
+              title: t('toast.title'),
+              description: t('toast.description'),
+            });
+            
+            form.reset({
+              ...form.getValues(),
+              avatar: null,
+            });
+    
+          } catch (error) {
+             console.error("Failed to update profile:", error);
+             toast({
+              title: 'Error',
+              description: 'Failed to update profile.',
+              variant: 'destructive',
+            });
+          } finally {
+            setAvatarPreview(null);
+            if (profileUpdated) {
+                // Refresh the page to show the new avatar
+                router.refresh();
+            }
+          }
     });
   }
 

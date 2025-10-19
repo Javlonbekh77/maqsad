@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { NextIntlClientProvider, useMessages } from 'next-intl';
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages } from 'next-intl/server';
 import { PT_Sans as PTSans } from 'next/font/google';
 import { AuthProvider } from '@/context/auth-context';
 import { auth, db } from '@/lib/firebase';
@@ -28,12 +29,12 @@ export default async function RootLayout({
   children,
   params: {locale}
 }: Readonly<RootLayoutProps>) {
-  const messages = (await import(`../../../locales/${locale}.json`)).default;
+  const messages = await getMessages();
 
   return (
     <html lang={locale} suppressHydrationWarning>
        <body className={cn('min-h-screen bg-background font-sans antialiased', fontSans.variable)}>
-        <NextIntlClientProvider locale={locale} messages={messages}>
+        <NextIntlClientProvider messages={messages}>
           <AuthProvider>
             {children}
             <Toaster />
