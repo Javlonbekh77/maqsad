@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { UserTask } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,18 +25,18 @@ export default function TodoList({ initialTasks, userId, onTaskCompletion }: Tod
     setTasks(initialTasks);
   }, [initialTasks]);
 
-  const handleCompleteClick = (task: UserTask) => {
+  const handleCompleteClick = useCallback((task: UserTask) => {
     setSelectedTask(task);
-  };
+  }, []);
 
-  const handleConfirmCompletion = async () => {
+  const handleConfirmCompletion = useCallback(async () => {
     if (!selectedTask || !userId) return;
     
     await completeUserTask(userId, selectedTask.id, selectedTask.coins);
 
     setSelectedTask(null);
     onTaskCompletion(userId); // Re-fetch all data to ensure consistency
-  };
+  }, [selectedTask, userId, onTaskCompletion]);
 
   const activeTasks = tasks.filter(t => !t.isCompleted);
   const completedTasks = tasks.filter(t => t.isCompleted);

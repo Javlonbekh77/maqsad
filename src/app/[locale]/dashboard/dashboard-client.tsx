@@ -44,7 +44,7 @@ export default function DashboardClient() {
 
   const isLoading = authLoading || loadingTasks;
 
-  const handleTaskCompletion = async () => {
+  const handleTaskCompletion = useCallback(async () => {
     if(authUser) {
       // We need to re-fetch the authUser to get the latest taskHistory, then fetch tasks
       const freshUser = await getUser(authUser.id);
@@ -52,7 +52,7 @@ export default function DashboardClient() {
         fetchData(freshUser);
       }
     }
-  }
+  }, [authUser, fetchData]);
 
   if (isLoading || !authUser) {
     return (

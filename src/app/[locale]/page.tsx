@@ -63,6 +63,9 @@ export default function LandingPage() {
               <p className="mx-auto max-w-[700px] text-foreground/80 md:text-xl">
                 {t('heroSubtitle')}
               </p>
+               <p className="font-semibold text-lg md:text-xl text-foreground max-w-2xl">
+                "Bir maqsad yo'lida birlashganlar aql bovar qilmas kuchga ega!!!"
+              </p>
               <div className="space-x-4">
                 <Button size="lg" asChild>
                   <Link href="/signup" prefetch={false}>
