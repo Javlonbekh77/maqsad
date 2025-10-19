@@ -13,11 +13,12 @@ import {
   query,
   where,
   orderBy,
-  limit
+  limit,
+  or
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
-import type { User, Group, Task, UserTask, WeeklyMeeting } from './types';
+import type { User, Group, Task, UserTask, WeeklyMeeting, UserTaskSchedule } from './types';
 import { format } from 'date-fns';
 
 // --- Read Functions ---
@@ -27,7 +28,11 @@ export const getUser = async (userId: string): Promise<User | null> => {
   const userDocRef = doc(db, 'users', userId);
   const userSnap = await getDoc(userDocRef);
   if (userSnap.exists()) {
-    return { ...userSnap.data(), id: userSnap.id, firebaseId: userSnap.id } as User;
+    const userData = userSnap.data();
+    // Ensure taskHistory and groups are arrays
+    const taskHistory = Array.isArray(userData.taskHistory) ? userData.taskHistory : [];
+    const groups = Array.isArray(userData.groups) ? userData.groups : [];
+    return { ...userData, id: userSnap.id, firebaseId: userSnap.id, taskHistory, groups } as User;
   }
   return null;
 }
@@ -50,14 +55,30 @@ export const getUserTasks = async (user: User): Promise<UserTask[]> => {
     }
 
     const today = format(new Date(), 'yyyy-MM-dd');
+    const dayOfWeek = format(new Date(), 'EEEE'); // e.g., "Monday"
+    
+    const userSchedules = user.taskSchedules || [];
+
+    // Filter for tasks scheduled for today
+    const todaysScheduledTasks = userSchedules.filter(schedule => schedule.days.includes(dayOfWeek));
+    const todaysTaskIds = todaysScheduledTasks.map(schedule => schedule.taskId);
+
+    if (todaysTaskIds.length === 0) {
+      return [];
+    }
     
     // Firestore 'in' query has a limit of 30 elements in the array.
-    const groupIds = user.groups.slice(0, 30);
-    if(groupIds.length === 0) return [];
+    const taskIds = todaysTaskIds.slice(0, 30);
+    if(taskIds.length === 0) return [];
 
-    const tasksQuery = query(collection(db, 'tasks'), where('groupId', 'in', groupIds));
+    const tasksQuery = query(collection(db, 'tasks'), where('__name__', 'in', taskIds));
     const tasksSnapshot = await getDocs(tasksQuery);
     const tasksForUser = tasksSnapshot.docs.map(doc => ({ ...doc.data() as Task, id: doc.id }));
+    
+    if (tasksForUser.length === 0) return [];
+
+    const groupIds = [...new Set(tasksForUser.map(t => t.groupId))].slice(0,30);
+    if(groupIds.length === 0) return [];
     
     const allGroupsSnapshot = await getDocs(query(collection(db, 'groups'), where('__name__', 'in', groupIds)));
     const groupMap = new Map(allGroupsSnapshot.docs.map(doc => [doc.id, doc.data().name]));
@@ -102,7 +123,7 @@ export const getGroupAndDetails = async (groupId: string): Promise<{ group: Grou
 
     const members = membersData.filter(Boolean) as User[];
     const tasks = tasksSnapshot.docs.map(d => ({ ...d.data() as Task, id: d.id }));
-    const meetings = meetingsSnapshot.docs.map(d => d.data() as WeeklyMeeting);
+    const meetings = meetingsSnapshot.docs.map(d => ({ ...d.data(), id: d.id } as WeeklyMeeting));
 
     return { group: groupData, members, tasks, meetings };
 };
@@ -222,12 +243,33 @@ export const createTask = async (taskData: Omit<Task, 'id'>): Promise<string> =>
     return docRef.id;
 };
 
-export const addUserToGroup = async (userId: string, groupId: string, taskIds: string[]): Promise<void> => {
+export const addUserToGroup = async (userId: string, groupId: string, taskSchedules: UserTaskSchedule[]): Promise<void> => {
     const userDocRef = doc(db, "users", userId);
     const groupDocRef = doc(db, "groups", groupId);
+    const user = await getUser(userId);
+
+    if (!user) {
+        throw new Error("User not found");
+    }
+
+    // Filter out old schedules for the tasks in the current group
+    const tasksInGroupQuery = query(collection(db, 'tasks'), where('groupId', '==', groupId));
+    const tasksInGroupSnapshot = await getDocs(tasksInGroupQuery);
+    const taskIdsInGroup = tasksInGroupSnapshot.docs.map(doc => doc.id);
+
+    const existingSchedules = user.taskSchedules || [];
+    const updatedSchedules = existingSchedules.filter(schedule => !taskIdsInGroup.includes(schedule.taskId));
+    
+    // Add the new schedules
+    taskSchedules.forEach(newSchedule => {
+        updatedSchedules.push(newSchedule);
+    });
 
     const batch = writeBatch(db);
-    batch.update(userDocRef, { groups: arrayUnion(groupId) });
+    batch.update(userDocRef, { 
+      groups: arrayUnion(groupId),
+      taskSchedules: updatedSchedules
+    });
     batch.update(groupDocRef, { members: arrayUnion(userId) });
 
     await batch.commit();
@@ -281,4 +323,35 @@ export const updateUserProfile = async (userId: string, data: { goals?: string |
     if (Object.keys(updateData).length > 0) {
       await updateDoc(userDocRef, updateData);
     }
+};
+
+export const updateGroupImage = async (groupId: string, imageFile: File): Promise<string> => {
+    const groupDocRef = doc(db, 'groups', groupId);
+
+    const storageRef = ref(storage, `group-images/${groupId}/${imageFile.name}`);
+    const snapshot = await uploadBytes(storageRef, imageFile);
+    const downloadURL = await getDownloadURL(snapshot.ref);
+
+    await updateDoc(groupDocRef, {
+        imageUrl: downloadURL
+    });
+
+    return downloadURL;
+};
+
+export const performSearch = async (searchTerm: string): Promise<{ users: User[], groups: Group[] }> => {
+    if (!searchTerm.trim()) {
+        return { users: [], groups: [] };
+    }
+    const term = searchTerm.toLowerCase();
+
+    // For simplicity, we'll fetch all and filter client-side.
+    // For production, you would use a search service like Algolia or a more complex query.
+    const allUsers = await getAllUsers();
+    const allGroups = await getAllGroups();
+
+    const filteredUsers = allUsers.filter(u => u.fullName.toLowerCase().includes(term)).slice(0, 5);
+    const filteredGroups = allGroups.filter(g => g.name.toLowerCase().includes(term)).slice(0, 5);
+    
+    return { users: filteredUsers, groups: filteredGroups };
 };

@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Coins, Crown, UserPlus } from 'lucide-react';
+import { Coins, Crown, UserPlus, Settings } from 'lucide-react';
 import CreateTaskDialog from '@/components/groups/create-task-dialog';
 import {
   Table,
@@ -25,9 +25,10 @@ import JoinGroupDialog from '@/components/groups/join-group-dialog';
 import { useTranslations } from 'next-intl';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import WeeklyMeetings from '@/components/groups/weekly-meetings';
-import type { Group, Task, User, WeeklyMeeting } from '@/lib/types';
+import type { Group, Task, User, WeeklyMeeting, UserTaskSchedule } from '@/lib/types';
 import { useAuth } from '@/context/auth-context';
 import { Skeleton } from '@/components/ui/skeleton';
+import GroupSettingsDialog from '@/components/groups/group-settings-dialog';
 
 export default function GroupDetailClient() {
   const t = useTranslations('groupDetail');
@@ -41,6 +42,7 @@ export default function GroupDetailClient() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [meetings, setMeetings] = useState<WeeklyMeeting[]>([]);
   const [isJoinDialogOpen, setJoinDialogOpen] = useState(false);
+  const [isSettingsOpen, setSettingsOpen] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
 
   const fetchGroupData = useCallback(async (groupId: string) => {
@@ -74,10 +76,10 @@ export default function GroupDetailClient() {
     }
   }, [id, authLoading, currentUser, router, fetchGroupData]);
 
-  const handleJoinGroup = useCallback(async (selectedTaskIds: string[]) => {
+  const handleJoinGroup = useCallback(async (schedules: UserTaskSchedule[]) => {
     if (!currentUser || !group) return;
     try {
-      await addUserToGroup(currentUser.id, group.id, selectedTaskIds);
+      await addUserToGroup(currentUser.id, group.id, schedules);
       setJoinDialogOpen(false);
       await fetchGroupData(id as string); // Re-fetch data to show the user as a new member
     } catch(error) {
@@ -151,11 +153,17 @@ export default function GroupDetailClient() {
             <h1 className="text-4xl font-bold text-white font-display">{group.name}</h1>
             <p className="text-lg text-white/80 max-w-2xl mt-2">{group.description}</p>
           </div>
-           <div className="absolute top-4 right-4">
+           <div className="absolute top-4 right-4 flex gap-2">
               {!isMember && currentUser && (
                 <Button onClick={() => setJoinDialogOpen(true)}>
                   <UserPlus className="mr-2 h-4 w-4" />
                   {t('joinGroup')}
+                </Button>
+              )}
+              {isAdmin && (
+                <Button variant="secondary" onClick={() => setSettingsOpen(true)}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Guruh Sozlamalari
                 </Button>
               )}
             </div>
@@ -260,6 +268,14 @@ export default function GroupDetailClient() {
         groupName={group.name}
         tasks={tasks}
       />
+      {isAdmin && (
+         <GroupSettingsDialog
+            isOpen={isSettingsOpen}
+            onClose={() => setSettingsOpen(false)}
+            group={group}
+            onGroupUpdated={() => fetchGroupData(group.id)}
+        />
+      )}
     </AppLayout>
   );
 }

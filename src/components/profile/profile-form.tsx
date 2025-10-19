@@ -20,7 +20,7 @@ import { Separator } from '../ui/separator';
 import { useTranslations } from 'next-intl';
 import { updateUserProfile } from '@/lib/data';
 import { useRouter } from '@/navigation';
-import { useTransition, useState, useRef } from 'react';
+import { useTransition, useState, useRef, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Input } from '../ui/input';
 import { Edit } from 'lucide-react';
@@ -55,6 +55,15 @@ export default function ProfileForm({ user }: { user: User }) {
     },
     mode: 'onChange',
   });
+  
+  useEffect(() => {
+    // Reset form with new user data if user changes
+    form.reset({
+      goals: user.goals || '',
+      habits: user.habits || '',
+    });
+  }, [user, form]);
+
 
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -71,37 +80,38 @@ export default function ProfileForm({ user }: { user: User }) {
   async function onSubmit(data: ProfileFormValues) {
     let profileUpdated = false;
     startTransition(async () => {
-        try {
-            await updateUserProfile(user.id, {
-              goals: data.goals,
-              habits: data.habits,
-              avatarFile: data.avatar,
-            });
-            profileUpdated = true; // Mark as updated only on success
-            toast({
-              title: t('toast.title'),
-              description: t('toast.description'),
-            });
-            
-            form.reset({
-              ...form.getValues(),
-              avatar: null,
-            });
-    
-          } catch (error) {
-             console.error("Failed to update profile:", error);
-             toast({
-              title: 'Error',
-              description: 'Failed to update profile.',
-              variant: 'destructive',
-            });
-          } finally {
-            setAvatarPreview(null);
-            if (profileUpdated) {
-                // Refresh the page to show the new avatar
-                router.refresh();
-            }
-          }
+      try {
+        await updateUserProfile(user.id, {
+          goals: data.goals,
+          habits: data.habits,
+          avatarFile: data.avatar,
+        });
+        profileUpdated = true; // Mark as updated only on success
+        toast({
+          title: t('toast.title'),
+          description: t('toast.description'),
+        });
+        
+        form.reset({
+          ...form.getValues(),
+          avatar: null,
+        });
+        
+        // Refresh the page to show the new avatar after state transition
+        if (profileUpdated) {
+            router.refresh();
+        }
+
+      } catch (error) {
+         console.error("Failed to update profile:", error);
+         toast({
+          title: 'Error',
+          description: 'Failed to update profile.',
+          variant: 'destructive',
+        });
+      } finally {
+        setAvatarPreview(null);
+      }
     });
   }
 

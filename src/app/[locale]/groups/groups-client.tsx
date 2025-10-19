@@ -90,12 +90,12 @@ export default function GroupsClient() {
             <p className="text-muted-foreground">{t('subtitle')}</p>
           </div>
           <div className="flex gap-2">
-             <div className="relative flex-1">
+             <div className="relative flex-1 md:grow-0">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder={t('searchPlaceholder')}
-                className="pl-8 w-full"
+                className="pl-8 w-full md:w-[200px] lg:w-[320px]"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />

@@ -13,6 +13,13 @@ export type TaskHistory = {
   date: string; // YYYY-MM-DD
 };
 
+export type DayOfWeek = 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
+
+export type UserTaskSchedule = {
+  taskId: string;
+  days: DayOfWeek[];
+};
+
 export type User = {
   firebaseId: string; // Firestore document ID
   id: string; // This is the Firebase Auth UID
@@ -27,6 +34,7 @@ export type User = {
   groups: string[]; // array of group IDs
   occupation: string;
   taskHistory: TaskHistory[];
+  taskSchedules?: UserTaskSchedule[]; // New field for task schedules
   university?: string;
   specialization?: string;
   course?: string;

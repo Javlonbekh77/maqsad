@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/navigation";
 import { useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import ThemeSwitcher from "@/components/theme-switcher";
 
 export default function SettingsPage() {
     const tSettings = useTranslations('settings');
@@ -58,6 +59,17 @@ export default function SettingsPage() {
                     </CardHeader>
                     <CardContent>
                         <ProfileForm user={user} />
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Display</CardTitle>
+                        <CardDescription>
+                            Turn on or off dark mode.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <ThemeSwitcher />
                     </CardContent>
                 </Card>
             </div>
