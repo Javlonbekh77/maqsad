@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from "next/image";
@@ -9,8 +8,6 @@ import type { Group, User } from "@/lib/types";
 import { ArrowRight, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/navigation";
-import { useEffect, useState } from "react";
-import { Skeleton } from "../ui/skeleton";
 
 interface GroupCardProps {
   group: Group;

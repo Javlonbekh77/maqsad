@@ -1,4 +1,3 @@
-
 {
     "actions": {
         "cancel": "Bekor qilish",
@@ -54,7 +53,8 @@
         "integrityTitle": "Halollik haqida qisqacha eslatma:",
         "integrityDescription": "Tasdiqlash orqali siz ushbu vazifani imkon qadar yaxshi bajarganingizga rozilik bildirasiz. Halollik shaxsiy o'sish va jamiyat ishonchining kalitidir.",
         "earn": "Sizga taqdim etiladi",
-        "coins": "{count} tanga"
+        "coins": "{count} tanga",
+        "confirmButton": "Tasdiqlash"
     },
     "groups": {
         "title": "Guruhlarni toping",

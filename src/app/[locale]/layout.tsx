@@ -3,7 +3,6 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { PT_Sans as PTSans } from 'next/font/google';
 import { AuthProvider } from '@/context/auth-context';
-import { auth, db } from '@/lib/firebase';
 
 import '../globals.css';
 import { Toaster } from '@/components/ui/toaster';
@@ -34,7 +33,7 @@ export default async function RootLayout({
   return (
     <html lang={locale} suppressHydrationWarning>
        <body className={cn('min-h-screen bg-background font-sans antialiased', fontSans.variable)}>
-        <NextIntlClientProvider messages={messages}>
+        <NextIntlClientProvider locale={locale} messages={messages}>
           <AuthProvider>
             {children}
             <Toaster />

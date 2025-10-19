@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -77,7 +76,7 @@ export default function SignupPage() {
       if (err.code === 'auth/email-already-in-use') {
         setError('This email is already registered. Please log in or use a different email.');
       } else if (err.code === 'auth/operation-not-allowed') {
-        setError('Email/password sign-up is not enabled. Please contact support.');
+        setError('Email/password sign-up is not enabled. Please check your Firebase Console settings.');
       }
       else if (err.code === 'auth/network-request-failed') {
         setError('Network error. Please check your internet connection.');

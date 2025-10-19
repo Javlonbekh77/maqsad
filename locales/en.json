@@ -1,4 +1,3 @@
-
 {
     "actions": {
         "cancel": "Cancel",
@@ -54,7 +53,8 @@
         "integrityTitle": "A quick reminder on integrity:",
         "integrityDescription": "By confirming, you agree that you have completed this task to the best of your ability. Honesty is key to personal growth and community trust.",
         "earn": "You will earn",
-        "coins": "{count} coins"
+        "coins": "{count} coins",
+        "confirmButton": "Confirm & Earn"
     },
     "groups": {
         "title": "Discover Groups",

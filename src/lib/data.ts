@@ -18,9 +18,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 import type { User, Group, Task, UserTask, WeeklyMeeting } from './types';
-import { PlaceHolderImages } from './placeholder-images';
 import { format } from 'date-fns';
-import type { User as FirebaseUser } from 'firebase/auth';
 
 // --- Read Functions ---
 
@@ -196,34 +194,6 @@ export const getGoalMates = async (userId: string): Promise<User[]> => {
 
 
 // --- Write Functions ---
-
-export const createUserProfile = async (firebaseUser: FirebaseUser, data: Partial<User> & { avatarUrl: string }) => {
-    const userDocRef = doc(db, 'users', firebaseUser.uid);
-    
-    const fullName = `${data.firstName || ''} ${data.lastName || ''}`.trim();
-    const newUser: User = {
-        id: firebaseUser.uid,
-        firebaseId: firebaseUser.uid, 
-        firstName: data.firstName || 'Test',
-        lastName: data.lastName || 'User',
-        fullName: fullName || 'Test User',
-        email: data.email || firebaseUser.email || '',
-        avatarUrl: data.avatarUrl,
-        coins: 0,
-        goals: '',
-        habits: '',
-        groups: [],
-        occupation: data.specialization || 'Developer',
-        taskHistory: [],
-        university: data.university || 'TUIT',
-        specialization: data.specialization || 'Software Engineering',
-        course: data.course || '3',
-        telegram: data.telegram || '',
-        createdAt: serverTimestamp(),
-    };
-    await setDoc(userDocRef, newUser);
-    return newUser;
-};
 
 export const createGroup = async (groupData: Omit<Group, 'id' | 'firebaseId' | 'members'>, adminId: string): Promise<string> => {
     const newGroupRef = doc(collection(db, 'groups'));

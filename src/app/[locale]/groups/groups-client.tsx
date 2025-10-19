@@ -32,7 +32,7 @@ export default function GroupsClient() {
       ]);
       setGroups(groupsData);
       setUsers(usersData);
-    } catch (error) => {
+    } catch (error) {
       console.error("Failed to fetch groups and users:", error);
     } finally {
       setLoadingData(false);
