@@ -10,49 +10,47 @@ import HabitTracker from "@/components/profile/habit-tracker";
 import { useAuth } from '@/context/auth-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getUser, getUserTasks } from '@/lib/data';
-import DashboardStats from '@/components/dashboard/dashboard-stats';
-import { Card } from '@/components/ui/card';
-import QuickAccess from '@/components/dashboard/quick-access';
 
 export default function DashboardClient() {
   const t = useTranslations('dashboard');
-  const { user: authUser, loading: authLoading } = useAuth();
+  const { user: authUser, loading: authLoading, refreshAuth } = useAuth();
   const router = useRouter();
 
   const [tasks, setTasks] = useState<UserTask[]>([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
 
-  const fetchData = useCallback(async (user: User) => {
-    if (!user) return;
+  const fetchData = useCallback(async () => {
+    if (!authUser) return;
     setLoadingTasks(true);
     try {
-      const userTasks = await getUserTasks(user);
-      setTasks(userTasks);
+      // Re-fetch user to get latest history for task calculation
+      const freshUser = await getUser(authUser.id);
+      if (freshUser) {
+        const userTasks = await getUserTasks(freshUser);
+        setTasks(userTasks);
+      }
     } catch (error) {
       console.error("Failed to fetch dashboard tasks:", error);
     } finally {
       setLoadingTasks(false);
     }
-  }, []);
-
-  const refreshUserData = useCallback(async () => {
-    if (authUser) {
-      const freshUser = await getUser(authUser.id);
-      if(freshUser) {
-        fetchData(freshUser);
-      }
-    }
-  }, [authUser, fetchData]);
+  }, [authUser]);
 
   useEffect(() => {
     if (!authLoading) {
       if (!authUser) {
         router.push('/login');
       } else {
-        fetchData(authUser);
+        fetchData();
       }
     }
   }, [authUser, authLoading, router, fetchData]);
+  
+  const handleTaskCompletion = async () => {
+    // Refresh all auth context data, which will trigger a re-render and re-fetch here.
+    await refreshAuth(); 
+    await fetchData();
+  };
 
   const isLoading = authLoading || loadingTasks;
 
@@ -91,21 +89,13 @@ export default function DashboardClient() {
           <p className="text-muted-foreground">{t('welcomeSubtitle')}</p>
         </div>
 
-        <DashboardStats user={authUser} tasks={tasks} />
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 items-start">
-          <div className="lg:col-span-2 grid gap-8">
-             <TodaySchedule 
-              tasks={tasks} 
-              userId={authUser.id} 
-              onTaskCompletion={refreshUserData} 
-            />
-             <HabitTracker user={authUser} />
-          </div>
-
-          <div className="space-y-8">
-            <QuickAccess userGroups={authUser.groups} />
-          </div>
+        <div className="grid lg:grid-cols-2 gap-8 items-start">
+          <TodaySchedule 
+            tasks={tasks} 
+            userId={authUser.id} 
+            onTaskCompletion={handleTaskCompletion} 
+          />
+          <HabitTracker user={authUser} />
         </div>
       </div>
     </AppLayout>

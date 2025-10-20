@@ -140,10 +140,11 @@ export default function AvatarUpload({ user, onUploadComplete }: AvatarUploadPro
           description: "Sizning yangi profilingiz rasmi muvaffaqiyatli saqlandi.",
         });
         
-        onUploadComplete(); // This will refresh user data from AuthContext
+        // This is the critical part: ensure everything is reset after success
+        onUploadComplete();
         setIsCropping(false);
         setImgSrc('');
-
+        
       } catch (error) {
         console.error("Failed to upload avatar", error);
         toast({
@@ -152,6 +153,7 @@ export default function AvatarUpload({ user, onUploadComplete }: AvatarUploadPro
           description: "Rasmni yuklashda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.",
         });
       } finally {
+        // This will always run, ensuring the loading state is turned off.
         setIsUploading(false);
       }
     }, [completedCrop, user.id, onUploadComplete, toast]);
@@ -175,7 +177,7 @@ export default function AvatarUpload({ user, onUploadComplete }: AvatarUploadPro
                 </div>
             </div>
             <div>
-                 <Button onClick={handleAvatarClick} variant="outline">
+                 <Button onClick={handleAvatarClick} variant="outline" disabled={isUploading}>
                     <RotateCw className="mr-2 h-4 w-4" />
                     Rasmni o'zgartirish
                 </Button>
@@ -183,7 +185,7 @@ export default function AvatarUpload({ user, onUploadComplete }: AvatarUploadPro
             </div>
 
             {isCropping && (
-                <Dialog open={isCropping} onOpenChange={(open) => !open && setIsCropping(false)}>
+                <Dialog open={isCropping} onOpenChange={(open) => { if(!open) setIsCropping(false) }}>
                     <DialogContent className="max-w-md">
                         <DialogHeader>
                             <DialogTitle>Rasmni Kesish</DialogTitle>
