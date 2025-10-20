@@ -8,33 +8,39 @@
     },
     {
       "id": "user1",
-      "description": "Avatar for Michael",
-      "imageUrl": "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wzNzEzfDB8MHxzZWFyY2h8MTB8fHBvcnRyYWl0fGVufDB8fHx8MTY5MDM0OTYxOHww&ixlib=rb-4.0.3&q=80&w=1080",
-      "imageHint": "man professional"
+      "description": "Simple avatar 1",
+      "imageUrl": "https://images.unsplash.com/photo-1732020858816-93c130ab8f49?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxhYnN0cmFjdCUyMGF2YXRhcnxlbnwwfHx8fDE3NjA4NTQyMjJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "abstract avatar"
     },
     {
       "id": "user2",
-      "description": "Avatar for David",
-      "imageUrl": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxtYW4lMjBwb3J0cmFpdHxlbnwwfHx8fDE3NTkwNzk5MTd8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "man portrait"
+      "description": "Simple avatar 2",
+      "imageUrl": "https://images.unsplash.com/photo-1754838880357-60c7c468180f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGF2YXRhcnxlbnwwfHx8fDE3NjA4NTQyMjJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "abstract avatar"
     },
     {
       "id": "user3",
-      "description": "Avatar for Emily",
-      "imageUrl": "https://images.unsplash.com/photo-1607529378676-a20456ee2f6b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxwZXJzb24lMjBzbWlsaW5nfGVufDB8fHx8MTc1OTAxMjAzOHww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "person smiling"
+      "description": "Simple avatar 3",
+      "imageUrl": "https://images.unsplash.com/photo-1571249104671-f5537fb3e137?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxhYnN0cmFjdCUyMGF2YXRhcnxlbnwwfHx8fDE3NjA4NTQyMjJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "abstract avatar"
     },
     {
       "id": "user4",
-      "description": "Avatar for Sarah",
-      "imageUrl": "https://images.unsplash.com/photo-1610655507808-a59293f4e332?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHx3b21hbiUyMHBvcnRyYWl0fGVufDB8fHx8MTc1OTA2NDc1MHww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "woman portrait"
+      "description": "Simple avatar 4",
+      "imageUrl": "https://images.unsplash.com/photo-1754838880357-60c7c468180f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGF2YXRhcnxlbnwwfHx8fDE3NjA4NTQyMjJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "abstract avatar"
     },
     {
       "id": "user5",
-      "description": "Avatar for Jessica",
-      "imageUrl": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wzNzEzfDB8MHxzZWFyY2h8M3x8cG9ydHJhaXR8ZW58MHx8fHwxNjkwMzQ5NjE4fDA&ixlib=rb-4.0.3&q=80&w=1080",
-      "imageHint": "woman smiling"
+      "description": "Simple avatar 5",
+      "imageUrl": "https://images.unsplash.com/photo-1754837369018-ff35655d126f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxhYnN0cmFjdCUyMGF2YXRhcnxlbnwwfHx8fDE3NjA4NTQyMjJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "abstract avatar"
+    },
+    {
+      "id": "user6",
+      "description": "Simple avatar 6",
+      "imageUrl": "https://images.unsplash.com/photo-1509587961360-de7aff9a662a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxhYnN0cmFjdCUyMGF2YXRhcnxlbnwwfHx8fDE3NjA4NTQyMjJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "abstract avatar"
     },
     {
       "id": "group1",

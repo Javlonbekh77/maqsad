@@ -323,7 +323,7 @@ export const completeUserTask = async (userId: string, taskId: string, coins: nu
     });
 };
 
-export const updateUserProfile = async (userId: string, data: { goals?: string | null; habits?: string | null; avatarFile?: File | null }): Promise<void> => {
+export const updateUserProfile = async (userId: string, data: { goals?: string | null; habits?: string | null; }): Promise<void> => {
     const userDocRef = doc(db, 'users', userId);
     const updateData: { [key: string]: any } = {};
 
@@ -333,20 +333,13 @@ export const updateUserProfile = async (userId: string, data: { goals?: string |
     if (data.habits !== undefined && data.habits !== null) {
         updateData.habits = data.habits;
     }
-
-    if (data.avatarFile) {
-        const storageRef = ref(storage, `avatars/${userId}/${data.avatarFile.name}`);
-        const snapshot = await uploadBytes(storageRef, data.avatarFile);
-        const downloadURL = await getDownloadURL(snapshot.ref);
-        updateData.avatarUrl = downloadURL;
-    }
     
     if (Object.keys(updateData).length > 0) {
       await updateDoc(userDocRef, updateData);
     }
 };
 
-export const updateGroupDetails = async (groupId: string, data: { name?: string, description?: string, imageFile?: File | null }): Promise<void> => {
+export const updateGroupDetails = async (groupId: string, data: { name?: string, description?: string }): Promise<void> => {
     const groupDocRef = doc(db, 'groups', groupId);
     const updateData: { [key: string]: any } = {};
 
@@ -355,14 +348,6 @@ export const updateGroupDetails = async (groupId: string, data: { name?: string,
     }
     if (data.description) {
         updateData.description = data.description;
-    }
-
-    if (data.imageFile) {
-        const storageRef = ref(storage, `group-images/${groupId}/${data.imageFile.name}`);
-        const snapshot = await uploadBytes(storageRef, data.imageFile);
-        const downloadURL = await getDownloadURL(snapshot.ref);
-        updateData.imageUrl = downloadURL;
-        // We might want to update imageHint here as well if we implement AI-based hint generation
     }
 
     if (Object.keys(updateData).length > 0) {

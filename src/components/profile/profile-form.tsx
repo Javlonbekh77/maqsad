@@ -16,14 +16,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
-import { Separator } from '../ui/separator';
 import { useTranslations } from 'next-intl';
 import { updateUserProfile } from '@/lib/data';
 import { useRouter } from '@/navigation';
-import { useTransition, useState, useEffect } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { Input } from '../ui/input';
-import { Edit } from 'lucide-react';
+import { useTransition, useEffect } from 'react';
 
 const profileFormSchema = z.object({
   goals: z
@@ -34,7 +30,6 @@ const profileFormSchema = z.object({
     .string()
     .max(300, { message: 'Habits must not be longer than 300 characters.' })
     .optional().or(z.literal('')),
-  avatar: z.any().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -44,8 +39,6 @@ export default function ProfileForm({ user }: { user: User }) {
   const { toast } = useToast();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -64,18 +57,6 @@ export default function ProfileForm({ user }: { user: User }) {
   }, [user, form]);
 
 
-  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-      setAvatarFile(file);
-    }
-  };
-
   async function onSubmit(data: ProfileFormValues) {
     let profileUpdated = false;
     startTransition(async () => {
@@ -83,21 +64,8 @@ export default function ProfileForm({ user }: { user: User }) {
         await updateUserProfile(user.id, {
           goals: data.goals,
           habits: data.habits,
-          avatarFile: avatarFile,
         });
-        profileUpdated = true;
-        toast({
-          title: t('toast.title'),
-          description: t('toast.description'),
-        });
-        
-        form.reset({
-            ...form.getValues(),
-            avatar: null,
-        });
-        setAvatarFile(null);
-        setAvatarPreview(null);
-        
+        profileUpdated = true; // Set flag on success
       } catch (error) {
          console.error("Failed to update profile:", error);
          toast({
@@ -105,51 +73,21 @@ export default function ProfileForm({ user }: { user: User }) {
           description: 'Failed to update profile.',
           variant: 'destructive',
         });
-      } finally {
-        if (profileUpdated) {
-            router.refresh();
-        }
       }
     });
+
+    if (profileUpdated) {
+        toast({
+          title: t('toast.title'),
+          description: t('toast.description'),
+        });
+        router.refresh();
+    }
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <FormField
-          control={form.control}
-          name="avatar"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-lg">Avatar</FormLabel>
-              <FormControl>
-                <div className="flex items-center gap-4">
-                  <Avatar className="h-24 w-24">
-                    <AvatarImage src={avatarPreview || user.avatarUrl} alt={user.fullName} />
-                    <AvatarFallback>{user.firstName.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => document.getElementById('avatar-input')?.click()}
-                  >
-                    <Edit className="mr-2 h-4 w-4" />
-                    Change Photo
-                  </Button>
-                  <Input
-                    id="avatar-input"
-                    type="file"
-                    className="hidden"
-                    accept="image/png, image/jpeg, image/gif"
-                    onChange={handleAvatarChange}
-                  />
-                </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Separator className="my-6" />
         <FormField
           control={form.control}
           name="goals"
@@ -191,7 +129,7 @@ export default function ProfileForm({ user }: { user: User }) {
           )}
         />
         <div className="flex justify-end">
-            <Button type="submit" disabled={isPending}>
+            <Button type="submit" disabled={isPending || !form.formState.isDirty}>
               {isPending ? "Yangilanmoqda..." : t('updateButton')}
             </Button>
         </div>
