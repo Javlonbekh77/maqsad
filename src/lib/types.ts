@@ -69,3 +69,14 @@ export type UserTask = Task & {
   groupName: string;
   isCompleted: boolean;
 };
+
+export interface ChatMessage {
+  id: string;
+  text: string;
+  senderId: string;
+  createdAt: FieldValue;
+  user: {
+    name: string;
+    avatarUrl: string;
+  }
+}

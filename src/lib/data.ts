@@ -246,7 +246,6 @@ export const createTask = async (taskData: Omit<Task, 'id'>): Promise<string> =>
 
 export const addUserToGroup = async (userId: string, groupId: string, taskSchedules: UserTaskSchedule[]): Promise<void> => {
     const userDocRef = doc(db, "users", userId);
-    const groupDocRef = doc(db, "groups", groupId);
     const user = await getUser(userId);
 
     if (!user) {
@@ -271,6 +270,8 @@ export const addUserToGroup = async (userId: string, groupId: string, taskSchedu
       groups: arrayUnion(groupId),
       taskSchedules: updatedSchedules
     });
+    
+    const groupDocRef = doc(db, "groups", groupId);
     batch.update(groupDocRef, { members: arrayUnion(userId) });
 
     await batch.commit();

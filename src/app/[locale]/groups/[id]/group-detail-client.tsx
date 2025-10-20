@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Coins, Crown, UserPlus, Settings } from 'lucide-react';
+import { Coins, Crown, UserPlus, Settings, MessageSquare } from 'lucide-react';
 import CreateTaskDialog from '@/components/groups/create-task-dialog';
 import {
   Table,
@@ -29,6 +29,7 @@ import type { Group, Task, User, WeeklyMeeting, UserTaskSchedule } from '@/lib/t
 import { useAuth } from '@/context/auth-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import GroupSettingsDialog from '@/components/groups/group-settings-dialog';
+import GroupChat from '@/components/groups/group-chat';
 
 export default function GroupDetailClient() {
   const t = useTranslations('groupDetail');
@@ -88,6 +89,7 @@ export default function GroupDetailClient() {
   }, [currentUser, group, id, fetchGroupData]);
   
   const isLoading = authLoading || loadingData;
+  const isMember = !!currentUser?.id && group?.members.includes(currentUser.id);
 
   if (isLoading || !currentUser) {
     return (
@@ -135,7 +137,6 @@ export default function GroupDetailClient() {
   }
 
   const isAdmin = group.adminId === currentUser?.id;
-  const isMember = !!currentUser?.id && group.members.includes(currentUser.id);
 
   return (
     <AppLayout>
@@ -170,10 +171,14 @@ export default function GroupDetailClient() {
         </header>
 
         <Tabs defaultValue="tasks" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="tasks">{t('tasksTitle')}</TabsTrigger>
             <TabsTrigger value="members">{t('membersTitle', { count: members.length })}</TabsTrigger>
             <TabsTrigger value="meetings">Haftalik Uchrashuvlar</TabsTrigger>
+            <TabsTrigger value="chat" disabled={!isMember}>
+                <MessageSquare className="mr-2 h-4 w-4" />
+                Chat
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="tasks">
              <Card>
@@ -258,6 +263,13 @@ export default function GroupDetailClient() {
           </TabsContent>
           <TabsContent value="meetings">
             <WeeklyMeetings groupId={group.id} meetings={meetings} />
+          </TabsContent>
+          <TabsContent value="chat">
+            <Card>
+                <CardContent>
+                    <GroupChat groupId={group.id} members={members} />
+                </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
