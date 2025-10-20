@@ -20,7 +20,7 @@ import { Separator } from '../ui/separator';
 import { useTranslations } from 'next-intl';
 import { updateUserProfile } from '@/lib/data';
 import { useRouter } from '@/navigation';
-import { useTransition, useState, useRef, useEffect } from 'react';
+import { useTransition, useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Input } from '../ui/input';
 import { Edit } from 'lucide-react';
@@ -98,10 +98,6 @@ export default function ProfileForm({ user }: { user: User }) {
         setAvatarFile(null);
         setAvatarPreview(null);
         
-        if (profileUpdated) {
-            router.refresh();
-        }
-
       } catch (error) {
          console.error("Failed to update profile:", error);
          toast({
@@ -109,6 +105,10 @@ export default function ProfileForm({ user }: { user: User }) {
           description: 'Failed to update profile.',
           variant: 'destructive',
         });
+      } finally {
+        if (profileUpdated) {
+            router.refresh();
+        }
       }
     });
   }
