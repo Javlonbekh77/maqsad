@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from '@/navigation';
 import AppLayout from "@/components/layout/app-layout";
-import TodoList from "@/components/dashboard/todo-list";
+import TodaySchedule from "@/components/dashboard/today-schedule";
 import type { User, UserTask } from "@/lib/types";
 import { useTranslations } from "next-intl";
 import HabitTracker from "@/components/profile/habit-tracker";
@@ -80,8 +80,8 @@ export default function DashboardClient() {
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 items-start">
-          <TodoList 
-            initialTasks={tasks} 
+          <TodaySchedule 
+            tasks={tasks} 
             userId={authUser.id} 
             onTaskCompletion={handleTaskCompletion} 
           />
