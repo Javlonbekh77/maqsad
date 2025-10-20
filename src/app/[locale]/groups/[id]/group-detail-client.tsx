@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Coins, Crown, UserPlus, Settings, MessageSquare } from 'lucide-react';
+import { Coins, Crown, UserPlus, Settings, MessageSquare, Edit } from 'lucide-react';
 import CreateTaskDialog from '@/components/groups/create-task-dialog';
 import {
   Table,
@@ -30,6 +30,8 @@ import { useAuth } from '@/context/auth-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import GroupSettingsDialog from '@/components/groups/group-settings-dialog';
 import GroupChat from '@/components/groups/group-chat';
+import EditTaskDialog from '@/components/groups/edit-task-dialog';
+
 
 export default function GroupDetailClient() {
   const t = useTranslations('groupDetail');
@@ -44,6 +46,7 @@ export default function GroupDetailClient() {
   const [meetings, setMeetings] = useState<WeeklyMeeting[]>([]);
   const [isJoinDialogOpen, setJoinDialogOpen] = useState(false);
   const [isSettingsOpen, setSettingsOpen] = useState(false);
+  const [isEditingTask, setIsEditingTask] = useState<Task | null>(null);
   const [loadingData, setLoadingData] = useState(true);
 
   const fetchGroupData = useCallback(async (groupId: string) => {
@@ -89,7 +92,9 @@ export default function GroupDetailClient() {
   }, [currentUser, group, id, fetchGroupData]);
   
   const isLoading = authLoading || loadingData;
-  const isMember = !!currentUser?.id && group?.members.includes(currentUser.id);
+  const isMember = !!currentUser?.id && !!group?.members.includes(currentUser.id);
+  const isAdmin = group?.adminId === currentUser?.id;
+
 
   if (isLoading || !currentUser) {
     return (
@@ -135,8 +140,6 @@ export default function GroupDetailClient() {
       </AppLayout>
     )
   }
-
-  const isAdmin = group.adminId === currentUser?.id;
 
   return (
     <AppLayout>
@@ -196,6 +199,7 @@ export default function GroupDetailClient() {
                         <TableRow>
                           <TableHead>{t('taskColumn')}</TableHead>
                           <TableHead className='text-right'>{t('rewardColumn')}</TableHead>
+                          {isAdmin && <TableHead className="w-12"></TableHead>}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -211,6 +215,13 @@ export default function GroupDetailClient() {
                                 <span>{task.coins}</span>
                               </div>
                             </TableCell>
+                             {isAdmin && (
+                              <TableCell className="text-right">
+                                <Button variant="ghost" size="icon" onClick={() => setIsEditingTask(task)}>
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            )}
                           </TableRow>
                         ))}
                       </TableBody>
@@ -286,6 +297,17 @@ export default function GroupDetailClient() {
             onClose={() => setSettingsOpen(false)}
             group={group}
             onGroupUpdated={() => fetchGroupData(group.id)}
+        />
+      )}
+      {isAdmin && isEditingTask && (
+        <EditTaskDialog
+            isOpen={!!isEditingTask}
+            onClose={() => setIsEditingTask(null)}
+            task={isEditingTask}
+            onTaskUpdated={() => {
+                fetchGroupData(group.id);
+                setIsEditingTask(null);
+            }}
         />
       )}
     </AppLayout>

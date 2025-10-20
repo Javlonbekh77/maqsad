@@ -244,6 +244,11 @@ export const createTask = async (taskData: Omit<Task, 'id'>): Promise<string> =>
     return docRef.id;
 };
 
+export const updateTask = async (taskId: string, data: Partial<Pick<Task, 'title' | 'description' | 'coins'>>): Promise<void> => {
+    const taskDocRef = doc(db, 'tasks', taskId);
+    await updateDoc(taskDocRef, data);
+};
+
 export const addUserToGroup = async (userId: string, groupId: string, taskSchedules: UserTaskSchedule[]): Promise<void> => {
     const userDocRef = doc(db, "users", userId);
     const user = await getUser(userId);
@@ -327,19 +332,30 @@ export const updateUserProfile = async (userId: string, data: { goals?: string |
     }
 };
 
-export const updateGroupImage = async (groupId: string, imageFile: File): Promise<string> => {
+export const updateGroupDetails = async (groupId: string, data: { name?: string, description?: string, imageFile?: File | null }): Promise<void> => {
     const groupDocRef = doc(db, 'groups', groupId);
+    const updateData: { [key: string]: any } = {};
 
-    const storageRef = ref(storage, `group-images/${groupId}/${imageFile.name}`);
-    const snapshot = await uploadBytes(storageRef, imageFile);
-    const downloadURL = await getDownloadURL(snapshot.ref);
+    if (data.name) {
+        updateData.name = data.name;
+    }
+    if (data.description) {
+        updateData.description = data.description;
+    }
 
-    await updateDoc(groupDocRef, {
-        imageUrl: downloadURL
-    });
+    if (data.imageFile) {
+        const storageRef = ref(storage, `group-images/${groupId}/${data.imageFile.name}`);
+        const snapshot = await uploadBytes(storageRef, data.imageFile);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        updateData.imageUrl = downloadURL;
+        // We might want to update imageHint here as well if we implement AI-based hint generation
+    }
 
-    return downloadURL;
+    if (Object.keys(updateData).length > 0) {
+        await updateDoc(groupDocRef, updateData);
+    }
 };
+
 
 export const performSearch = async (searchTerm: string): Promise<{ users: User[], groups: Group[] }> => {
     if (!searchTerm.trim()) {
