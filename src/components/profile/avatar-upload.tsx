@@ -140,6 +140,12 @@ export default function AvatarUpload({ user, onUploadComplete }: AvatarUploadPro
           duration: 5000,
         });
 
+        // Explicitly set states to false on success BEFORE context refresh
+        setIsUploading(false);
+        setIsCropping(false);
+        onUploadComplete();
+
+
       } catch (error) {
         console.error("Failed to upload avatar", error);
         toast({
@@ -147,16 +153,11 @@ export default function AvatarUpload({ user, onUploadComplete }: AvatarUploadPro
           title: "Xatolik",
           description: "Rasmni yuklashda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.",
         });
-      } finally {
-        // This is the new, more robust logic.
-        // First, reset all local states to close dialogs and loading indicators.
+        // Explicitly set states to false on error
         setIsUploading(false);
         setIsCropping(false);
-        setImgSrc('');
-        // We no longer call onUploadComplete here to prevent race conditions.
-        // The user is prompted to refresh manually.
       }
-    }, [completedCrop, user.id, toast]);
+    }, [completedCrop, user.id, toast, onUploadComplete]);
 
     return (
         <div className="flex items-center gap-6">
