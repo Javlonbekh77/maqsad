@@ -6,6 +6,7 @@ export type Task = {
   description: string;
   coins: number;
   groupId: string;
+  time?: string; // Optional time for the task
   createdAt: FieldValue;
 };
 
@@ -25,7 +26,7 @@ export type User = {
   firebaseId: string; // Firestore document ID
   id: string; // This is the Firebase Auth UID
   firstName: string;
-  lastName: string;
+  lastName:string;
   fullName: string; // Combined for easier display
   email: string;
   avatarUrl: string;

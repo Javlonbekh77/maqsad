@@ -20,6 +20,9 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import type { User, Group, Task, UserTask, WeeklyMeeting, UserTaskSchedule } from './types';
 import { format } from 'date-fns';
 
+type DayOfWeek = 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
+
+
 // --- Read Functions ---
 
 export const getUser = async (userId: string): Promise<User | null> => {
@@ -47,6 +50,17 @@ export const getAllGroups = async (): Promise<Group[]> => {
     const groupsQuery = collection(db, 'groups');
     const snapshot = await getDocs(groupsQuery);
     return snapshot.docs.map(doc => ({ ...doc.data() as Group, id: doc.id, firebaseId: doc.id }));
+}
+
+export const getUserGroups = async(userId: string): Promise<Group[]> => {
+    const user = await getUser(userId);
+    if (!user || !user.groups || user.groups.length === 0) {
+        return [];
+    }
+    const groupIds = user.groups.slice(0, 30);
+    const groupsQuery = query(collection(db, 'groups'), where('__name__', 'in', groupIds));
+    const snapshot = await getDocs(groupsQuery);
+    return snapshot.docs.map(d => ({...d.data() as Group, id: d.id, firebaseId: d.id}));
 }
 
 export const getUserTasks = async (user: User): Promise<UserTask[]> => {
@@ -244,7 +258,7 @@ export const createTask = async (taskData: Omit<Task, 'id'>): Promise<string> =>
     return docRef.id;
 };
 
-export const updateTask = async (taskId: string, data: Partial<Pick<Task, 'title' | 'description' | 'coins'>>): Promise<void> => {
+export const updateTask = async (taskId: string, data: Partial<Pick<Task, 'title' | 'description' | 'coins' | 'time'>>): Promise<void> => {
     const taskDocRef = doc(db, 'tasks', taskId);
     await updateDoc(taskDocRef, data);
 };

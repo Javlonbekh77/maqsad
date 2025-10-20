@@ -2,8 +2,8 @@
 
 import DashboardClient from "./dashboard-client";
 
-export const dynamic = 'force-dynamic';
-
+// This is now a client component to use hooks for data fetching.
+// For server-side fetching, we'd need to adjust the structure significantly.
 export default function DashboardPage() {
   return <DashboardClient />;
 }

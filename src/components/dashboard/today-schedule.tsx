@@ -1,29 +1,26 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import type { UserTask } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, Coins, Info } from 'lucide-react';
+import { Check, Coins, Clock, CalendarPlus } from 'lucide-react';
 import TaskCompletionDialog from './task-completion-dialog';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { completeUserTask } from '@/lib/data';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
+import { Badge } from '../ui/badge';
 
-interface TodoListProps {
-  initialTasks: UserTask[];
+interface TodayScheduleProps {
+  tasks: UserTask[];
   userId: string;
   onTaskCompletion: (userId: string) => void;
 }
 
-export default function TodoList({ initialTasks, userId, onTaskCompletion }: TodoListProps) {
+export default function TodaySchedule({ tasks, userId, onTaskCompletion }: TodayScheduleProps) {
   const t = useTranslations('todoList');
-  const [tasks, setTasks] = useState(initialTasks);
   const [selectedTask, setSelectedTask] = useState<UserTask | null>(null);
-  
-  useEffect(() => {
-    setTasks(initialTasks);
-  }, [initialTasks]);
 
   const handleCompleteClick = useCallback((task: UserTask) => {
     setSelectedTask(task);
@@ -37,7 +34,7 @@ export default function TodoList({ initialTasks, userId, onTaskCompletion }: Tod
     setSelectedTask(null);
     onTaskCompletion(userId); // Re-fetch all data to ensure consistency
   }, [selectedTask, userId, onTaskCompletion]);
-
+  
   const activeTasks = tasks.filter(t => !t.isCompleted);
   const completedTasks = tasks.filter(t => t.isCompleted);
 
@@ -45,44 +42,47 @@ export default function TodoList({ initialTasks, userId, onTaskCompletion }: Tod
     <>
       <Card>
         <CardHeader>
-          <CardTitle>{t('title')}</CardTitle>
-          <CardDescription>{t('description')}</CardDescription>
+          <CardTitle>Bugungi Reja</CardTitle>
+          <CardDescription>Bugungi vazifalaringiz va ularning holati.</CardDescription>
         </CardHeader>
         <CardContent>
           {activeTasks.length > 0 ? (
-            <ul className="space-y-4">
-              <AnimatePresence>
-                {activeTasks.map((task, index) => (
-                  <motion.li
-                    key={task.id}
-                    layout
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: -50, transition: { duration: 0.3 } }}
-                    transition={{ duration: 0.5, delay: index * 0.05 }}
-                    className="flex items-center justify-between p-4 rounded-lg bg-secondary/50 border"
-                  >
-                    <div className="flex-1 pr-4">
-                      <p className="font-semibold">{task.title}</p>
-                      <p className="text-sm text-muted-foreground flex items-center gap-2">
-                        <Info className="w-3 h-3"/>
-                        {task.groupName}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-1 font-semibold text-amber-500">
-                        <Coins className="w-4 h-4" />
-                        <span>{task.coins}</span>
-                      </div>
-                      <Button size="sm" onClick={() => handleCompleteClick(task)}>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Vazifa</TableHead>
+                  <TableHead>Guruh</TableHead>
+                  <TableHead>Vaqt</TableHead>
+                  <TableHead className="text-right">Holat</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {activeTasks.map((task) => (
+                  <TableRow key={task.id}>
+                    <TableCell className="font-medium">{task.title}</TableCell>
+                    <TableCell>
+                        <Badge variant="outline">{task.groupName}</Badge>
+                    </TableCell>
+                    <TableCell>
+                        {task.time ? (
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                                <Clock className="h-3 w-3" />
+                                {task.time}
+                            </div>
+                        ) : (
+                            <span className="text-muted-foreground">-</span>
+                        )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                       <Button size="sm" onClick={() => handleCompleteClick(task)}>
                         <Check className="w-4 h-4 mr-2" />
                         {t('completeButton')}
                       </Button>
-                    </div>
-                  </motion.li>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </AnimatePresence>
-            </ul>
+              </TableBody>
+            </Table>
           ) : (
             <div className="text-center py-8">
               <Check className="mx-auto h-12 w-12 text-green-500" />
@@ -99,6 +99,7 @@ export default function TodoList({ initialTasks, userId, onTaskCompletion }: Tod
                    <li key={task.id} className="flex items-center p-3 rounded-lg bg-secondary/30 text-muted-foreground">
                     <Check className="w-5 h-5 mr-3 text-green-500" />
                     <span className="line-through">{task.title}</span>
+                    <Badge variant="secondary" className="ml-auto">{task.groupName}</Badge>
                   </li>
                 ))}
               </ul>

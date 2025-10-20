@@ -12,8 +12,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Coins } from 'lucide-react';
-import { useState, useTransition, useEffect } from 'react';
+import { Coins, Clock } from 'lucide-react';
+import { useTransition, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -26,6 +26,7 @@ const taskSchema = z.object({
   title: z.string().min(3, { message: "Title must be at least 3 characters." }),
   description: z.string().min(10, { message: "Description must be at least 10 characters." }),
   coins: z.coerce.number().min(1, { message: "Coins must be at least 1." }),
+  time: z.string().optional(),
 });
 
 interface EditTaskDialogProps {
@@ -45,6 +46,7 @@ export default function EditTaskDialog({ isOpen, onClose, task, onTaskUpdated }:
       title: task.title,
       description: task.description,
       coins: task.coins,
+      time: task.time || "",
     },
   });
 
@@ -54,6 +56,7 @@ export default function EditTaskDialog({ isOpen, onClose, task, onTaskUpdated }:
         title: task.title,
         description: task.description,
         coins: task.coins,
+        time: task.time || "",
       });
     }
   }, [task, form]);
@@ -114,19 +117,34 @@ export default function EditTaskDialog({ isOpen, onClose, task, onTaskUpdated }:
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="coins"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className='flex items-center gap-1'><Coins className="h-4 w-4 text-amber-500" /> Coins</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="e.g., 50" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+             <div className="grid grid-cols-2 gap-4">
+               <FormField
+                control={form.control}
+                name="coins"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className='flex items-center gap-1'><Coins className="h-4 w-4 text-amber-500" /> Coins</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="e.g., 50" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="time"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className='flex items-center gap-1'><Clock className="h-4 w-4" /> Time (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., 9:00 AM" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             <DialogFooter>
                 <DialogClose asChild>
                     <Button variant="outline" type="button">Cancel</Button>
