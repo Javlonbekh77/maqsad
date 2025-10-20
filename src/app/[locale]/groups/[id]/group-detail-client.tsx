@@ -98,6 +98,7 @@ export default function GroupDetailClient() {
   const isLoading = authLoading || loadingData;
   const isMember = !!currentUser?.id && !!group?.members.includes(currentUser.id);
   const isAdmin = group?.adminId === currentUser?.id;
+  const latestMeeting = meetings.length > 0 ? meetings[0] : null;
 
 
   if (isLoading || !currentUser) {
@@ -287,7 +288,7 @@ export default function GroupDetailClient() {
           <TabsContent value="chat">
             <Card>
                 <CardContent>
-                    <GroupChat groupId={group.id} members={members} />
+                    <GroupChat groupId={group.id} members={members} latestMeeting={latestMeeting} />
                 </CardContent>
             </Card>
           </TabsContent>

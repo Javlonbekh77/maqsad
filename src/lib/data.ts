@@ -15,10 +15,11 @@ import {
   orderBy,
   limit,
   deleteDoc,
+  Timestamp,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
-import type { User, Group, Task, UserTask, WeeklyMeeting, UserTaskSchedule } from './types';
+import type { User, Group, Task, UserTask, WeeklyMeeting, UserTaskSchedule, ChatMessage } from './types';
 import { format, isSameDay, startOfDay, isPast } from 'date-fns';
 
 type DayOfWeek = 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
@@ -128,6 +129,7 @@ export const getGroupAndDetails = async (groupId: string): Promise<{ group: Grou
     const memberPromises = (groupData.members || []).slice(0,30).map(memberId => getUser(memberId));
     
     const tasksQuery = query(collection(db, 'tasks'), where('groupId', '==', groupId));
+    // Remove orderby from here to avoid needing a composite index
     const meetingsQuery = query(collection(db, 'meetings'), where('groupId', '==', groupId));
     
     const [membersData, tasksSnapshot, meetingsSnapshot] = await Promise.all([
@@ -138,9 +140,18 @@ export const getGroupAndDetails = async (groupId: string): Promise<{ group: Grou
 
     const members = membersData.filter(Boolean) as User[];
     const tasks = tasksSnapshot.docs.map(d => ({ ...d.data() as Task, id: d.id }));
+    // Sort in-memory after fetching
     const meetings = meetingsSnapshot.docs
         .map(d => ({ ...d.data(), id: d.id } as WeeklyMeeting))
-        .sort((a, b) => (a.createdAt as any) - (b.createdAt as any)); // Sort in-memory
+        .sort((a, b) => {
+            const aTimestamp = a.createdAt as Timestamp;
+            const bTimestamp = b.createdAt as Timestamp;
+            if (aTimestamp && bTimestamp) {
+                return bTimestamp.toMillis() - aTimestamp.toMillis();
+            }
+            return 0;
+        });
+
 
     return { group: groupData, members, tasks, meetings };
 };
@@ -228,6 +239,15 @@ export const getGoalMates = async (userId: string): Promise<User[]> => {
     
     const snapshots = await Promise.all(matesPromises);
     return snapshots.flat();
+}
+
+export async function getUnreadMessageCount(groupId: string, lastRead: Timestamp): Promise<number> {
+    const messagesQuery = query(
+        collection(db, 'groups', groupId, 'messages'),
+        where('createdAt', '>', lastRead)
+    );
+    const snapshot = await getDocs(messagesQuery);
+    return snapshot.size;
 }
 
 
@@ -349,8 +369,7 @@ export const uploadAvatar = async (userId: string, file: Blob): Promise<string> 
     const filePath = `avatars/${userId}/${Date.now()}.jpg`;
     const storageRef = ref(storage, filePath);
     const snapshot = await uploadBytes(storageRef, file);
-    const downloadURL = await getDownloadURL(snapshot.ref);
-    return downloadURL;
+    return getDownloadURL(snapshot.ref);
 };
 
 export const updateGroupDetails = async (groupId: string, data: { name?: string, description?: string }): Promise<void> => {
@@ -398,19 +417,19 @@ export const performSearch = async (searchTerm: string): Promise<{ users: User[]
 };
 
 export const createOrUpdateMeeting = async (meetingData: Omit<WeeklyMeeting, 'id' | 'createdAt'>, meetingId?: string): Promise<WeeklyMeeting> => {
+  const dataToSave = { ...meetingData, createdAt: serverTimestamp() };
   if (meetingId) {
     // Update existing meeting
     const meetingRef = doc(db, 'meetings', meetingId);
-    await updateDoc(meetingRef, meetingData);
-    return { ...meetingData, id: meetingId, createdAt: serverTimestamp() }; // Note: createdAt won't be updated, but needed for type
+    await updateDoc(meetingRef, dataToSave);
+    const docSnap = await getDoc(meetingRef);
+    return { ...docSnap.data(), id: meetingId } as WeeklyMeeting;
   } else {
     // Create new meeting
-    const meetingRef = await addDoc(collection(db, 'meetings'), {
-      ...meetingData,
-      createdAt: serverTimestamp(),
-    });
+    const meetingRef = await addDoc(collection(db, 'meetings'), dataToSave);
     await updateDoc(meetingRef, { id: meetingRef.id });
-    return { ...meetingData, id: meetingRef.id, createdAt: serverTimestamp() };
+    const docSnap = await getDoc(meetingRef);
+    return { ...docSnap.data(), id: meetingRef.id } as WeeklyMeeting;
   }
 };
 
@@ -518,4 +537,11 @@ export const getNotificationsData = async (user: User): Promise<{
     }
 
     return { todayTasks, overdueTasks, todayMeetings };
+};
+
+export const updateUserLastRead = async (userId: string, groupId: string) => {
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+        [`lastRead.${groupId}`]: Timestamp.now()
+    });
 };

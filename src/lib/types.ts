@@ -1,4 +1,4 @@
-import { FieldValue } from "firebase/firestore";
+import { FieldValue, Timestamp } from "firebase/firestore";
 
 export type Task = {
   id: string;
@@ -22,6 +22,10 @@ export type UserTaskSchedule = {
   days: DayOfWeek[];
 };
 
+export type LastRead = {
+  [groupId: string]: Timestamp;
+}
+
 export type User = {
   firebaseId: string; // Firestore document ID
   id: string; // This is the Firebase Auth UID
@@ -42,6 +46,7 @@ export type User = {
   course?: string;
   telegram?: string;
   createdAt: FieldValue;
+  lastRead?: LastRead;
 };
 
 export type WeeklyMeeting = {
@@ -51,7 +56,7 @@ export type WeeklyMeeting = {
   day: DayOfWeek | string;
   time?: string; // Optional
   url?: string; // Optional
-  createdAt?: FieldValue;
+  createdAt?: FieldValue | Timestamp;
 }
 
 export type Group = {
@@ -76,7 +81,7 @@ export interface ChatMessage {
   id: string;
   text: string;
   senderId: string;
-  createdAt: FieldValue;
+  createdAt: FieldValue | Timestamp;
   user: {
     name: string;
     avatarUrl: string;

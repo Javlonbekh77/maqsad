@@ -31,13 +31,13 @@ interface CreateMeetingDialogProps {
     isOpen: boolean;
     onClose: () => void;
     groupId: string;
-    onMeetingCreated: (meeting: WeeklyMeeting) => void;
+    onMeetingSaved: (meeting: WeeklyMeeting) => void;
     existingMeeting?: WeeklyMeeting | null;
 }
 
 const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-export default function CreateMeetingDialog({ isOpen, onClose, groupId, onMeetingCreated, existingMeeting }: CreateMeetingDialogProps) {
+export default function CreateMeetingDialog({ isOpen, onClose, groupId, onMeetingSaved, existingMeeting }: CreateMeetingDialogProps) {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const isEditing = !!existingMeeting;
@@ -54,7 +54,7 @@ export default function CreateMeetingDialog({ isOpen, onClose, groupId, onMeetin
     if (isOpen) {
         form.reset(existingMeeting ? {
             title: existingMeeting.title,
-            day: existingMeeting.day,
+            day: existingMeeting.day as string,
         } : {
             title: '',
             day: '',
@@ -73,7 +73,7 @@ export default function CreateMeetingDialog({ isOpen, onClose, groupId, onMeetin
           title: isEditing ? 'Uchrashuv Yangilandi' : 'Uchrashuv Yaratildi',
           description: `Uchrashuv muvaffaqiyatli ${isEditing ? 'yangilandi' : 'yaratildi'}.`,
         });
-        onMeetingCreated(savedMeeting);
+        onMeetingSaved(savedMeeting);
         onClose();
       } catch (error) {
         console.error("Failed to save meeting:", error);
@@ -135,7 +135,7 @@ export default function CreateMeetingDialog({ isOpen, onClose, groupId, onMeetin
                     />
                   <DialogFooter>
                       <Button variant="outline" onClick={onClose} type="button">Bekor qilish</Button>
-                      <Button type="submit" disabled={isPending || !form.formState.isDirty}>
+                      <Button type="submit" disabled={isPending}>
                           {isPending ? 'Saqlanmoqda...' : 'Saqlash'}
                       </Button>
                   </DialogFooter>

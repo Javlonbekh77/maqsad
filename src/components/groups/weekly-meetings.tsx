@@ -9,6 +9,7 @@ import CreateMeetingDialog from "./create-meeting-dialog";
 import { deleteMeeting } from "@/lib/data";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../ui/alert-dialog";
+import { Timestamp } from "firebase/firestore";
 
 interface WeeklyMeetingsProps {
     groupId: string;
@@ -23,16 +24,18 @@ export default function WeeklyMeetings({ groupId, initialMeetings, isAdmin, onUp
     const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
     const [editingMeeting, setEditingMeeting] = useState<WeeklyMeeting | null>(null);
 
-    const handleMeetingCreated = (newMeeting: WeeklyMeeting) => {
-        setMeetings(prev => [...prev, newMeeting]);
+    const handleMeetingSaved = (savedMeeting: WeeklyMeeting) => {
+        if (editingMeeting) {
+            // Update
+             setMeetings(prev => prev.map(m => m.id === savedMeeting.id ? savedMeeting : m));
+        } else {
+            // Create
+            setMeetings(prev => [savedMeeting, ...prev]);
+        }
+        setEditingMeeting(null);
         onUpdate();
     }
     
-    const handleMeetingUpdated = (updatedMeeting: WeeklyMeeting) => {
-        setMeetings(prev => prev.map(m => m.id === updatedMeeting.id ? updatedMeeting : m));
-        onUpdate();
-    }
-
     const handleDelete = async (meetingId: string) => {
         try {
             await deleteMeeting(meetingId);
@@ -71,7 +74,14 @@ export default function WeeklyMeetings({ groupId, initialMeetings, isAdmin, onUp
                  {meetings.length === 0 ? (
                     <p className="text-muted-foreground text-center py-4">Bu guruh uchun rejalashtirilgan uchrashuvlar mavjud emas.</p>
                  ) : (
-                    meetings.map(meeting => (
+                    meetings.sort((a, b) => {
+                        const aTimestamp = a.createdAt as Timestamp;
+                        const bTimestamp = b.createdAt as Timestamp;
+                        if (aTimestamp && bTimestamp) {
+                            return bTimestamp.toMillis() - aTimestamp.toMillis();
+                        }
+                        return 0;
+                    }).map(meeting => (
                         <div key={meeting.id} className="p-4 rounded-lg border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                             <div className="flex-1">
                                 <h3 className="font-semibold">{meeting.title}</h3>
@@ -85,7 +95,7 @@ export default function WeeklyMeetings({ groupId, initialMeetings, isAdmin, onUp
                             <div className="flex items-center gap-2">
                                 {isAdmin && (
                                     <>
-                                        <Button variant="ghost" size="icon" onClick={() => setEditingMeeting(meeting)}>
+                                        <Button variant="ghost" size="icon" onClick={() => { setEditingMeeting(meeting); setCreateDialogOpen(true); }}>
                                             <Edit className="h-4 w-4" />
                                         </Button>
                                          <AlertDialog>
@@ -117,23 +127,13 @@ export default function WeeklyMeetings({ groupId, initialMeetings, isAdmin, onUp
                  )}
             </CardContent>
             {isAdmin && (
-                <>
-                    <CreateMeetingDialog
-                        isOpen={isCreateDialogOpen}
-                        onClose={() => setCreateDialogOpen(false)}
-                        groupId={groupId}
-                        onMeetingCreated={handleMeetingCreated}
-                    />
-                    {editingMeeting && (
-                        <CreateMeetingDialog
-                            isOpen={!!editingMeeting}
-                            onClose={() => setEditingMeeting(null)}
-                            groupId={groupId}
-                            onMeetingCreated={handleMeetingUpdated}
-                            existingMeeting={editingMeeting}
-                        />
-                    )}
-                </>
+                <CreateMeetingDialog
+                    isOpen={isCreateDialogOpen}
+                    onClose={() => setCreateDialogOpen(false)}
+                    groupId={groupId}
+                    onMeetingSaved={handleMeetingSaved}
+                    existingMeeting={editingMeeting}
+                />
             )}
         </Card>
     );

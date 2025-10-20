@@ -15,16 +15,38 @@ import { useAuth } from '@/context/auth-context';
 import { Separator } from '../ui/separator';
 import useSWR from 'swr';
 import type { Group } from '@/lib/types';
-import { getUserGroups } from '@/lib/data';
+import { getUnreadMessageCount, getUserGroups } from '@/lib/data';
 import { Skeleton } from '../ui/skeleton';
 import { ScrollArea } from '../ui/scroll-area';
 import Image from 'next/image';
+import { Badge } from '../ui/badge';
+import { Timestamp } from 'firebase/firestore';
 
-const fetcher = (userId: string) => getUserGroups(userId);
+
+function UnreadCountBadge({ groupId }: { groupId: string }) {
+    const { user } = useAuth();
+    const lastReadTimestamp = user?.lastRead?.[groupId] || new Timestamp(0, 0);
+
+    const { data: unreadCount } = useSWR(
+        `unreadCount/${groupId}`, 
+        () => getUnreadMessageCount(groupId, lastReadTimestamp),
+        { refreshInterval: 10000 } // Re-fetch every 10 seconds
+    );
+
+    if (!unreadCount || unreadCount === 0) {
+        return null;
+    }
+
+    return (
+        <Badge variant="destructive" className="ml-auto h-5 w-5 p-0 flex items-center justify-center text-xs">
+            {unreadCount > 9 ? '9+' : unreadCount}
+        </Badge>
+    );
+}
 
 function UserGroupList() {
     const { user } = useAuth();
-    const { data: groups, error, isLoading } = useSWR(user ? user.id : null, fetcher);
+    const { data: groups, error, isLoading } = useSWR(user ? `userGroups/${user.id}` : null, () => getUserGroups(user!.id));
 
     if (isLoading) {
         return (
@@ -54,7 +76,8 @@ function UserGroupList() {
                     <div className="h-5 w-5 relative rounded-md overflow-hidden">
                         <Image src={group.imageUrl} alt={group.name} fill className="object-cover" />
                     </div>
-                    <span className='truncate'>{group.name}</span>
+                    <span className='truncate flex-1'>{group.name}</span>
+                    <UnreadCountBadge groupId={group.id} />
                 </Link>
             ))}
         </div>

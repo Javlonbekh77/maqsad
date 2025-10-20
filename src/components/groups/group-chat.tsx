@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { useAuth } from '@/context/auth-context';
-import type { ChatMessage, User } from '@/lib/types';
+import type { ChatMessage, User, WeeklyMeeting } from '@/lib/types';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Send, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import { Send, MoreHorizontal, Edit, Trash2, Pin, Calendar } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { formatDistanceToNow } from 'date-fns';
 import { Skeleton } from '../ui/skeleton';
@@ -30,16 +30,18 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Textarea } from '../ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { updateChatMessage, deleteChatMessage } from '@/lib/data';
+import { updateChatMessage, deleteChatMessage, updateUserLastRead } from '@/lib/data';
+import { useDebounce } from '@/hooks/use-debounce';
 
 
 interface GroupChatProps {
   groupId: string;
   members: User[];
+  latestMeeting: WeeklyMeeting | null;
 }
 
-export default function GroupChat({ groupId, members }: GroupChatProps) {
-  const { user } = useAuth();
+export default function GroupChat({ groupId, members, latestMeeting }: GroupChatProps) {
+  const { user, refreshAuth } = useAuth();
   const { toast } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -48,9 +50,20 @@ export default function GroupChat({ groupId, members }: GroupChatProps) {
   const [editingText, setEditingText] = useState('');
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
+
+  const debouncedUpdateLastRead = useDebounce(useCallback(() => {
+    if (user && groupId) {
+      updateUserLastRead(user.id, groupId);
+      // We don't need to refresh the entire auth context here,
+      // as the unread count will update on its own via SWR revalidation.
+    }
+  }, [user, groupId]), 2000); // 2 second debounce
 
   useEffect(() => {
+    if (!groupId) return;
+    
+    setLoading(true);
     const messagesQuery = query(collection(db, `groups/${groupId}/messages`), orderBy('createdAt', 'asc'));
     
     const unsubscribe = onSnapshot(messagesQuery, (querySnapshot) => {
@@ -60,21 +73,19 @@ export default function GroupChat({ groupId, members }: GroupChatProps) {
       });
       setMessages(msgs);
       setLoading(false);
+      debouncedUpdateLastRead();
     }, (error) => {
       console.error("Error fetching messages: ", error);
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [groupId]);
+  }, [groupId, debouncedUpdateLastRead]);
 
   useEffect(() => {
-    // Auto-scroll to bottom
-    if (scrollAreaRef.current) {
-        const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-        if (viewport) {
-            viewport.scrollTop = viewport.scrollHeight;
-        }
+    // Auto-scroll to bottom on new messages
+    if (viewportRef.current) {
+        viewportRef.current.scrollTop = viewportRef.current.scrollHeight;
     }
   }, [messages]);
 
@@ -160,11 +171,27 @@ export default function GroupChat({ groupId, members }: GroupChatProps) {
   return (
     <>
     <div className="flex flex-col h-[70vh]">
-        <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+         {latestMeeting && (
+            <div className="p-3 border-b bg-secondary/50">
+                <div className="flex items-center gap-3">
+                    <Pin className="h-4 w-4 text-primary shrink-0" />
+                    <div className='flex-1 truncate'>
+                        <p className="font-semibold text-sm truncate">{latestMeeting.title}</p>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            Har {latestMeeting.day}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        )}
+        <ScrollArea className="flex-1 p-4" viewportRef={viewportRef}>
             <div className="space-y-6">
             {messages.map(msg => {
                 const isSender = msg.senderId === user?.id;
-                const sentAt = msg.createdAt ? (msg.createdAt as any).toDate() : new Date();
+                const createdAtTimestamp = msg.createdAt as Timestamp;
+                const sentAt = createdAtTimestamp ? createdAtTimestamp.toDate() : new Date();
+
 
                 return (
                 <div key={msg.id} className={`flex items-end gap-3 group ${isSender ? 'justify-end' : 'justify-start'}`}>
@@ -210,7 +237,7 @@ export default function GroupChat({ groupId, members }: GroupChatProps) {
                             <DropdownMenuItem onClick={() => handleEdit(msg)}>
                               <Edit className="mr-2 h-4 w-4" /> Tahrirlash
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => openDeleteDialog(msg.id)} className="text-destructive">
+                            <DropdownMenuItem onClick={() => openDeleteDialog(msg.id)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
                               <Trash2 className="mr-2 h-4 w-4" /> O'chirish
                             </DropdownMenuItem>
                           </DropdownMenuContent>
