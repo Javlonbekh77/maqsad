@@ -19,7 +19,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 import type { User, Group, Task, UserTask, WeeklyMeeting, UserTaskSchedule } from './types';
-import { format } from 'date-fns';
+import { format, isSameDay, startOfDay, isPast } from 'date-fns';
 
 type DayOfWeek = 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
 
@@ -348,10 +348,8 @@ export const updateUserProfile = async (userId: string, data: { goals?: string |
 export const uploadAvatar = async (userId: string, file: Blob): Promise<string> => {
     const filePath = `avatars/${userId}/${Date.now()}.jpg`;
     const storageRef = ref(storage, filePath);
-    
     const snapshot = await uploadBytes(storageRef, file);
     const downloadURL = await getDownloadURL(snapshot.ref);
-
     return downloadURL;
 };
 
@@ -432,4 +430,92 @@ export const updateChatMessage = async (groupId: string, messageId: string, newT
 export const deleteChatMessage = async (groupId: string, messageId: string): Promise<void> => {
   const messageRef = doc(db, `groups/${groupId}/messages`, messageId);
   await deleteDoc(messageRef);
+};
+
+
+export const getNotificationsData = async (user: User): Promise<{
+    todayTasks: UserTask[];
+    overdueTasks: UserTask[];
+    todayMeetings: (WeeklyMeeting & { groupName: string })[];
+}> => {
+    if (!user || !user.groups || user.groups.length === 0) {
+        return { todayTasks: [], overdueTasks: [], todayMeetings: [] };
+    }
+
+    const today = startOfDay(new Date());
+    const todayDayOfWeek = format(today, 'EEEE') as DayOfWeek;
+
+    const userSchedules = user.taskSchedules || [];
+
+    // 1. Get Today's Meetings
+    const groupIds = user.groups.slice(0, 30);
+    const meetingsQuery = query(collection(db, 'meetings'), where('groupId', 'in', groupIds), where('day', '==', todayDayOfWeek));
+    const groupsQuery = query(collection(db, 'groups'), where('__name__', 'in', groupIds));
+
+    const [meetingsSnapshot, groupsSnapshot] = await Promise.all([getDocs(meetingsQuery), getDocs(groupsQuery)]);
+    
+    const groupMap = new Map(groupsSnapshot.docs.map(doc => [doc.id, doc.data().name]));
+
+    const todayMeetings = meetingsSnapshot.docs.map(doc => {
+        const meeting = doc.data() as WeeklyMeeting;
+        return {
+            ...meeting,
+            id: doc.id,
+            groupName: groupMap.get(meeting.groupId) || 'Noma\'lum guruh'
+        };
+    });
+
+
+    // 2. Get All Scheduled Tasks
+    const scheduledTaskIds = userSchedules.map(s => s.taskId);
+    if (scheduledTaskIds.length === 0) {
+         return { todayTasks: [], overdueTasks: [], todayMeetings };
+    }
+    const allScheduledTasksQuery = query(collection(db, 'tasks'), where('__name__', 'in', scheduledTaskIds.slice(0, 30)));
+    const allTasksSnapshot = await getDocs(allScheduledTasksQuery);
+    const allScheduledTasks = allTasksSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Task));
+
+    const todayTasks: UserTask[] = [];
+    const overdueTasks: UserTask[] = [];
+    
+    const taskSchedulesMap = new Map(userSchedules.map(s => [s.taskId, s.days]));
+
+    for (const task of allScheduledTasks) {
+        const scheduleDays = taskSchedulesMap.get(task.id);
+        if (!scheduleDays) continue;
+
+        // Check for today's tasks
+        if (scheduleDays.includes(todayDayOfWeek)) {
+            const isCompletedToday = user.taskHistory.some(h => h.taskId === task.id && isSameDay(new Date(h.date), today));
+            if (!isCompletedToday) {
+                 todayTasks.push({
+                    ...task,
+                    groupName: groupMap.get(task.groupId) || 'Noma\'lum guruh',
+                    isCompleted: false,
+                });
+            }
+        }
+        
+        // Check for overdue tasks from past scheduled days
+        for (let i = 1; i < 7; i++) { // check last 6 days
+            const pastDate = startOfDay(new Date().setDate(today.getDate() - i));
+            const pastDayOfWeek = format(pastDate, 'EEEE') as DayOfWeek;
+
+            if (scheduleDays.includes(pastDayOfWeek)) {
+                const wasCompleted = user.taskHistory.some(h => h.taskId === task.id && isSameDay(new Date(h.date), pastDate));
+                if (!wasCompleted) {
+                    // Avoid adding duplicates
+                    if (!overdueTasks.some(t => t.id === task.id)) {
+                        overdueTasks.push({
+                            ...task,
+                            groupName: groupMap.get(task.groupId) || 'Noma\'lum guruh',
+                            isCompleted: false,
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    return { todayTasks, overdueTasks, todayMeetings };
 };

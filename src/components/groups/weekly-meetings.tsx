@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
-import { Calendar, Clock, Video, PlusCircle, Trash2, Edit } from "lucide-react";
-import { Link } from "@/navigation";
+import { Calendar, PlusCircle, Trash2, Edit } from "lucide-react";
 import type { WeeklyMeeting } from "@/lib/types";
 import CreateMeetingDialog from "./create-meeting-dialog";
 import { deleteMeeting } from "@/lib/data";
@@ -42,6 +41,7 @@ export default function WeeklyMeetings({ groupId, initialMeetings, isAdmin, onUp
                 title: "Uchrashuv o'chirildi",
                 description: "Rejalashtirilgan uchrashuv bekor qilindi.",
             });
+            onUpdate();
         } catch (error) {
             console.error("Failed to delete meeting", error);
             toast({
@@ -58,12 +58,12 @@ export default function WeeklyMeetings({ groupId, initialMeetings, isAdmin, onUp
             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                     <CardTitle>Haftalik Uchrashuvlar</CardTitle>
-                    <CardDescription>Guruhning navbatdagi sinxronlash nuqtalari.</CardDescription>
+                    <CardDescription>Guruhning rejalashtirilgan uchrashuv kunlari.</CardDescription>
                 </div>
                 {isAdmin && (
-                    <Button onClick={() => setCreateDialogOpen(true)}>
+                    <Button onClick={() => { setEditingMeeting(null); setCreateDialogOpen(true); }}>
                         <PlusCircle className="mr-2 h-4 w-4" />
-                        Uchrashuv Yaratish
+                        Uchrashuv Belgilash
                     </Button>
                 )}
             </CardHeader>
@@ -78,11 +78,7 @@ export default function WeeklyMeetings({ groupId, initialMeetings, isAdmin, onUp
                                 <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mt-2">
                                     <div className="flex items-center gap-1.5">
                                         <Calendar className="w-4 h-4" />
-                                        <span>{meeting.day}</span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5">
-                                        <Clock className="w-4 h-4" />
-                                        <span>{meeting.time}</span>
+                                        <span>Har {meeting.day}</span>
                                     </div>
                                 </div>
                             </div>
@@ -100,27 +96,21 @@ export default function WeeklyMeetings({ groupId, initialMeetings, isAdmin, onUp
                                             </AlertDialogTrigger>
                                             <AlertDialogContent>
                                                 <AlertDialogHeader>
-                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                <AlertDialogTitle>Haqiqatan ham o'chirasizmi?</AlertDialogTitle>
                                                 <AlertDialogDescription>
                                                    "{meeting.title}" uchrashuvini o'chirishni xohlaysizmi? Bu amalni ortga qaytarib bo'lmaydi.
                                                 </AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
                                                 <AlertDialogAction onClick={() => handleDelete(meeting.id)} className="bg-destructive hover:bg-destructive/90">
-                                                    Delete
+                                                    O'chirish
                                                 </AlertDialogAction>
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
                                     </>
                                 )}
-                                <Button asChild>
-                                    <Link href={meeting.url} target="_blank">
-                                        <Video className="mr-2 h-4 w-4" />
-                                        Qo'shilish
-                                    </Link>
-                                </Button>
                             </div>
                         </div>
                     ))

@@ -23,8 +23,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 const meetingSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters.'),
   day: z.string().min(1, 'Please select a day.'),
-  time: z.string().min(1, 'Please specify a time.'),
-  url: z.string().url('Please enter a valid URL.'),
 });
 
 type MeetingFormValues = z.infer<typeof meetingSchema>;
@@ -49,8 +47,6 @@ export default function CreateMeetingDialog({ isOpen, onClose, groupId, onMeetin
     defaultValues: {
       title: '',
       day: '',
-      time: '',
-      url: '',
     },
   });
   
@@ -59,13 +55,9 @@ export default function CreateMeetingDialog({ isOpen, onClose, groupId, onMeetin
         form.reset(existingMeeting ? {
             title: existingMeeting.title,
             day: existingMeeting.day,
-            time: existingMeeting.time,
-            url: existingMeeting.url,
         } : {
             title: '',
             day: '',
-            time: '',
-            url: '',
         });
     }
   }, [isOpen, existingMeeting, form]);
@@ -100,7 +92,7 @@ export default function CreateMeetingDialog({ isOpen, onClose, groupId, onMeetin
             <DialogHeader>
             <DialogTitle>{isEditing ? "Uchrashuvni Tahrirlash" : "Yangi Uchrashuv Yaratish"}</DialogTitle>
             <DialogDescription>
-                {isEditing ? "Uchrashuv tafsilotlarini o'zgartiring." : "Guruh uchun yangi haftalik uchrashuv rejalashtiring."}
+                {isEditing ? "Uchrashuv tafsilotlarini o'zgartiring." : "Guruh uchun yangi haftalik uchrashuv kunini belgilang."}
             </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -118,7 +110,7 @@ export default function CreateMeetingDialog({ isOpen, onClose, groupId, onMeetin
                       </FormItem>
                     )}
                   />
-                  <div className="grid grid-cols-2 gap-4">
+                  
                      <FormField
                         control={form.control}
                         name="day"
@@ -137,33 +129,6 @@ export default function CreateMeetingDialog({ isOpen, onClose, groupId, onMeetin
                                     ))}
                                 </SelectContent>
                             </Select>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="time"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Vaqt</FormLabel>
-                            <FormControl>
-                                <Input placeholder="19:00" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                  </div>
-                   <FormField
-                        control={form.control}
-                        name="url"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Uchrashuv Havolasi (URL)</FormLabel>
-                            <FormControl>
-                                <Input placeholder="https://meet.google.com/..." {...field} />
-                            </FormControl>
                             <FormMessage />
                         </FormItem>
                         )}

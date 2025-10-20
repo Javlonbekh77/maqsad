@@ -49,8 +49,8 @@ export type WeeklyMeeting = {
   groupId: string;
   title: string;
   day: DayOfWeek | string;
-  time: string;
-  url: string;
+  time?: string; // Optional
+  url?: string; // Optional
   createdAt?: FieldValue;
 }
 
