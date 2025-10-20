@@ -7,40 +7,40 @@
       "imageHint": "team collaboration"
     },
     {
-      "id": "user1",
-      "description": "Simple avatar 1",
-      "imageUrl": "https://images.unsplash.com/photo-1732020858816-93c130ab8f49?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxhYnN0cmFjdCUyMGF2YXRhcnxlbnwwfHx8fDE3NjA4NTQyMjJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "abstract avatar"
+      "id": "user_student_male",
+      "description": "Avatar of a male student",
+      "imageUrl": "https://images.unsplash.com/photo-1509305717900-84f40e786d82?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxwb3J0cmFpdCUyMG1hbGUlMjBzdHVkZW50fGVufDB8fHx8MTc2MDk2MDQ4N3ww&ixlib=rb-4.1.0&q=80&w=200",
+      "imageHint": "student boy"
     },
     {
-      "id": "user2",
-      "description": "Simple avatar 2",
-      "imageUrl": "https://images.unsplash.com/photo-1754838880357-60c7c468180f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGF2YXRhcnxlbnwwfHx8fDE3NjA4NTQyMjJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "abstract avatar"
+      "id": "user_student_female",
+      "description": "Avatar of a female student",
+      "imageUrl": "https://images.unsplash.com/photo-1525134479668-1bee5c7c6845?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxwb3J0cmFpdCUyMGZlbWFsZSUyMHN0dWRlbnR8ZW58MHx8fHwxNzYwOTYwNDg3fDA&ixlib=rb-4.1.0&q=80&w=200",
+      "imageHint": "student girl"
     },
     {
-      "id": "user3",
-      "description": "Simple avatar 3",
-      "imageUrl": "https://images.unsplash.com/photo-1571249104671-f5537fb3e137?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxhYnN0cmFjdCUyMGF2YXRhcnxlbnwwfHx8fDE3NjA4NTQyMjJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "abstract avatar"
+      "id": "user_teacher_male",
+      "description": "Avatar of a male teacher",
+      "imageUrl": "https://images.unsplash.com/photo-1567168544646-208745408078?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtYWxlJTIwdGVhY2hlciUyMHBvcnRyYWl0fGVufDB8fHx8MTc2MDk2MDU5Nnww&ixlib=rb-4.1.0&q=80&w=200",
+      "imageHint": "teacher man"
     },
     {
-      "id": "user4",
-      "description": "Simple avatar 4",
-      "imageUrl": "https://images.unsplash.com/photo-1754838880357-60c7c468180f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGF2YXRhcnxlbnwwfHx8fDE3NjA4NTQyMjJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "abstract avatar"
+      "id": "user_teacher_female",
+      "description": "Avatar of a female teacher",
+      "imageUrl": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxmZW1hbGUlMjB0ZWFjaGVyJTIwcG9ydHJhaXR8ZW58MHx8fHwxNzYwOTYwNjE1fDA&ixlib=rb-4.1.0&q=80&w=200",
+      "imageHint": "teacher woman"
     },
     {
-      "id": "user5",
-      "description": "Simple avatar 5",
-      "imageUrl": "https://images.unsplash.com/photo-1754837369018-ff35655d126f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxhYnN0cmFjdCUyMGF2YXRhcnxlbnwwfHx8fDE3NjA4NTQyMjJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "abstract avatar"
+      "id": "user_boy",
+      "description": "Avatar of a boy",
+      "imageUrl": "https://images.unsplash.com/photo-1610661603112-a1a6b033d5b0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxjaGlsZCUyMGJveSUyMHJvYm90fGVufDB8fHx8MTc2MDk2MDczN3ww&ixlib=rb-4.1.0&q=80&w=200",
+      "imageHint": "boy robot"
     },
     {
-      "id": "user6",
-      "description": "Simple avatar 6",
-      "imageUrl": "https://images.unsplash.com/photo-1509587961360-de7aff9a662a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxhYnN0cmFjdCUyMGF2YXRhcnxlbnwwfHx8fDE3NjA4NTQyMjJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "abstract avatar"
+      "id": "user_girl",
+      "description": "Avatar of a girl",
+      "imageUrl": "https://images.unsplash.com/photo-1610661543632-e5651e49b49b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxjaGlsZCUyMGdpcmwlMjByb2JvdHxlbnwwfHx8fDE3NjA5NjA3Mzd8MA&ixlib=rb-4.1.0&q=80&w=200",
+      "imageHint": "girl robot"
     },
     {
       "id": "group1",

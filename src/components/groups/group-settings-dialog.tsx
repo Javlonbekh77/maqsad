@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import type { Group } from '@/lib/types';
-import { useTransition, useState, useEffect } from 'react';
+import { useTransition, useEffect } from 'react';
 import { updateGroupDetails } from '@/lib/data';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -87,7 +87,7 @@ export default function GroupSettingsDialog({ isOpen, onClose, group, onGroupUpd
             <DialogHeader>
             <DialogTitle>Group Settings: {group.name}</DialogTitle>
             <DialogDescription>
-                Update your group's details here.
+                Update your group's details here. Image selection is not available.
             </DialogDescription>
             </DialogHeader>
             <Form {...form}>

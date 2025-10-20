@@ -65,7 +65,7 @@ export default function ProfileForm({ user }: { user: User }) {
           goals: data.goals,
           habits: data.habits,
         });
-        profileUpdated = true; // Set flag on success
+        profileUpdated = true; 
       } catch (error) {
          console.error("Failed to update profile:", error);
          toast({
@@ -76,13 +76,15 @@ export default function ProfileForm({ user }: { user: User }) {
       }
     });
 
-    if (profileUpdated) {
-        toast({
-          title: t('toast.title'),
-          description: t('toast.description'),
-        });
-        router.refresh();
-    }
+    // We can't await inside the transition, so we can't reliably refresh here.
+    // The parent component should handle re-fetching or refreshing.
+    // For now, let's just show the toast and let the user refresh manually or navigate away.
+    // A better solution would involve state management (like SWR or React Query) to auto-revalidate.
+    toast({
+      title: t('toast.title'),
+      description: t('toast.description'),
+    });
+    router.refresh();
   }
 
   return (
