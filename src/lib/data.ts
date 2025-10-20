@@ -350,8 +350,6 @@ export const uploadAvatar = async (userId: string, file: Blob): Promise<string> 
     const snapshot = await uploadBytes(storageRef, file);
     const downloadURL = await getDownloadURL(snapshot.ref);
 
-    await updateUserProfile(userId, { avatarUrl: downloadURL });
-    
     return downloadURL;
 };
 

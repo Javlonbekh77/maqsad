@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from '@/lib/types';
-import { uploadAvatar } from '@/lib/data';
+import { uploadAvatar, updateUserProfile } from '@/lib/data';
 import { Camera, Save, X, RotateCw } from 'lucide-react';
 import 'react-image-crop/dist/ReactCrop.css';
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop';
@@ -132,20 +132,16 @@ export default function AvatarUpload({ user, onUploadComplete }: AvatarUploadPro
             throw new Error("Could not crop image.");
         }
 
-        await uploadAvatar(user.id, croppedImageBlob);
-        
+        const newAvatarUrl = await uploadAvatar(user.id, croppedImageBlob);
+        await updateUserProfile(user.id, { avatarUrl: newAvatarUrl });
+
         toast({
-          title: "Rasm Yangilandi",
-          description: "O'zgarishlarni ko'rish uchun sahifani yangilang.",
-          duration: 5000,
+          title: "Rasm Yangilandi!",
+          description: "Sizning profilingiz rasmi muvaffaqiyatli o'zgartirildi.",
         });
 
-        // Explicitly set states to false on success BEFORE context refresh
-        setIsUploading(false);
-        setIsCropping(false);
-        onUploadComplete();
-
-
+        await onUploadComplete();
+        
       } catch (error) {
         console.error("Failed to upload avatar", error);
         toast({
@@ -153,7 +149,7 @@ export default function AvatarUpload({ user, onUploadComplete }: AvatarUploadPro
           title: "Xatolik",
           description: "Rasmni yuklashda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.",
         });
-        // Explicitly set states to false on error
+      } finally {
         setIsUploading(false);
         setIsCropping(false);
       }
