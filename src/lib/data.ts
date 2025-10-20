@@ -128,7 +128,7 @@ export const getGroupAndDetails = async (groupId: string): Promise<{ group: Grou
     const memberPromises = (groupData.members || []).slice(0,30).map(memberId => getUser(memberId));
     
     const tasksQuery = query(collection(db, 'tasks'), where('groupId', '==', groupId));
-    const meetingsQuery = query(collection(db, 'meetings'), where('groupId', '==', groupId), orderBy('createdAt', 'asc'));
+    const meetingsQuery = query(collection(db, 'meetings'), where('groupId', '==', groupId));
     
     const [membersData, tasksSnapshot, meetingsSnapshot] = await Promise.all([
         Promise.all(memberPromises),
@@ -138,7 +138,9 @@ export const getGroupAndDetails = async (groupId: string): Promise<{ group: Grou
 
     const members = membersData.filter(Boolean) as User[];
     const tasks = tasksSnapshot.docs.map(d => ({ ...d.data() as Task, id: d.id }));
-    const meetings = meetingsSnapshot.docs.map(d => ({ ...d.data(), id: d.id } as WeeklyMeeting));
+    const meetings = meetingsSnapshot.docs
+        .map(d => ({ ...d.data(), id: d.id } as WeeklyMeeting))
+        .sort((a, b) => (a.createdAt as any) - (b.createdAt as any)); // Sort in-memory
 
     return { group: groupData, members, tasks, meetings };
 };
