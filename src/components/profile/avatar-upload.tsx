@@ -26,8 +26,7 @@ interface AvatarUploadProps {
 // Function to get the cropped image as a blob
 async function getCroppedImg(
   image: HTMLImageElement,
-  crop: Crop,
-  fileName: string
+  crop: Crop
 ): Promise<Blob | null> {
   const canvas = document.createElement('canvas');
   const scaleX = image.naturalWidth / image.width;
@@ -128,7 +127,7 @@ export default function AvatarUpload({ user, onUploadComplete }: AvatarUploadPro
       }
       setIsUploading(true);
       try {
-        const croppedImageBlob = await getCroppedImg(imgRef.current, completedCrop, "avatar.jpg");
+        const croppedImageBlob = await getCroppedImg(imgRef.current, completedCrop);
         if (!croppedImageBlob) {
             throw new Error("Could not crop image.");
         }
@@ -137,7 +136,8 @@ export default function AvatarUpload({ user, onUploadComplete }: AvatarUploadPro
         
         toast({
           title: "Rasm Yangilandi",
-          description: "Sizning yangi profilingiz rasmi muvaffaqiyatli saqlandi.",
+          description: "O'zgarishlarni ko'rish uchun sahifani yangilang.",
+          duration: 5000,
         });
 
       } catch (error) {
@@ -153,10 +153,10 @@ export default function AvatarUpload({ user, onUploadComplete }: AvatarUploadPro
         setIsUploading(false);
         setIsCropping(false);
         setImgSrc('');
-        // THEN, trigger the parent component to refresh its data.
-        onUploadComplete();
+        // We no longer call onUploadComplete here to prevent race conditions.
+        // The user is prompted to refresh manually.
       }
-    }, [completedCrop, user.id, onUploadComplete, toast]);
+    }, [completedCrop, user.id, toast]);
 
     return (
         <div className="flex items-center gap-6">

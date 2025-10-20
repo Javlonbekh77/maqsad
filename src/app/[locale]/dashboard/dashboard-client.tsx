@@ -19,31 +19,30 @@ export default function DashboardClient() {
   const [tasks, setTasks] = useState<UserTask[]>([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
 
-  const fetchTasks = useCallback(async (user: User) => {
-    setLoadingTasks(true);
-    try {
-      const userTasks = await getUserTasks(user);
-      setTasks(userTasks);
-    } catch (error) {
-      console.error("Failed to fetch dashboard tasks:", error);
-    } finally {
-      setLoadingTasks(false);
-    }
-  }, []);
-
   useEffect(() => {
-    if (!authLoading) {
-      if (!authUser) {
-        router.push('/login');
-      } else {
-        fetchTasks(authUser);
-      }
+    if (!authLoading && !authUser) {
+      router.push('/login');
+      return;
     }
-  }, [authUser, authLoading, router, fetchTasks]);
-  
+
+    if (authUser) {
+      setLoadingTasks(true);
+      getUserTasks(authUser)
+        .then(userTasks => {
+          setTasks(userTasks);
+        })
+        .catch(error => {
+          console.error("Failed to fetch dashboard tasks:", error);
+        })
+        .finally(() => {
+          setLoadingTasks(false);
+        });
+    }
+  }, [authUser, authLoading, router]);
+
   const handleTaskCompletion = async () => {
     // Refresh all auth context data, which will trigger a re-render and re-fetch of tasks.
-    await refreshAuth(); 
+    await refreshAuth();
   };
 
   const isLoading = authLoading || loadingTasks;
@@ -74,10 +73,10 @@ export default function DashboardClient() {
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8 items-start">
-          <TodaySchedule 
-            tasks={tasks} 
-            userId={authUser.id} 
-            onTaskCompletion={handleTaskCompletion} 
+          <TodaySchedule
+            tasks={tasks}
+            userId={authUser.id}
+            onTaskCompletion={handleTaskCompletion}
           />
           <HabitTracker user={authUser} />
         </div>
