@@ -139,12 +139,7 @@ export default function AvatarUpload({ user, onUploadComplete }: AvatarUploadPro
           title: "Rasm Yangilandi",
           description: "Sizning yangi profilingiz rasmi muvaffaqiyatli saqlandi.",
         });
-        
-        // This is the critical part: ensure everything is reset after success
-        onUploadComplete();
-        setIsCropping(false);
-        setImgSrc('');
-        
+
       } catch (error) {
         console.error("Failed to upload avatar", error);
         toast({
@@ -153,8 +148,13 @@ export default function AvatarUpload({ user, onUploadComplete }: AvatarUploadPro
           description: "Rasmni yuklashda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.",
         });
       } finally {
-        // This will always run, ensuring the loading state is turned off.
+        // This is the new, more robust logic.
+        // First, reset all local states to close dialogs and loading indicators.
         setIsUploading(false);
+        setIsCropping(false);
+        setImgSrc('');
+        // THEN, trigger the parent component to refresh its data.
+        onUploadComplete();
       }
     }, [completedCrop, user.id, onUploadComplete, toast]);
 
