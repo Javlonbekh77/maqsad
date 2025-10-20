@@ -1,12 +1,6 @@
 {
   "placeholderImages": [
     {
-      "id": "hero",
-      "description": "A diverse group of people working together towards a common goal.",
-      "imageUrl": "https://images.unsplash.com/photo-1521737852567-6949f3f9f2b5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx0ZWFtJTIwY29sbGFib3JhdGlvbnxlbnwwfHx8fDE3NTkwMzMzOTJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "team collaboration"
-    },
-    {
       "id": "user-default",
       "description": "Default user avatar icon",
       "imageUrl": "https://storage.googleapis.com/studio-assets/b-hack-24/user-icon.png",

@@ -31,8 +31,6 @@ export default function LandingPage() {
     },
   ];
 
-  const heroImage = PlaceHolderImages.find((img) => img.id === 'hero');
-
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <header className="px-4 lg:px-6 h-16 flex items-center bg-background/80 backdrop-blur-sm fixed top-0 left-0 right-0 z-50">
@@ -75,18 +73,6 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
-          {heroImage && (
-             <div className="relative mt-12 w-full h-[300px] md:h-[500px] lg:h-[600px]">
-                <Image
-                    src={heroImage.imageUrl}
-                    alt={heroImage.description}
-                    fill
-                    className="object-cover"
-                    data-ai-hint={heroImage.imageHint}
-                />
-                 <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent"></div>
-             </div>
-          )}
         </section>
 
         <section id="features" className="w-full py-12 md:py-24 lg:py-32 bg-secondary/50">
