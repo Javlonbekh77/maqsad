@@ -1,0 +1,92 @@
+'use client';
+
+import type { User, UserTask } from '@/lib/types';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Coins, CheckCircle, BarChart } from 'lucide-react';
+import { ChartContainer, ChartTooltip, ChartTooltipContent, Bar, XAxis, YAxis, CartesianGrid, BarChart as RechartsBarChart } from '@/components/ui/chart';
+import { ChartConfig } from '@/components/ui/chart';
+import { useMemo } from 'react';
+import { format, subDays } from 'date-fns';
+
+
+interface DashboardStatsProps {
+    user: User;
+    tasks: UserTask[];
+}
+
+const chartConfig = {
+  tasks: {
+    label: "Tasks",
+    color: "hsl(var(--chart-1))",
+  },
+} satisfies ChartConfig
+
+export default function DashboardStats({ user, tasks }: DashboardStatsProps) {
+    const completedTasksCount = useMemo(() => {
+        const today = format(new Date(), 'yyyy-MM-dd');
+        return user.taskHistory.filter(h => h.date === today).length;
+    }, [user.taskHistory]);
+
+    const chartData = useMemo(() => {
+        const last7Days = Array.from({ length: 7 }).map((_, i) => subDays(new Date(), i)).reverse();
+        return last7Days.map(date => {
+            const dateString = format(date, 'yyyy-MM-dd');
+            const tasksCompleted = user.taskHistory.filter(h => h.date === dateString).length;
+            return {
+                date: format(date, 'MMM d'),
+                tasks: tasksCompleted,
+            };
+        });
+    }, [user.taskHistory]);
+
+    return (
+       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Jami Tangalar</CardTitle>
+              <Coins className="h-4 w-4 text-muted-foreground text-amber-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{user.coins}</div>
+              <p className="text-xs text-muted-foreground">Umumiy ishlab topilgan tangalar</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Bugun Bajarilgan Vazifalar</CardTitle>
+              <CheckCircle className="h-4 w-4 text-muted-foreground text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{completedTasksCount}</div>
+              <p className="text-xs text-muted-foreground">Bugungi rejadagi vazifalardan</p>
+            </CardContent>
+          </Card>
+           <Card className="md:col-span-2 lg:col-span-1">
+             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Haftalik Yutuqlar</CardTitle>
+                <BarChart className="h-4 w-4 text-muted-foreground" />
+             </CardHeader>
+             <CardContent className="pb-2">
+               <ChartContainer config={chartConfig} className="h-[60px] w-full">
+                  <RechartsBarChart accessibilityLayer data={chartData}>
+                    <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-muted-foreground/30" />
+                     <YAxis hide={true} domain={[0, 'dataMax + 2']} />
+                     <XAxis
+                        dataKey="date"
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={8}
+                        tickFormatter={(value) => value.slice(0, 3)}
+                        />
+                    <ChartTooltip 
+                        cursor={false}
+                        content={<ChartTooltipContent indicator="dot" />}
+                     />
+                    <Bar dataKey="tasks" fill="var(--color-tasks)" radius={4} />
+                  </RechartsBarChart>
+                </ChartContainer>
+            </CardContent>
+          </Card>
+       </div>
+    )
+}

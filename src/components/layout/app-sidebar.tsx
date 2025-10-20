@@ -48,7 +48,7 @@ function UserGroupList() {
             {groups.map((group) => (
                 <Link
                     key={group.id}
-                    href={{pathname: '/groups/[id]', params: {id: group.id}}}
+                    href={{ pathname: '/groups/[id]', params: { id: group.id }, query: { tab: 'chat' } }}
                     className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
                 >
                     <div className="h-5 w-5 relative rounded-md overflow-hidden">

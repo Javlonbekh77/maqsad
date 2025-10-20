@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, type User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import type { User } from '@/lib/types';
@@ -16,6 +16,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<any>;
   signup: (data: SignupData) => Promise<any>;
   logout: () => Promise<void>;
+  refreshAuth: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,35 +30,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      setLoading(true);
-      setFirebaseUser(fbUser);
-      if (fbUser) {
-        try {
-          const userDocRef = doc(db, 'users', fbUser.uid);
-          const docSnap = await getDoc(userDocRef);
-          if (docSnap.exists()) {
-            const appUser = { ...docSnap.data(), id: docSnap.id, firebaseId: docSnap.id } as User;
-            setUser(appUser);
-          } else {
-             // This might happen if user is created in auth but not in firestore yet
-             // The signup function should handle creating the user doc.
-             // We can attempt to fetch again after a short delay, or rely on signup to set the user.
-            setUser(null);
-          }
-        } catch (error) {
-          console.error("Failed to fetch user profile:", error);
+  const fetchAppUser = useCallback(async (fbUser: FirebaseUser | null) => {
+    if (fbUser) {
+      try {
+        const userDocRef = doc(db, 'users', fbUser.uid);
+        const docSnap = await getDoc(userDocRef);
+        if (docSnap.exists()) {
+          const appUser = { ...docSnap.data(), id: docSnap.id, firebaseId: docSnap.id } as User;
+          setUser(appUser);
+        } else {
           setUser(null);
         }
-      } else {
+      } catch (error) {
+        console.error("Failed to fetch user profile:", error);
         setUser(null);
       }
-      setLoading(false);
+    } else {
+      setUser(null);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
+      setLoading(true);
+      setFirebaseUser(fbUser);
+      fetchAppUser(fbUser);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [fetchAppUser]);
   
   const login = (email: string, password: string) => {
      return signInWithEmailAndPassword(auth, email, password);
@@ -75,8 +77,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error("Default user avatar not found in placeholder images.");
     }
 
-    const newUser: User = {
-      id: userCredential.user.uid,
+    const newUser: Omit<User, 'id'> = {
       firebaseId: userCredential.user.uid,
       firstName: data.firstName,
       lastName: data.lastName,
@@ -89,6 +90,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       groups: [],
       occupation: data.specialization || '',
       taskHistory: [],
+      taskSchedules: [],
       university: data.university || '',
       specialization: data.specialization || '',
       course: data.course || '',
@@ -97,7 +99,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
     
     await setDoc(userDocRef, newUser);
-    setUser(newUser); // Immediately set user state after creation
+    setUser({ ...newUser, id: userCredential.user.uid });
     
     return userCredential;
   };
@@ -108,7 +110,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setFirebaseUser(null);
   };
 
-  const value = { user, firebaseUser, loading, login, signup, logout };
+  const refreshAuth = useCallback(async () => {
+    // Re-fetch the app user data without re-authenticating
+    if (firebaseUser) {
+      setLoading(true);
+      await fetchAppUser(firebaseUser);
+      setLoading(false);
+    }
+  }, [firebaseUser, fetchAppUser]);
+
+  const value = { user, firebaseUser, loading, login, signup, logout, refreshAuth };
 
   return (
     <AuthContext.Provider value={value}>

@@ -9,11 +9,12 @@ import { useRouter } from "@/navigation";
 import { useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import ThemeSwitcher from "@/components/theme-switcher";
+import AvatarUpload from "@/components/profile/avatar-upload";
 
 export default function SettingsPage() {
     const tSettings = useTranslations('settings');
     const tProfile = useTranslations('profile');
-    const { user, loading } = useAuth();
+    const { user, loading, refreshAuth } = useAuth();
     const router = useRouter();
 
     useEffect(() => {
@@ -31,6 +32,15 @@ export default function SettingsPage() {
                     <Skeleton className="h-10 w-1/3" />
                     <Skeleton className="h-4 w-1/2 mt-2" />
                 </div>
+                <Card>
+                    <CardHeader>
+                        <Skeleton className="h-8 w-1/4" />
+                        <Skeleton className="h-4 w-1/3 mt-1" />
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-24 w-full" />
+                    </CardContent>
+                </Card>
                 <Card>
                     <CardHeader>
                         <Skeleton className="h-8 w-1/4" />
@@ -61,6 +71,19 @@ export default function SettingsPage() {
                     <h1 className="text-3xl font-bold font-display">{tProfile('settings.title')}</h1>
                     <p className="text-muted-foreground">{tSettings('subtitle')}</p>
                 </div>
+
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Profil Rasmi</CardTitle>
+                        <CardDescription>
+                            Profil rasmingizni o'zgartiring. Bu rasm boshqa foydalanuvchilarga ko'rinadi.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <AvatarUpload user={user} onUploadComplete={refreshAuth} />
+                    </CardContent>
+                </Card>
+
                 <Card>
                     <CardHeader>
                         <CardTitle>{tProfile('settings.title')}</CardTitle>
@@ -70,6 +93,7 @@ export default function SettingsPage() {
                         <ProfileForm user={user} />
                     </CardContent>
                 </Card>
+
                  <Card>
                     <CardHeader>
                         <CardTitle>Display</CardTitle>

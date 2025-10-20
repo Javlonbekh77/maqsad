@@ -14,6 +14,7 @@ import {
   where,
   orderBy,
   limit,
+  deleteDoc,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
@@ -127,7 +128,7 @@ export const getGroupAndDetails = async (groupId: string): Promise<{ group: Grou
     const memberPromises = (groupData.members || []).slice(0,30).map(memberId => getUser(memberId));
     
     const tasksQuery = query(collection(db, 'tasks'), where('groupId', '==', groupId));
-    const meetingsQuery = query(collection(db, 'meetings'), where('groupId', '==', groupId));
+    const meetingsQuery = query(collection(db, 'meetings'), where('groupId', '==', groupId), orderBy('createdAt', 'asc'));
     
     const [membersData, tasksSnapshot, meetingsSnapshot] = await Promise.all([
         Promise.all(memberPromises),
@@ -323,7 +324,7 @@ export const completeUserTask = async (userId: string, taskId: string, coins: nu
     });
 };
 
-export const updateUserProfile = async (userId: string, data: { goals?: string | null; habits?: string | null; }): Promise<void> => {
+export const updateUserProfile = async (userId: string, data: { goals?: string | null; habits?: string | null; avatarUrl?: string }): Promise<void> => {
     const userDocRef = doc(db, 'users', userId);
     const updateData: { [key: string]: any } = {};
 
@@ -333,10 +334,25 @@ export const updateUserProfile = async (userId: string, data: { goals?: string |
     if (data.habits !== undefined && data.habits !== null) {
         updateData.habits = data.habits;
     }
+     if (data.avatarUrl) {
+        updateData.avatarUrl = data.avatarUrl;
+    }
     
     if (Object.keys(updateData).length > 0) {
       await updateDoc(userDocRef, updateData);
     }
+};
+
+export const uploadAvatar = async (userId: string, file: Blob): Promise<string> => {
+    const filePath = `avatars/${userId}/${Date.now()}.jpg`;
+    const storageRef = ref(storage, filePath);
+    
+    const snapshot = await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(snapshot.ref);
+
+    await updateUserProfile(userId, { avatarUrl: downloadURL });
+    
+    return downloadURL;
 };
 
 export const updateGroupDetails = async (groupId: string, data: { name?: string, description?: string }): Promise<void> => {
@@ -381,4 +397,26 @@ export const performSearch = async (searchTerm: string): Promise<{ users: User[]
     ).slice(0, 5);
     
     return { users: filteredUsers, groups: filteredGroups };
+};
+
+export const createOrUpdateMeeting = async (meetingData: Omit<WeeklyMeeting, 'id' | 'createdAt'>, meetingId?: string): Promise<WeeklyMeeting> => {
+  if (meetingId) {
+    // Update existing meeting
+    const meetingRef = doc(db, 'meetings', meetingId);
+    await updateDoc(meetingRef, meetingData);
+    return { ...meetingData, id: meetingId, createdAt: serverTimestamp() }; // Note: createdAt won't be updated, but needed for type
+  } else {
+    // Create new meeting
+    const meetingRef = await addDoc(collection(db, 'meetings'), {
+      ...meetingData,
+      createdAt: serverTimestamp(),
+    });
+    await updateDoc(meetingRef, { id: meetingRef.id });
+    return { ...meetingData, id: meetingRef.id, createdAt: serverTimestamp() };
+  }
+};
+
+export const deleteMeeting = async (meetingId: string): Promise<void> => {
+    const meetingRef = doc(db, 'meetings', meetingId);
+    await deleteDoc(meetingRef);
 };

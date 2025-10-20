@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import AppLayout from '@/components/layout/app-layout';
 import { addUserToGroup, getGroupAndDetails } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -36,9 +36,13 @@ import EditTaskDialog from '@/components/groups/edit-task-dialog';
 export default function GroupDetailClient() {
   const t = useTranslations('groupDetail');
   const params = useParams();
-  const id = params.id as string;
-  const { user: currentUser, loading: authLoading } = useAuth();
+  const searchParams = useSearchParams();
   const router = useRouter();
+
+  const id = params.id as string;
+  const initialTab = searchParams.get('tab') || 'tasks';
+
+  const { user: currentUser, loading: authLoading } = useAuth();
   
   const [group, setGroup] = useState<Group | null>(null);
   const [members, setMembers] = useState<User[]>([]);
@@ -173,7 +177,7 @@ export default function GroupDetailClient() {
             </div>
         </header>
 
-        <Tabs defaultValue="tasks" className="w-full">
+        <Tabs defaultValue={initialTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="tasks">{t('tasksTitle')}</TabsTrigger>
             <TabsTrigger value="members">{t('membersTitle', { count: members.length })}</TabsTrigger>
@@ -273,7 +277,12 @@ export default function GroupDetailClient() {
             </Card>
           </TabsContent>
           <TabsContent value="meetings">
-            <WeeklyMeetings groupId={group.id} meetings={meetings} />
+            <WeeklyMeetings 
+                groupId={group.id} 
+                initialMeetings={meetings}
+                isAdmin={isAdmin}
+                onUpdate={() => fetchGroupData(group.id)}
+            />
           </TabsContent>
           <TabsContent value="chat">
             <Card>
