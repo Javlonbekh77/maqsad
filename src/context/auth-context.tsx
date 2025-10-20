@@ -5,8 +5,9 @@ import { onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndP
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 import { auth, db } from '@/lib/firebase';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
-type SignupData = Omit<User, 'id' | 'firebaseId' | 'coins' | 'goals' | 'habits' | 'groups' | 'taskHistory' | 'fullName' | 'occupation' | 'createdAt'> & { password: string; avatarUrl: string; };
+type SignupData = Omit<User, 'id' | 'firebaseId' | 'coins' | 'goals' | 'habits' | 'groups' | 'taskHistory' | 'fullName' | 'occupation' | 'createdAt' | 'avatarUrl'> & { password: string; };
 
 interface AuthContextType {
   user: User | null;
@@ -68,6 +69,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     const userDocRef = doc(db, 'users', userCredential.user.uid);
     const fullName = `${data.firstName || ''} ${data.lastName || ''}`.trim();
+    
+    const defaultAvatar = PlaceHolderImages.find(img => img.id === 'user-default');
+    if (!defaultAvatar) {
+        throw new Error("Default user avatar not found in placeholder images.");
+    }
 
     const newUser: User = {
       id: userCredential.user.uid,
@@ -76,7 +82,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       lastName: data.lastName,
       fullName: fullName,
       email: data.email,
-      avatarUrl: data.avatarUrl,
+      avatarUrl: defaultAvatar.imageUrl,
       coins: 0,
       goals: '',
       habits: '',

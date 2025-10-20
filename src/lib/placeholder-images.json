@@ -7,34 +7,10 @@
       "imageHint": "team collaboration"
     },
     {
-      "id": "user_student_male",
-      "description": "Avatar of a male student with glasses",
-      "imageUrl": "https://storage.googleapis.com/studio-assets/b-hack-24/3d_boy_student.webp",
-      "imageHint": "3d student boy"
-    },
-    {
-      "id": "user_student_female",
-      "description": "Avatar of a female student with headphones",
-      "imageUrl": "https://storage.googleapis.com/studio-assets/b-hack-24/3d_girl_student.webp",
-      "imageHint": "3d student girl"
-    },
-    {
-      "id": "user_teacher_male",
-      "description": "Avatar of a male teacher with a beard",
-      "imageUrl": "https://storage.googleapis.com/studio-assets/b-hack-24/3d_man_teacher.webp",
-      "imageHint": "3d teacher man"
-    },
-    {
-      "id": "user_teacher_female",
-      "description": "Avatar of a female teacher with glasses",
-      "imageUrl": "https://storage.googleapis.com/studio-assets/b-hack-24/3d_woman_teacher.webp",
-      "imageHint": "3d teacher woman"
-    },
-    {
-      "id": "user_generic_male",
-      "description": "Avatar of a man with a cap",
-      "imageUrl": "https://storage.googleapis.com/studio-assets/b-hack-24/3d_man_cap.webp",
-      "imageHint": "3d man cap"
+      "id": "user-default",
+      "description": "Default user avatar icon",
+      "imageUrl": "https://storage.googleapis.com/studio-assets/b-hack-24/user-icon.png",
+      "imageHint": "user icon"
     },
     {
       "id": "group1",
