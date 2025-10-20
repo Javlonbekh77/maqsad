@@ -7,7 +7,7 @@ import type { User } from '@/lib/types';
 import { auth, db } from '@/lib/firebase';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
-type SignupData = Omit<User, 'id' | 'firebaseId' | 'coins' | 'goals' | 'habits' | 'groups' | 'taskHistory' | 'fullName' | 'occupation' | 'createdAt' | 'avatarUrl'> & { password: string; };
+type SignupData = Omit<User, 'id' | 'firebaseId' | 'coins' | 'goals' | 'habits' | 'groups' | 'taskHistory' | 'fullName' | 'occupation' | 'createdAt' | 'avatarUrl' | 'taskSchedules'> & { password: string; };
 
 interface AuthContextType {
   user: User | null;
@@ -30,6 +30,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const requestNotificationPermission = useCallback(async () => {
+    if ('Notification' in window) {
+      if (Notification.permission === 'default') {
+        await Notification.requestPermission();
+      }
+    }
+  }, []);
+
   const fetchAppUser = useCallback(async (fbUser: FirebaseUser | null) => {
     if (fbUser) {
       try {
@@ -38,6 +46,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (docSnap.exists()) {
           const appUser = { ...docSnap.data(), id: docSnap.id, firebaseId: docSnap.id } as User;
           setUser(appUser);
+          await requestNotificationPermission(); // Request permission after user is fetched
         } else {
           setUser(null);
         }
@@ -49,7 +58,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(null);
     }
     setLoading(false);
-  }, []);
+  }, [requestNotificationPermission]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
@@ -99,7 +108,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
     
     await setDoc(userDocRef, newUser);
-    setUser({ ...newUser, id: userCredential.user.uid });
+    const createdUser = { ...newUser, id: userCredential.user.uid } as User;
+    setUser(createdUser);
+    await requestNotificationPermission(); // Request permission on signup
     
     return userCredential;
   };

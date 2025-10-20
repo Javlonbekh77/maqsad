@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import useSWR from 'swr';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,7 +17,7 @@ import type { UserTask, User, WeeklyMeeting } from '@/lib/types';
 import { getNotificationsData } from '@/lib/data';
 import { Link } from '@/navigation';
 import { Badge } from '../ui/badge';
-import { format, isSameDay, isPast, startOfDay } from 'date-fns';
+import { Skeleton } from '../ui/skeleton';
 
 type NotificationData = {
     todayTasks: UserTask[];
@@ -24,38 +25,50 @@ type NotificationData = {
     todayMeetings: (WeeklyMeeting & { groupName: string })[];
 };
 
+const fetcher = ([, user]: [string, User | null]) => {
+    if (!user) return Promise.resolve({ todayTasks: [], overdueTasks: [], todayMeetings: [] });
+    return getNotificationsData(user);
+};
+
+function showBrowserNotification(title: string, options: NotificationOptions) {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification(title, options);
+  }
+}
+
 export default function NotificationsDropdown() {
   const { user } = useAuth();
-  const [notifications, setNotifications] = useState<NotificationData>({
-      todayTasks: [],
-      overdueTasks: [],
-      todayMeetings: [],
-  });
-  const [loading, setLoading] = useState(false);
+  const [hasShownOverdue, setHasShownOverdue] = useState(false);
 
-  const fetchNotifications = useCallback(async (currentUser: User) => {
-    if (!currentUser) return;
-    setLoading(true);
-    try {
-      const data = await getNotificationsData(currentUser);
-      setNotifications(data);
-    } catch (error) {
-      console.error("Failed to fetch notifications:", error);
-    } finally {
-      setLoading(false);
+  // Use SWR for automatic re-fetching every 30 seconds
+  const { data: notifications, isLoading } = useSWR(
+    ['notifications', user], 
+    fetcher,
+    {
+      refreshInterval: 30000, // 30 seconds
+      dedupingInterval: 30000,
     }
-  }, []);
-
-  const handleOpenChange = (isOpen: boolean) => {
-    if (isOpen && user) {
-      fetchNotifications(user);
+  );
+  
+  useEffect(() => {
+    if (notifications && notifications.overdueTasks.length > 0 && !hasShownOverdue) {
+      showBrowserNotification("Vaqti o'tgan vazifalar mavjud!", {
+        body: `${notifications.overdueTasks.length} ta vazifangizning vaqti o'tib ketgan.`,
+        icon: '/logo.svg', // Make sure you have a logo in /public/logo.svg
+      });
+      // Set flag to true to avoid spamming the user with notifications
+      setHasShownOverdue(true); 
+    } else if (notifications && notifications.overdueTasks.length === 0) {
+      // Reset the flag if there are no more overdue tasks
+      setHasShownOverdue(false);
     }
-  };
+  }, [notifications, hasShownOverdue]);
 
-  const totalNotifications = notifications.todayTasks.length + notifications.overdueTasks.length + notifications.todayMeetings.length;
+
+  const totalNotifications = notifications ? (notifications.todayTasks.length + notifications.overdueTasks.length + notifications.todayMeetings.length) : 0;
 
   return (
-    <DropdownMenu onOpenChange={handleOpenChange}>
+    <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="rounded-full relative">
           <Bell className="h-5 w-5" />
@@ -70,9 +83,12 @@ export default function NotificationsDropdown() {
       <DropdownMenuContent align="end" className="w-80">
         <DropdownMenuLabel>Bildirishnomalar</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {loading ? (
-          <DropdownMenuItem disabled>Yuklanmoqda...</DropdownMenuItem>
-        ) : totalNotifications > 0 ? (
+        {isLoading && !notifications ? (
+          <div className="p-2 space-y-2">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        ) : totalNotifications > 0 && notifications ? (
             <>
                 {notifications.todayMeetings.length > 0 && (
                     <>
