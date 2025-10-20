@@ -418,3 +418,16 @@ export const deleteMeeting = async (meetingId: string): Promise<void> => {
     const meetingRef = doc(db, 'meetings', meetingId);
     await deleteDoc(meetingRef);
 };
+
+export const updateChatMessage = async (groupId: string, messageId: string, newText: string): Promise<void> => {
+  const messageRef = doc(db, `groups/${groupId}/messages`, messageId);
+  await updateDoc(messageRef, {
+    text: newText,
+    isEdited: true,
+  });
+};
+
+export const deleteChatMessage = async (groupId: string, messageId: string): Promise<void> => {
+  const messageRef = doc(db, `groups/${groupId}/messages`, messageId);
+  await deleteDoc(messageRef);
+};

@@ -81,4 +81,5 @@ export interface ChatMessage {
     name: string;
     avatarUrl: string;
   }
+  isEdited?: boolean;
 }
