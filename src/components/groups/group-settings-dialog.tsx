@@ -87,7 +87,7 @@ export default function GroupSettingsDialog({ isOpen, onClose, group, onGroupUpd
             <DialogHeader>
             <DialogTitle>Group Settings: {group.name}</DialogTitle>
             <DialogDescription>
-                Update your group's details here. Image selection is not available.
+                Update your group's name and description.
             </DialogDescription>
             </DialogHeader>
             <Form {...form}>
