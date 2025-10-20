@@ -2,9 +2,9 @@
 
 import type { User, UserTask } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Coins, CheckCircle, BarChart } from 'lucide-react';
-import { ChartContainer, ChartTooltip, ChartTooltipContent, Bar, XAxis, YAxis, CartesianGrid, BarChart as RechartsBarChart } from '@/components/ui/chart';
-import { ChartConfig } from '@/components/ui/chart';
+import { Coins, CheckCircle, BarChart as BarChartIcon } from 'lucide-react';
+import { Bar, XAxis, YAxis, CartesianGrid, BarChart } from 'recharts';
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
 import { useMemo } from 'react';
 import { format, subDays } from 'date-fns';
 
@@ -64,11 +64,11 @@ export default function DashboardStats({ user, tasks }: DashboardStatsProps) {
            <Card className="md:col-span-2 lg:col-span-1">
              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Haftalik Yutuqlar</CardTitle>
-                <BarChart className="h-4 w-4 text-muted-foreground" />
+                <BarChartIcon className="h-4 w-4 text-muted-foreground" />
              </CardHeader>
              <CardContent className="pb-2">
                <ChartContainer config={chartConfig} className="h-[60px] w-full">
-                  <RechartsBarChart accessibilityLayer data={chartData}>
+                  <BarChart accessibilityLayer data={chartData}>
                     <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-muted-foreground/30" />
                      <YAxis hide={true} domain={[0, 'dataMax + 2']} />
                      <XAxis
@@ -83,7 +83,7 @@ export default function DashboardStats({ user, tasks }: DashboardStatsProps) {
                         content={<ChartTooltipContent indicator="dot" />}
                      />
                     <Bar dataKey="tasks" fill="var(--color-tasks)" radius={4} />
-                  </RechartsBarChart>
+                  </BarChart>
                 </ChartContainer>
             </CardContent>
           </Card>
