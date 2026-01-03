@@ -12,6 +12,7 @@ import useSWR from 'swr';
 import { Skeleton } from '../ui/skeleton';
 import { Link } from '@/navigation';
 import { Button } from '../ui/button';
+import { cn } from '@/lib/utils';
 
 interface DashboardStatsProps {
     user: User;
@@ -91,22 +92,21 @@ function LeaderboardMotivation({ user }: { user: User }) {
     )
 }
 
-function WeeklyMotivation({ user }: { user: User }) {
+function WeeklyMotivation({ user, tasks }: { user: User, tasks: UserTask[] }) {
     const { message, percentageChange, Icon, periodTotal } = useMemo(() => {
         const today = new Date();
-        const startOfThisWeek = startOfWeek(today);
-        const endOfThisWeek = endOfWeek(today);
-        const startOfLastWeek = startOfWeek(subDays(today, 7));
-        const endOfLastWeek = endOfWeek(subDays(today, 7));
+        // Use the start of the week for consistent comparison
+        const startOfThisWeek = startOfWeek(today, { weekStartsOn: 1 }); // Monday
+        const startOfLastWeek = subDays(startOfThisWeek, 7);
 
         const completedThisWeek = user.taskHistory.filter(h => {
             const historyDate = new Date(h.date);
-            return historyDate >= startOfThisWeek && historyDate <= endOfThisWeek;
+            return historyDate >= startOfThisWeek && historyDate <= today;
         }).length;
-        
+
         const completedLastWeek = user.taskHistory.filter(h => {
             const historyDate = new Date(h.date);
-            return historyDate >= startOfLastWeek && historyDate <= endOfLastWeek;
+            return historyDate >= startOfLastWeek && historyDate < startOfThisWeek;
         }).length;
 
         let percentageChange = 0;
@@ -118,9 +118,9 @@ function WeeklyMotivation({ user }: { user: User }) {
 
         let message;
         if (percentageChange > 0) {
-            message = `Bu o'tgan haftadan ${percentageChange}% ko'p. Ajoyib natija!`;
+            message = <>Bu o'tgan haftadan <span className="text-green-500 font-bold">{percentageChange}%</span> ko'proq. Ajoyib natija!</>;
         } else if (percentageChange < 0) {
-            message = `Bu o'tgan haftadan ${Math.abs(percentageChange)}% kam. Keyingi hafta yanada harakat qilamiz!`;
+            message = <>Bu o'tgan haftadan <span className="text-red-500 font-bold">{Math.abs(percentageChange)}%</span> kam. Keyingi hafta yanada harakat qilamiz!</>;
         } else {
             message = "Natijangiz o'tgan haftadagi kabi. Barqarorlik - bu ham yutuq!";
         }
@@ -131,14 +131,14 @@ function WeeklyMotivation({ user }: { user: User }) {
             Icon: percentageChange >= 0 ? TrendingUp : TrendingDown,
             periodTotal: completedThisWeek,
         }
-    }, [user.taskHistory]);
+    }, [user.taskHistory, tasks]);
 
 
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Haftalik Faollik</CardTitle>
-               <Icon className={`h-4 w-4 ${percentageChange >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+               <Icon className={cn("h-4 w-4", percentageChange > 0 ? "text-green-500" : percentageChange < 0 ? "text-red-500" : "text-muted-foreground")} />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{periodTotal} vazifa</div>
@@ -165,7 +165,7 @@ export default function DashboardStats({ user, tasks }: DashboardStatsProps) {
 
     return (
        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-            <WeeklyMotivation user={user} />
+            <WeeklyMotivation user={user} tasks={tasks} />
             <LeaderboardMotivation user={user} />
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { User, DayOfWeek, PersonalTask, Task, UserTask } from "@/lib/types";
-import { format, add, startOfWeek, isSameDay, isToday } from 'date-fns';
+import { format, add, startOfWeek, isSameDay, isToday, startOfDay } from 'date-fns';
 import { Check, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useEffect, useState, useCallback } from "react";
 import { getTasksForUserGroups, getPersonalTasksForUser } from "@/lib/data";
@@ -134,7 +134,7 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
                         scheduleDays = (task as PersonalTask).schedule;
                     }
 
-                    const taskCreationDate = toDate(task.createdAt as Timestamp);
+                    const taskCreationDate = startOfDay(toDate(task.createdAt as Timestamp));
 
                     return (
                         <TableRow key={task.id}>
@@ -148,9 +148,12 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
                                 </div>
                             </TableCell>
                             {dates.map(date => {
+                                const currentDate = startOfDay(date);
                                 // Don't show anything for dates before the task was created
-                                if (date < taskCreationDate) {
-                                    return <TableCell key={date.toISOString()} className="text-center"></TableCell>;
+                                if (currentDate < taskCreationDate) {
+                                    return <TableCell key={date.toISOString()} className="text-center">
+                                        <span className="text-muted-foreground text-lg">-</span>
+                                    </TableCell>;
                                 }
 
                                 const dayOfWeek = format(date, 'EEEE') as DayOfWeek;
@@ -159,7 +162,7 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
                                 if (!isTaskScheduledForThisDay) {
                                 return (
                                     <TableCell key={date.toISOString()} className="text-center bg-muted/30">
-                                    <span className="text-muted-foreground text-lg">-</span>
+                                      <span className="text-muted-foreground text-lg">-</span>
                                     </TableCell>
                                 );
                                 }
@@ -172,7 +175,7 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
                                     {completed ? (
                                     <Check className="h-5 w-5 text-green-500 mx-auto" />
                                     ) : (
-                                     !isToday(date) && date < new Date() ? <X className="h-5 w-5 text-red-500 mx-auto" /> : null
+                                     currentDate < startOfDay(new Date()) ? <X className="h-5 w-5 text-red-500 mx-auto" /> : null
                                     )}
                                 </TableCell>
                                 );

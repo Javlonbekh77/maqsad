@@ -12,12 +12,21 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Badge } from '../ui/badge';
 import { addDays, format, isToday, isYesterday, isTomorrow, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Timestamp } from 'firebase/firestore';
 
 interface TodayScheduleProps {
   tasks: UserTask[];
   userId: string;
   onTaskCompletion: () => void;
 }
+
+const toDate = (timestamp: Timestamp | Date): Date => {
+    if (timestamp instanceof Date) {
+        return timestamp;
+    }
+    return timestamp.toDate();
+}
+
 
 export default function TodaySchedule({ tasks, userId, onTaskCompletion }: TodayScheduleProps) {
   const t = useTranslations('todoList');
@@ -48,7 +57,14 @@ export default function TodaySchedule({ tasks, userId, onTaskCompletion }: Today
     const tasksForDay = tasks.filter(task => {
         const schedule = 'groupId' in task 
             ? task.schedule // This will be pre-filtered now
-            : (task as any).schedule; // Personal Task
+            : (task as any).schedule;
+        
+        // Task must exist on this day to be considered
+        const taskCreationDate = toDate(task.createdAt as Timestamp);
+        if (displayDate < startOfDay(taskCreationDate)) {
+            return false;
+        }
+            
         return schedule.includes(dayOfWeek);
     });
 
