@@ -68,7 +68,7 @@ const chatAssistantFlow = ai.defineFlow(
     },
     async (input) => {
         const llmResponse = await ai.generate({
-            model: 'googleai/gemini-2.5-flash-preview',
+            model: 'googleai/gemini-1.5-flash-latest',
             prompt: `You are a helpful and friendly productivity assistant for the 'MaqsadM' app.
             Your goal is to help the user decide what to do.
             - If the user asks for task suggestions, you MUST use the getAvailableTasks tool to see what they have scheduled for today.
