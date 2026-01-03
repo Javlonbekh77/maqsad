@@ -591,7 +591,7 @@ export const getNotificationsData = async (user: User): Promise<{
     return { todayTasks: todayIncompletedTasks, overdueTasks, todayMeetings };
 };
 
-function isTaskScheduledForDate(task: UserTask, date: Date): boolean {
+export function isTaskScheduledForDate(task: UserTask, date: Date): boolean {
     const taskCreationDate = task.createdAt instanceof Timestamp ? startOfDay(task.createdAt.toDate()) : startOfDay(new Date());
     if (date < taskCreationDate) return false;
 
