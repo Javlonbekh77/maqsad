@@ -6,34 +6,12 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import type { DayOfWeek } from '@/lib/types';
 import { createPersonalTask } from '@/lib/data';
-
-// Define the structure of a single chat message
-const ChatMessageSchema = z.object({
-  role: z.enum(['user', 'model']),
-  content: z.string(),
-});
-
-// Define the input schema for the main flow
-export const CreateTaskChatInputSchema = z.object({
-  userId: z.string().describe("The ID of the user creating the task."),
-  history: z.array(ChatMessageSchema).describe("The conversation history so far."),
-});
-export type CreateTaskChatInput = z.infer<typeof CreateTaskChatInputSchema>;
-
-// Define the schema for the information we need to extract
-const ExtractedTaskInfoSchema = z.object({
-  isReadyToCreate: z.boolean().describe("Set to true only when all necessary information (title, schedule) has been gathered."),
-  title: z.string().optional().describe("The title of the task."),
-  schedule: z.array(z.string()).optional().describe("The schedule for the task (e.g., ['Monday', 'Wednesday'])."),
-  followUpQuestion: z.string().describe("A question to ask the user to get the next piece of information, or a confirmation message if the task is ready."),
-});
-
-// Define the output schema for the main flow
-export const CreateTaskChatOutputSchema = z.object({
-  response: z.string().describe("The AI's response to the user."),
-  isTaskCreated: z.boolean().describe("True if the task was successfully created in this turn."),
-});
-export type CreateTaskChatOutput = z.infer<typeof CreateTaskChatOutputSchema>;
+import {
+  CreateTaskChatInputSchema,
+  type CreateTaskChatInput,
+  CreateTaskChatOutputSchema,
+  type CreateTaskChatOutput,
+} from '@/ai/schemas';
 
 
 // Main exported function to be called by the client

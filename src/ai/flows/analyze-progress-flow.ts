@@ -8,29 +8,12 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
-import type { TaskHistory } from '@/lib/types';
-
-// Define the structure for the TaskHistory using Zod for validation
-const TaskHistorySchema = z.object({
-    taskId: z.string(),
-    date: z.string(),
-    taskType: z.enum(['group', 'personal']),
-});
-
-// Define the input schema for our AI flow
-export const ProgressAnalysisInputSchema = z.object({
-  goals: z.string().optional().describe("The user's long-term goals."),
-  habits: z.string().optional().describe("The user's desired daily/weekly habits."),
-  taskHistory: z.array(TaskHistorySchema).describe("The user's recent task completion history."),
-});
-export type ProgressAnalysisInput = z.infer<typeof ProgressAnalysisInputSchema>;
-
-// Define the output schema for our AI flow
-export const ProgressAnalysisOutputSchema = z.object({
-  text: z.string().describe("A short, insightful, and motivational analysis of the user's progress. Max 2-3 sentences."),
-});
-export type ProgressAnalysisOutput = z.infer<typeof ProgressAnalysisOutputSchema>;
+import { 
+    ProgressAnalysisInputSchema, 
+    type ProgressAnalysisInput, 
+    ProgressAnalysisOutputSchema,
+    type ProgressAnalysisOutput
+} from '@/ai/schemas';
 
 // Define the main function that will be called from the frontend
 export async function analyzeProgress(input: ProgressAnalysisInput): Promise<ProgressAnalysisOutput> {
