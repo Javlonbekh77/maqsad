@@ -67,7 +67,7 @@ export const getUserGroups = async(userId: string): Promise<Group[]> => {
 }
 
 export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> => {
-    // Safely initialize userSchedules to prevent 'undefined' errors
+    // CRITICAL FIX: Ensure user.taskSchedules is an array to prevent .find() on undefined.
     const userSchedules: UserTaskSchedule[] = Array.isArray(user.taskSchedules) ? user.taskSchedules : [];
     const scheduledGroupTaskIds = userSchedules.map(schedule => schedule.taskId);
     
