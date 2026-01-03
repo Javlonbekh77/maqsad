@@ -318,8 +318,22 @@ export const createTask = async (taskData: Omit<Task, 'id' | 'createdAt'>): Prom
 };
 
 export const createPersonalTask = async (taskData: Omit<PersonalTask, 'id' | 'createdAt'>): Promise<PersonalTask> => {
+    const { schedule, ...restOfTaskData } = taskData;
+
+    // Clean up schedule object to remove undefined fields
+    const cleanedSchedule: Partial<TaskSchedule> = { type: schedule.type };
+    if (schedule.type === 'one-time' && schedule.date) {
+        cleanedSchedule.date = schedule.date;
+    } else if (schedule.type === 'date-range' && schedule.startDate && schedule.endDate) {
+        cleanedSchedule.startDate = schedule.startDate;
+        cleanedSchedule.endDate = schedule.endDate;
+    } else if (schedule.type === 'recurring' && schedule.days) {
+        cleanedSchedule.days = schedule.days;
+    }
+
     const docRef = await addDoc(collection(db, 'personal_tasks'), {
-        ...taskData,
+        ...restOfTaskData,
+        schedule: cleanedSchedule,
         createdAt: serverTimestamp()
     });
     await updateDoc(docRef, { id: docRef.id });
