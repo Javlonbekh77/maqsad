@@ -2,7 +2,7 @@
 
 import type { User, UserTask } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Coins, CheckCircle, BarChart as BarChartIcon, TrendingUp, TrendingDown, ArrowRight, Flame, Trophy } from 'lucide-react';
+import { Coins, CheckCircle, BarChart as BarChartIcon, TrendingUp, TrendingDown, ArrowRight, Flame, Trophy, BrainCircuit } from 'lucide-react';
 import { Bar, XAxis, YAxis, CartesianGrid, BarChart } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
 import { useMemo } from 'react';
@@ -13,6 +13,7 @@ import { Skeleton } from '../ui/skeleton';
 import { Link } from '@/navigation';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
+import { analyzeProgress } from '@/ai/flows/analyze-progress-flow';
 
 interface DashboardStatsProps {
     user: User;
@@ -26,6 +27,58 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
+function AiAnalyst({ user }: { user: User }) {
+    const { data: analysis, isLoading, error } = useSWR(
+      ['ai-analysis', user.id], 
+      () => analyzeProgress({
+          goals: user.goals,
+          habits: user.habits,
+          taskHistory: user.taskHistory.slice(-20), // Send recent history
+      })
+    );
+  
+    if (isLoading) {
+      return (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">AI Tahlilchi</CardTitle>
+            <BrainCircuit className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-4 w-full mb-2" />
+            <Skeleton className="h-4 w-3/4" />
+          </CardContent>
+        </Card>
+      )
+    }
+
+    if (error || !analysis) {
+        return (
+             <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">AI Tahlilchi</CardTitle>
+                    <BrainCircuit className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <p className="text-xs text-muted-foreground">Tahlil qilishda xatolik yuz berdi.</p>
+                </CardContent>
+            </Card>
+        )
+    }
+  
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">AI Tahlilchi</CardTitle>
+          <BrainCircuit className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+            <p className="text-sm font-medium">{analysis.text}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
 function LeaderboardMotivation({ user }: { user: User }) {
     const { data: leaderboardData, isLoading } = useSWR('leaderboardData', getLeaderboardData);
 
@@ -33,7 +86,6 @@ function LeaderboardMotivation({ user }: { user: User }) {
         if (!leaderboardData || !user) return null;
         
         const rank = leaderboardData.topUsers.findIndex(u => u.id === user.id) + 1;
-        const totalUsersInLeaderboard = leaderboardData.topUsers.length;
 
         if (rank > 0) {
             if (rank === 1) {
@@ -43,7 +95,8 @@ function LeaderboardMotivation({ user }: { user: User }) {
             const coinsNeeded = (userAbove.coins + 1) - user.coins;
             return { rank, message: `Siz ${rank}-o'rindasiz! Yuqoriroqqa ko'tarilish uchun yana atigi ${coinsNeeded} tanga kerak!` };
         }
-
+        
+        const totalUsersInLeaderboard = leaderboardData.topUsers.length;
         if (totalUsersInLeaderboard > 0) {
             const lastUserInLeaderboard = leaderboardData.topUsers[totalUsersInLeaderboard - 1];
             const coinsNeeded = (lastUserInLeaderboard.coins + 1) - user.coins;
@@ -95,9 +148,9 @@ function LeaderboardMotivation({ user }: { user: User }) {
 function WeeklyMotivation({ user, tasks }: { user: User, tasks: UserTask[] }) {
     const { message, percentageChange, Icon, periodTotal } = useMemo(() => {
         const today = new Date();
-        // Use the start of the week for consistent comparison
         const startOfThisWeek = startOfWeek(today, { weekStartsOn: 1 }); // Monday
         const startOfLastWeek = subDays(startOfThisWeek, 7);
+        const endOfLastWeek = endOfWeek(startOfLastWeek, { weekStartsOn: 1 });
 
         const completedThisWeek = user.taskHistory.filter(h => {
             const historyDate = new Date(h.date);
@@ -106,7 +159,7 @@ function WeeklyMotivation({ user, tasks }: { user: User, tasks: UserTask[] }) {
 
         const completedLastWeek = user.taskHistory.filter(h => {
             const historyDate = new Date(h.date);
-            return historyDate >= startOfLastWeek && historyDate < startOfThisWeek;
+            return historyDate >= startOfLastWeek && historyDate <= endOfLastWeek;
         }).length;
 
         let percentageChange = 0;
@@ -128,7 +181,7 @@ function WeeklyMotivation({ user, tasks }: { user: User, tasks: UserTask[] }) {
         return {
             message,
             percentageChange,
-            Icon: percentageChange >= 0 ? TrendingUp : TrendingDown,
+            Icon: percentageChange > 0 ? TrendingUp : (percentageChange < 0 ? TrendingDown : BarChartIcon),
             periodTotal: completedThisWeek,
         }
     }, [user.taskHistory, tasks]);
@@ -151,48 +204,11 @@ function WeeklyMotivation({ user, tasks }: { user: User, tasks: UserTask[] }) {
 }
 
 export default function DashboardStats({ user, tasks }: DashboardStatsProps) {
-    const chartData = useMemo(() => {
-        const last7Days = Array.from({ length: 7 }).map((_, i) => subDays(new Date(), i)).reverse();
-        return last7Days.map(date => {
-            const dateString = format(date, 'yyyy-MM-dd');
-            const tasksCompleted = user.taskHistory.filter(h => h.date === dateString).length;
-            return {
-                date: format(date, 'MMM d'),
-                tasks: tasksCompleted,
-            };
-        });
-    }, [user.taskHistory]);
-
     return (
        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+            <AiAnalyst user={user} />
             <WeeklyMotivation user={user} tasks={tasks} />
             <LeaderboardMotivation user={user} />
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Oxirgi 7 kunlik yutuqlar</CardTitle>
-                    <BarChartIcon className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent className="pb-2">
-                <ChartContainer config={chartConfig} className="h-[60px] w-full">
-                    <BarChart accessibilityLayer data={chartData}>
-                        <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-muted-foreground/30" />
-                        <YAxis hide={true} domain={[0, 'dataMax + 2']} />
-                        <XAxis
-                            dataKey="date"
-                            tickLine={false}
-                            axisLine={false}
-                            tickMargin={8}
-                            tickFormatter={(value) => value.slice(0, 3)}
-                            />
-                        <ChartTooltip 
-                            cursor={false}
-                            content={<ChartTooltipContent indicator="dot" />}
-                        />
-                        <Bar dataKey="tasks" fill="var(--color-tasks)" radius={4} />
-                    </BarChart>
-                    </ChartContainer>
-                </CardContent>
-            </Card>
        </div>
     )
 }

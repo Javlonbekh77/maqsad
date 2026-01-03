@@ -70,11 +70,11 @@ export default function DashboardClient() {
     return (
       <AppLayout>
         <div className="grid gap-8">
-          <div>
+          <div className="rounded-lg bg-background/50 backdrop-blur-sm p-6 border">
             <Skeleton className="h-12 w-2/3" />
             <Skeleton className="h-4 w-1/2 mt-2" />
           </div>
-           <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+           <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
               <Skeleton className="h-28 w-full" />
               <Skeleton className="h-28 w-full" />
               <Skeleton className="h-28 w-full" />
