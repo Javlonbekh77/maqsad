@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 interface TodayScheduleProps {
   tasks: UserTask[];
   userId: string;
-  onTaskCompletion: (userId: string) => void;
+  onTaskCompletion: () => void;
 }
 
 export default function TodaySchedule({ tasks, userId, onTaskCompletion }: TodayScheduleProps) {
@@ -34,7 +34,7 @@ export default function TodaySchedule({ tasks, userId, onTaskCompletion }: Today
     await completeUserTask(userId, selectedTask);
 
     setSelectedTask(null);
-    onTaskCompletion(userId);
+    onTaskCompletion();
   }, [selectedTask, userId, onTaskCompletion]);
 
   const changeDay = (amount: number) => {
@@ -86,7 +86,7 @@ export default function TodaySchedule({ tasks, userId, onTaskCompletion }: Today
               <Button variant="outline" size="icon" onClick={() => changeDay(-1)}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="icon" onClick={() => changeDay(1)} disabled={isToday(displayDate)}>
+              <Button variant="outline" size="icon" onClick={() => changeDay(1)}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>

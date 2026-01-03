@@ -29,7 +29,7 @@ function UnreadCountBadge({ groupId }: { groupId: string }) {
     const lastReadTimestamp = user?.lastRead?.[groupId] || new Timestamp(0, 0);
 
     const { data: unreadCount } = useSWR(
-        `unreadCount/${groupId}`, 
+        `unreadCount/${groupId}/${user?.id}`, 
         () => getUnreadMessageCount(groupId, lastReadTimestamp),
         { refreshInterval: 10000 } // Re-fetch every 10 seconds
     );

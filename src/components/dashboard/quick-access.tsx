@@ -6,7 +6,6 @@ import { Button } from "../ui/button";
 import { ArrowRight, Trophy, Users } from "lucide-react";
 import useSWR from "swr";
 import { getUserGroups } from "@/lib/data";
-import type { Group } from "@/lib/types";
 import { useAuth } from "@/context/auth-context";
 import Image from "next/image";
 import { Skeleton } from "../ui/skeleton";
@@ -16,7 +15,7 @@ const fetcher = (userId: string) => getUserGroups(userId);
 function QuickAccessGroupList() {
     const { user } = useAuth();
     // Fetch only a few groups for quick access
-    const { data: groups, error, isLoading } = useSWR(user ? user.id : null, (id) => fetcher(id).then(g => g.slice(0, 5)));
+    const { data: groups, error, isLoading } = useSWR(user ? user.id : null, (id) => fetcher(id!).then(g => g.slice(0, 5)));
 
     if (isLoading) {
         return (
@@ -56,7 +55,7 @@ function QuickAccessGroupList() {
     )
 }
 
-export default function QuickAccess({ userGroups }: { userGroups: string[] }) {
+export default function QuickAccess() {
     return (
         <>
             <Card>

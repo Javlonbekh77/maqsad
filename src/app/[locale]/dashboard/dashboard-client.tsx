@@ -52,9 +52,17 @@ export default function DashboardClient() {
     // Refresh all auth context data, which will trigger a re-render and re-fetch of tasks.
     if (authUser) {
       await refreshAuth();
-      fetchDashboardData(authUser);
+      // After auth is refreshed, authUser in context is updated.
+      // We need to wait for the next render cycle for the updated authUser to be passed down.
+      // The useEffect listening to `authUser` will then re-trigger the data fetch.
     }
   };
+
+  useEffect(() => {
+    if(authUser) {
+      fetchDashboardData(authUser);
+    }
+  }, [authUser, fetchDashboardData]);
 
   const isLoading = authLoading || loadingTasks || !user;
 
@@ -102,7 +110,7 @@ export default function DashboardClient() {
                 />
             </div>
             <div className="space-y-8">
-                <QuickAccess userGroups={user.groups || []} />
+                <QuickAccess />
             </div>
         </div>
       </div>

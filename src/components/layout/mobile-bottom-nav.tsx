@@ -34,7 +34,7 @@ export default function MobileBottomNav() {
             key={item.href}
             href={item.href}
             className={`inline-flex flex-col items-center justify-center px-2 group ${
-              pathname === item.href
+              pathname.startsWith(item.href) && item.href !== '/' || pathname === item.href
                 ? 'text-primary'
                 : 'text-muted-foreground hover:bg-muted/50'
             }`}

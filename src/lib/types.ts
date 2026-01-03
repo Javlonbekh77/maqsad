@@ -3,7 +3,7 @@ import { FieldValue, Timestamp } from "firebase/firestore";
 export type Task = {
   id: string;
   title: string;
-  description: string;
+  description:string;
   coins: number;
   groupId: string;
   time?: string; // Optional time for the task
@@ -45,8 +45,8 @@ export type User = {
   fullName: string; // Combined for easier display
   email: string;
   avatarUrl: string;
-  coins: number; // For group tasks, Gold Coins
-  silverCoins: number; // For personal tasks, Silver Coins
+  coins: number;
+  silverCoins: number;
   goals: string;
   habits: string;
   groups: string[]; // array of group IDs
