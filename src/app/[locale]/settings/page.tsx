@@ -28,7 +28,7 @@ export default function SettingsPage() {
        return (
         <AppLayout>
              <div className="space-y-8">
-                <div>
+                <div className="rounded-lg bg-background/50 backdrop-blur-sm p-6 border">
                     <Skeleton className="h-10 w-1/3" />
                     <Skeleton className="h-4 w-1/2 mt-2" />
                 </div>
@@ -67,9 +67,9 @@ export default function SettingsPage() {
     return (
         <AppLayout>
             <div className="space-y-8">
-                <div>
+                <div className="rounded-lg bg-background/50 backdrop-blur-sm p-6 border">
                     <h1 className="text-3xl font-bold font-display">{tProfile('settings.title')}</h1>
-                    <p className="text-muted-foreground">{tSettings('subtitle')}</p>
+                    <p className="text-muted-foreground mt-1">{tSettings('subtitle')}</p>
                 </div>
                 
                  <Card>

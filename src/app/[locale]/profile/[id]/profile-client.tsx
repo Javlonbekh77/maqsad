@@ -114,7 +114,9 @@ export default function ProfileClient() {
     <AppLayout>
       <div className="space-y-8">
         <div className="flex items-center justify-between">
-          <GoBackButton />
+            <div className="rounded-lg bg-background/50 backdrop-blur-sm px-4 py-2 border">
+                <GoBackButton />
+            </div>
           {isCurrentUserProfile && (
             <Button variant="outline" onClick={() => router.push('/settings')}>
               <Settings className="mr-2 h-4 w-4" />

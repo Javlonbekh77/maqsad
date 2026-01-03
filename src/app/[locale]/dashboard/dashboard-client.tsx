@@ -54,10 +54,11 @@ export default function DashboardClient() {
       <AppLayout>
         <div className="grid gap-8">
           <div>
-            <Skeleton className="h-10 w-1/2" />
-            <Skeleton className="h-4 w-3/4 mt-2" />
+            <Skeleton className="h-12 w-2/3" />
+            <Skeleton className="h-4 w-1/2 mt-2" />
           </div>
-           <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+           <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+              <Skeleton className="h-28 w-full" />
               <Skeleton className="h-28 w-full" />
               <Skeleton className="h-28 w-full" />
             </div>
@@ -76,9 +77,9 @@ export default function DashboardClient() {
   return (
     <AppLayout>
       <div className="grid gap-8">
-        <div>
+        <div className="rounded-lg bg-background/50 backdrop-blur-sm p-6 border">
           <h1 className="text-3xl font-bold font-display">{t('welcome', { name: authUser.firstName })}</h1>
-          <p className="text-muted-foreground">{t('welcomeSubtitle')}</p>
+          <p className="text-muted-foreground mt-1">{t('welcomeSubtitle')}</p>
         </div>
 
         <DashboardStats user={authUser} tasks={tasks} />

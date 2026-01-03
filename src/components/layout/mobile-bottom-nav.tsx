@@ -9,17 +9,19 @@ import {
   PlusSquare,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
+import { useTranslations } from 'next-intl';
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const t = useTranslations('nav');
 
   const navItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/groups', label: 'Groups', icon: Users },
-    { href: '/create-task', label: 'Add', icon: PlusSquare },
-    { href: '/leaderboard', label: 'Leaders', icon: Trophy },
-    { href: `/profile/${user?.id}`, label: 'Profile', icon: UserCircle },
+    { href: '/dashboard', label: t('dashboard'), icon: LayoutDashboard },
+    { href: '/groups', label: t('groups'), icon: Users },
+    { href: '/create-task', label: 'Add Task', icon: PlusSquare },
+    { href: '/leaderboard', label: t('leaderboard'), icon: Trophy },
+    { href: `/profile/${user?.id}`, label: t('profile'), icon: UserCircle },
   ];
 
   return (
@@ -32,10 +34,10 @@ export default function MobileBottomNav() {
             key={item.href}
             href={item.href}
             className={`inline-flex flex-col items-center justify-center px-2 group ${
-              pathname.startsWith(item.href) && item.href !== '/create-task'
+              pathname === item.href
                 ? 'text-primary'
                 : 'text-muted-foreground hover:bg-muted/50'
-            } ${pathname === item.href && item.href === '/create-task' ? 'text-primary' : ''}`}
+            }`}
           >
             <item.icon className="w-5 h-5 mb-1" />
             <span className="text-xs">{item.label}</span>

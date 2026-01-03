@@ -51,7 +51,7 @@ export default function LeaderboardClient() {
     return (
       <AppLayout>
         <div className="space-y-8">
-          <div>
+          <div className="rounded-lg bg-background/50 backdrop-blur-sm p-6 border">
               <Skeleton className="h-10 w-1/3" />
               <Skeleton className="h-4 w-1/2 mt-2" />
           </div>
@@ -68,9 +68,9 @@ export default function LeaderboardClient() {
   return (
     <AppLayout>
       <div className="space-y-8">
-        <div>
+        <div className="rounded-lg bg-background/50 backdrop-blur-sm p-6 border">
           <h1 className="text-3xl font-bold font-display">{t('title')}</h1>
-          <p className="text-muted-foreground">{t('subtitle')}</p>
+          <p className="text-muted-foreground mt-1">{t('subtitle')}</p>
         </div>
         <LeaderboardTabs topUsers={topUsers} topGroups={topGroups} topSilverCoinUsers={topSilverCoinUsers} isLoading={isLoading} />
       </div>

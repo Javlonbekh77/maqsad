@@ -100,78 +100,80 @@ export default function CreatePersonalTaskPage() {
 
   return (
     <AppLayout>
-      <Card className="max-w-2xl mx-auto">
-        <CardHeader>
-          <CardTitle>Yangi Shaxsiy Vazifa Yaratish</CardTitle>
-          <CardDescription>
-            Bu vazifa faqat siz uchun. O'z odatlaringiz va maqsadlaringizni kuzatib boring. Har bir bajarilgan vazifa uchun 1 Kumush Tanga olasiz.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Vazifa Sarlavhasi</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Masalan, 30 daqiqa kitob o'qish" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tavsif (Ixtiyoriy)</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Maqsadingiz haqida batafsilroq ma'lumot qo'shing" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="schedule"
-                render={({ field }) => (
+       <div className="space-y-8">
+        <div className="rounded-lg bg-background/50 backdrop-blur-sm p-6 border">
+            <h1 className="text-3xl font-bold font-display">Yangi Shaxsiy Vazifa Yaratish</h1>
+            <p className="text-muted-foreground mt-1">
+                Bu vazifa faqat siz uchun. O'z odatlaringiz va maqsadlaringizni kuzatib boring. Har bir bajarilgan vazifa uchun 1 Kumush Tanga olasiz.
+            </p>
+        </div>
+        <Card className="max-w-2xl mx-auto">
+            <CardContent className='pt-6'>
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Qaysi kunlarda?</FormLabel>
+                        <FormLabel>Vazifa Sarlavhasi</FormLabel>
                         <FormControl>
-                             <ToggleGroup
-                                type="multiple"
-                                variant="outline"
-                                value={field.value}
-                                onValueChange={field.onChange}
-                                aria-label="Days of the week"
-                                className="flex-wrap justify-start"
-                            >
-                                {daysOfWeek.map(day => (
-                                    <ToggleGroupItem key={day} value={day} className="w-10 h-10">
-                                        {dayAbbreviations[day]}
-                                    </ToggleGroupItem>
-                                ))}
-                            </ToggleGroup>
+                        <Input placeholder="Masalan, 30 daqiqa kitob o'qish" {...field} />
                         </FormControl>
-                         <FormDescription>
-                            Ushbu vazifani haftaning qaysi kunlari bajarishni rejalashtirayotganingizni tanlang.
-                        </FormDescription>
                         <FormMessage />
                     </FormItem>
-                )}
-              />
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Yaratilmoqda...' : 'Vazifani Yaratish'}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Tavsif (Ixtiyoriy)</FormLabel>
+                        <FormControl>
+                        <Textarea placeholder="Maqsadingiz haqida batafsilroq ma'lumot qo'shing" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="schedule"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Qaysi kunlarda?</FormLabel>
+                            <FormControl>
+                                <ToggleGroup
+                                    type="multiple"
+                                    variant="outline"
+                                    value={field.value}
+                                    onValueChange={field.onChange}
+                                    aria-label="Days of the week"
+                                    className="flex-wrap justify-start"
+                                >
+                                    {daysOfWeek.map(day => (
+                                        <ToggleGroupItem key={day} value={day} className="w-10 h-10">
+                                            {dayAbbreviations[day]}
+                                        </ToggleGroupItem>
+                                    ))}
+                                </ToggleGroup>
+                            </FormControl>
+                            <FormDescription>
+                                Ushbu vazifani haftaning qaysi kunlari bajarishni rejalashtirayotganingizni tanlang.
+                            </FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? 'Yaratilmoqda...' : 'Vazifani Yaratish'}
+                </Button>
+                </form>
+            </Form>
+            </CardContent>
+        </Card>
+      </div>
     </AppLayout>
   );
 }
