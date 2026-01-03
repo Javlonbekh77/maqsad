@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Bell, AlertCircle, CalendarClock, ListTodo, History } from 'lucide-react';
+import { Bell, AlertCircle, CalendarClock, ListTodo, History, CheckCheck } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import type { UserTask, User, WeeklyMeeting } from '@/lib/types';
 import { getNotificationsData } from '@/lib/data';
@@ -39,33 +39,35 @@ function showBrowserNotification(title: string, options: NotificationOptions) {
 export default function NotificationsDropdown() {
   const { user } = useAuth();
   const [hasShownOverdue, setHasShownOverdue] = useState(false);
-
-  // Use SWR for automatic re-fetching every 30 seconds
-  const { data: notifications, isLoading } = useSWR(
+  const { data, isLoading, mutate } = useSWR(
     ['notifications', user], 
     fetcher,
     {
-      refreshInterval: 30000, // 30 seconds
+      refreshInterval: 30000,
       dedupingInterval: 30000,
     }
   );
   
   useEffect(() => {
-    if (notifications && notifications.overdueTasks.length > 0 && !hasShownOverdue) {
+    if (data && data.overdueTasks.length > 0 && !hasShownOverdue) {
       showBrowserNotification("Vaqti o'tgan vazifalar mavjud!", {
-        body: `${notifications.overdueTasks.length} ta vazifangizning vaqti o'tib ketgan.`,
-        icon: '/logo.svg', // Make sure you have a logo in /public/logo.svg
+        body: `${data.overdueTasks.length} ta vazifangizning vaqti o'tib ketgan.`,
+        icon: '/logo.svg',
       });
-      // Set flag to true to avoid spamming the user with notifications
       setHasShownOverdue(true); 
-    } else if (notifications && notifications.overdueTasks.length === 0) {
-      // Reset the flag if there are no more overdue tasks
+    } else if (data && data.overdueTasks.length === 0) {
       setHasShownOverdue(false);
     }
-  }, [notifications, hasShownOverdue]);
+  }, [data, hasShownOverdue]);
+  
+  const handleMarkAllRead = (e: React.MouseEvent) => {
+    e.preventDefault();
+    // In a real app, you'd call a function here to mark all as read on the backend.
+    // For now, we'll just clear them on the client side for an immediate visual effect.
+    mutate({ todayTasks: [], overdueTasks: [], todayMeetings: [] }, false);
+  };
 
-
-  const totalNotifications = notifications ? (notifications.todayTasks.length + notifications.overdueTasks.length + notifications.todayMeetings.length) : 0;
+  const totalNotifications = data ? (data.todayTasks.length + data.overdueTasks.length + data.todayMeetings.length) : 0;
 
   return (
     <DropdownMenu>
@@ -74,26 +76,34 @@ export default function NotificationsDropdown() {
           <Bell className="h-5 w-5" />
           {totalNotifications > 0 && (
              <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
-                {totalNotifications}
+                {totalNotifications > 9 ? '9+' : totalNotifications}
             </span>
           )}
           <span className="sr-only">Toggle notifications</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
-        <DropdownMenuLabel>Bildirishnomalar</DropdownMenuLabel>
+        <div className="flex items-center justify-between pr-2">
+            <DropdownMenuLabel>Bildirishnomalar</DropdownMenuLabel>
+            {totalNotifications > 0 && (
+                 <button onClick={handleMarkAllRead} className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1">
+                    <CheckCheck className="h-3 w-3" />
+                    Barchasini o'qish
+                </button>
+            )}
+        </div>
         <DropdownMenuSeparator />
-        {isLoading && !notifications ? (
+        {isLoading && !data ? (
           <div className="p-2 space-y-2">
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
           </div>
-        ) : totalNotifications > 0 && notifications ? (
+        ) : totalNotifications > 0 && data ? (
             <>
-                {notifications.todayMeetings.length > 0 && (
+                {data.todayMeetings.length > 0 && (
                     <>
                         <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground flex items-center gap-2"><CalendarClock className='h-4 w-4' /> Bugungi uchrashuvlar</DropdownMenuLabel>
-                        {notifications.todayMeetings.map(meeting => (
+                        {data.todayMeetings.map(meeting => (
                             <Link key={meeting.id} href={`/groups/${meeting.groupId}?tab=meetings`}>
                                 <DropdownMenuItem className="flex justify-between items-center">
                                     <p className="font-medium">{meeting.title}</p>
@@ -104,10 +114,10 @@ export default function NotificationsDropdown() {
                          <DropdownMenuSeparator />
                     </>
                 )}
-                 {notifications.todayTasks.length > 0 && (
+                 {data.todayTasks.length > 0 && (
                     <>
                         <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground flex items-center gap-2"><ListTodo className='h-4 w-4' /> Bugungi vazifalar</DropdownMenuLabel>
-                        {notifications.todayTasks.map(task => (
+                        {data.todayTasks.map(task => (
                              <Link key={task.id} href="/dashboard">
                                 <DropdownMenuItem className="flex justify-between items-center">
                                     <div>
@@ -121,10 +131,10 @@ export default function NotificationsDropdown() {
                          <DropdownMenuSeparator />
                     </>
                 )}
-                 {notifications.overdueTasks.length > 0 && (
+                 {data.overdueTasks.length > 0 && (
                     <>
                         <DropdownMenuLabel className="text-xs font-semibold text-destructive flex items-center gap-2"><History className='h-4 w-4' /> Vaqti o'tgan vazifalar</DropdownMenuLabel>
-                        {notifications.overdueTasks.map(task => (
+                        {data.overdueTasks.map(task => (
                              <Link key={task.id} href="/dashboard">
                                 <DropdownMenuItem className="flex justify-between items-center">
                                      <div>
