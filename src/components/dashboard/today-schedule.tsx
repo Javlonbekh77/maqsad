@@ -6,11 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Check, Coins, Clock, CalendarPlus } from 'lucide-react';
 import TaskCompletionDialog from './task-completion-dialog';
-import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { completeUserTask } from '@/lib/data';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
+import { Flame } from 'lucide-react';
 
 interface TodayScheduleProps {
   tasks: UserTask[];
@@ -29,7 +29,7 @@ export default function TodaySchedule({ tasks, userId, onTaskCompletion }: Today
   const handleConfirmCompletion = useCallback(async () => {
     if (!selectedTask || !userId) return;
     
-    await completeUserTask(userId, selectedTask.id, selectedTask.coins);
+    await completeUserTask(userId, selectedTask);
 
     setSelectedTask(null);
     onTaskCompletion(userId); // Re-fetch all data to ensure consistency
@@ -51,8 +51,8 @@ export default function TodaySchedule({ tasks, userId, onTaskCompletion }: Today
               <TableHeader>
                 <TableRow>
                   <TableHead>Vazifa</TableHead>
-                  <TableHead>Guruh</TableHead>
-                  <TableHead>Vaqt</TableHead>
+                  <TableHead>Turi</TableHead>
+                  <TableHead className="text-right">Mukofot</TableHead>
                   <TableHead className="text-right">Holat</TableHead>
                 </TableRow>
               </TableHeader>
@@ -61,17 +61,16 @@ export default function TodaySchedule({ tasks, userId, onTaskCompletion }: Today
                   <TableRow key={task.id}>
                     <TableCell className="font-medium">{task.title}</TableCell>
                     <TableCell>
-                        <Badge variant="outline">{task.groupName}</Badge>
+                        {task.taskType === 'group' ? 
+                            <Badge variant="outline">{task.groupName}</Badge> : 
+                            <Badge variant="secondary">Shaxsiy</Badge>
+                        }
                     </TableCell>
-                    <TableCell>
-                        {task.time ? (
-                            <div className="flex items-center gap-1 text-muted-foreground">
-                                <Clock className="h-3 w-3" />
-                                {task.time}
-                            </div>
-                        ) : (
-                            <span className="text-muted-foreground">-</span>
-                        )}
+                    <TableCell className="text-right">
+                         <div className={`flex items-center justify-end gap-1 font-semibold ${task.taskType === 'group' ? 'text-amber-500' : 'text-blue-500'}`}>
+                            {task.taskType === 'group' ? <Coins className="w-4 h-4" /> : <Flame className="w-4 h-4" />}
+                            <span>{task.coins}</span>
+                        </div>
                     </TableCell>
                     <TableCell className="text-right">
                        <Button size="sm" onClick={() => handleCompleteClick(task)}>
@@ -99,7 +98,10 @@ export default function TodaySchedule({ tasks, userId, onTaskCompletion }: Today
                    <li key={task.id} className="flex items-center p-3 rounded-lg bg-secondary/30 text-muted-foreground">
                     <Check className="w-5 h-5 mr-3 text-green-500" />
                     <span className="line-through">{task.title}</span>
-                    <Badge variant="secondary" className="ml-auto">{task.groupName}</Badge>
+                     {task.taskType === 'group' ? 
+                        <Badge variant="secondary" className="ml-auto">{task.groupName}</Badge> :
+                        <Badge variant="default" className="ml-auto bg-blue-500/10 text-blue-700 border-blue-500/20 hover:bg-blue-500/20">Shaxsiy</Badge>
+                    }
                   </li>
                 ))}
               </ul>

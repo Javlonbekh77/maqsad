@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import type { Task, User, DayOfWeek, PersonalTask } from "@/lib/types";
+import type { User, DayOfWeek, PersonalTask, Task } from "@/lib/types";
 import { format, add, startOfWeek, isSameDay, isToday } from 'date-fns';
 import { Check, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useEffect, useState, useCallback } from "react";
@@ -10,6 +10,7 @@ import { getTasksForUserGroups, getPersonalTasksForUser } from "@/lib/data";
 import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "../ui/skeleton";
+import { Badge } from "../ui/badge";
 
 interface HabitTrackerProps {
   user: User;
@@ -75,8 +76,8 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <CardTitle>Habit Tracker</CardTitle>
-                <CardDescription>Your progress on tasks for the selected week.</CardDescription>
+                <CardTitle>Odatlar Jadvali</CardTitle>
+                <CardDescription>Tanlangan hafta uchun vazifalardagi yutuqlaringiz.</CardDescription>
             </div>
              <div className="flex items-center gap-2 mt-4 sm:mt-0">
                 <Button variant="outline" size="icon" onClick={goToPreviousWeek}>
@@ -99,7 +100,7 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
             <Table className="min-w-full">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[150px] sm:w-[200px]">Task</TableHead>
+                  <TableHead className="w-[150px] sm:w-[200px]">Vazifa</TableHead>
                   {dates.map(date => (
                     <TableHead key={date.toISOString()} className="text-center w-12 p-1">
                       <div className={cn("flex flex-col items-center text-xs rounded-md p-1", isToday(date) && "bg-primary/10 text-primary font-bold")}>
@@ -122,7 +123,15 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
 
                     return (
                         <TableRow key={task.id}>
-                            <TableCell className="font-medium">{task.title}</TableCell>
+                            <TableCell className="font-medium">
+                                <div className="flex flex-col">
+                                    <span>{task.title}</span>
+                                    {'groupId' in task ? 
+                                        <Badge variant="outline" className="w-fit mt-1">Guruh</Badge> : 
+                                        <Badge variant="secondary" className="w-fit mt-1">Shaxsiy</Badge>
+                                    }
+                                </div>
+                            </TableCell>
                             {dates.map(date => {
                                 const dayOfWeek = format(date, 'EEEE') as DayOfWeek;
                                 const isTaskScheduledForThisDay = scheduleDays.includes(dayOfWeek);
@@ -143,7 +152,7 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
                                     {completed ? (
                                     <Check className="h-5 w-5 text-green-500 mx-auto" />
                                     ) : (
-                                    <X className="h-5 w-5 text-red-500 mx-auto" />
+                                     !isToday(date) && date < new Date() ? <X className="h-5 w-5 text-red-500 mx-auto" /> : null
                                     )}
                                 </TableCell>
                                 );
@@ -157,7 +166,7 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
         ) : (
             <div className="text-center py-8 text-muted-foreground">
                 <p>
-                  No scheduled tasks found for this user.
+                  Rejalashtirilgan vazifalar topilmadi.
                 </p>
             </div>
         )}

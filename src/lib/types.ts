@@ -17,11 +17,13 @@ export type PersonalTask = {
   description: string;
   schedule: DayOfWeek[];
   createdAt: FieldValue;
+  // Personal tasks will have a fixed coin value, so no need to store it here.
 }
 
 export type TaskHistory = {
   taskId: string;
   date: string; // YYYY-MM-DD
+  taskType: 'group' | 'personal';
 };
 
 export type DayOfWeek = 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
@@ -43,7 +45,8 @@ export type User = {
   fullName: string; // Combined for easier display
   email: string;
   avatarUrl: string;
-  coins: number;
+  coins: number; // For group tasks
+  habitCoins: number; // For personal tasks
   goals: string;
   habits: string;
   groups: string[]; // array of group IDs
@@ -81,10 +84,13 @@ export type Group = {
 };
 
 // Represents a user's specific task from a group they've joined
-export type UserTask = Task & {
-  groupName: string;
+export type UserTask = (Task | PersonalTask) & {
+  groupName?: string; // Optional because personal tasks don't have a group
   isCompleted: boolean;
+  taskType: 'group' | 'personal';
+  coins: number; // This will be static for personal, dynamic for group
 };
+
 
 export interface ChatMessage {
   id: string;

@@ -7,7 +7,7 @@ import type { User } from '@/lib/types';
 import { auth, db } from '@/lib/firebase';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
-type SignupData = Omit<User, 'id' | 'firebaseId' | 'coins' | 'goals' | 'habits' | 'groups' | 'taskHistory' | 'fullName' | 'occupation' | 'createdAt' | 'avatarUrl' | 'taskSchedules'> & { password: string; };
+type SignupData = Omit<User, 'id' | 'firebaseId' | 'coins' | 'habitCoins' | 'goals' | 'habits' | 'groups' | 'taskHistory' | 'fullName' | 'occupation' | 'createdAt' | 'avatarUrl' | 'taskSchedules'> & { password: string; };
 
 interface AuthContextType {
   user: User | null;
@@ -94,6 +94,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       email: data.email,
       avatarUrl: defaultAvatar.imageUrl,
       coins: 0,
+      habitCoins: 0,
       goals: '',
       habits: '',
       groups: [],

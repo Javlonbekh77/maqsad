@@ -72,8 +72,8 @@ export default function CreatePersonalTaskPage() {
         schedule: values.schedule as DayOfWeek[],
       });
       toast({
-        title: "Task Created!",
-        description: "Your new personal task has been saved.",
+        title: "Shaxsiy Vazifa Yaratildi!",
+        description: "Yangi odatingiz muvaffaqiyatli saqlandi.",
       });
       // Redirect to profile to see the new task in the habit tracker
       router.push(`/profile/${user.id}`);
@@ -102,9 +102,9 @@ export default function CreatePersonalTaskPage() {
     <AppLayout>
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
-          <CardTitle>Create a New Personal Task</CardTitle>
+          <CardTitle>Yangi Shaxsiy Vazifa Yaratish</CardTitle>
           <CardDescription>
-            This task is just for you. Track your personal habits and goals.
+            Bu vazifa faqat siz uchun. O'z odatlaringiz va maqsadlaringizni kuzatib boring. Har bir bajarilgan vazifa uchun 10 odat bali (Habit Coins) olasiz.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -115,9 +115,9 @@ export default function CreatePersonalTaskPage() {
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Task Title</FormLabel>
+                    <FormLabel>Vazifa Sarlavhasi</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Read for 30 minutes" {...field} />
+                      <Input placeholder="Masalan, 30 daqiqa kitob o'qish" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -128,9 +128,9 @@ export default function CreatePersonalTaskPage() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description (Optional)</FormLabel>
+                    <FormLabel>Tavsif (Ixtiyoriy)</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Add some details about your goal" {...field} />
+                      <Textarea placeholder="Maqsadingiz haqida batafsilroq ma'lumot qo'shing" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -141,7 +141,7 @@ export default function CreatePersonalTaskPage() {
                 name="schedule"
                 render={({ field }) => (
                     <FormItem>
-                        <FormLabel>On which days?</FormLabel>
+                        <FormLabel>Qaysi kunlarda?</FormLabel>
                         <FormControl>
                              <ToggleGroup
                                 type="multiple"
@@ -159,14 +159,14 @@ export default function CreatePersonalTaskPage() {
                             </ToggleGroup>
                         </FormControl>
                          <FormDescription>
-                            Select the days of the week you plan to do this task.
+                            Ushbu vazifani haftaning qaysi kunlari bajarishni rejalashtirayotganingizni tanlang.
                         </FormDescription>
                         <FormMessage />
                     </FormItem>
                 )}
               />
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Creating Task...' : 'Create Task'}
+                {isSubmitting ? 'Yaratilmoqda...' : 'Vazifani Yaratish'}
               </Button>
             </form>
           </Form>

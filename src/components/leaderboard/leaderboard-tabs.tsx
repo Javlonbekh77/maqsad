@@ -12,7 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Coins, Crown, Medal, Trophy } from 'lucide-react';
+import { Coins, Crown, Medal, Trophy, Flame } from 'lucide-react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/navigation';
@@ -44,17 +44,21 @@ const LoadingSkeleton = () => (
 interface LeaderboardTabsProps {
   topUsers: User[];
   topGroups: (Group & { coins: number })[];
+  topHabitUsers: User[];
   isLoading: boolean;
 }
 
-export default function LeaderboardTabs({ topUsers, topGroups, isLoading }: LeaderboardTabsProps) {
+export default function LeaderboardTabs({ topUsers, topGroups, topHabitUsers, isLoading }: LeaderboardTabsProps) {
   const t = useTranslations('leaderboard');
 
   return (
     <Tabs defaultValue="users">
-      <TabsList className="grid w-full grid-cols-2 md:w-96">
+      <TabsList className="grid w-full grid-cols-3 md:w-[480px]">
         <TabsTrigger value="users">
           <Trophy className="mr-2 h-4 w-4" /> {t('topUsers')}
+        </TabsTrigger>
+        <TabsTrigger value="habits">
+          <Flame className="mr-2 h-4 w-4" /> Odatlar Peshqadamlari
         </TabsTrigger>
         <TabsTrigger value="groups">
           <Crown className="mr-2 h-4 w-4" /> {t('topGroups')}
@@ -92,7 +96,7 @@ export default function LeaderboardTabs({ topUsers, topGroups, isLoading }: Lead
                             <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1 font-semibold text-amber-500">
                                 <Coins className="w-4 h-4" />
-                                <span>{user.coins}</span>
+                                <span>{user.coins || 0}</span>
                             </div>
                             </TableCell>
                         </TableRow>
@@ -103,6 +107,49 @@ export default function LeaderboardTabs({ topUsers, topGroups, isLoading }: Lead
             )}
         </Card>
       </TabsContent>
+        <TabsContent value="habits">
+            <Card>
+                {isLoading ? <CardContent className="p-6"><LoadingSkeleton /></CardContent> : (
+                    <CardContent className="p-0">
+                        <Table>
+                        <TableHeader>
+                            <TableRow>
+                            <TableHead className="w-16 text-center">{t('rank')}</TableHead>
+                            <TableHead>{t('user')}</TableHead>
+                            <TableHead className="text-right">Odat Ballari</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {topHabitUsers.map((user, index) => (
+                            <TableRow key={user.id}>
+                                <TableCell className="text-center">
+                                <div className="flex justify-center">
+                                    <RankIcon rank={index + 1} />
+                                </div>
+                                </TableCell>
+                                <TableCell>
+                                <Link href={{pathname: '/profile/[id]', params: {id: user.id}}} className="flex items-center gap-3 hover:underline">
+                                    <Avatar>
+                                    <AvatarImage src={user.avatarUrl} alt={user.fullName} />
+                                    <AvatarFallback>{user.firstName.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                    <span className="font-medium">{user.fullName}</span>
+                                </Link>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-1 font-semibold text-blue-500">
+                                    <Flame className="w-4 h-4" />
+                                    <span>{user.habitCoins || 0}</span>
+                                </div>
+                                </TableCell>
+                            </TableRow>
+                            ))}
+                        </TableBody>
+                        </Table>
+                    </CardContent>
+                )}
+            </Card>
+        </TabsContent>
       <TabsContent value="groups">
         <Card>
           {isLoading ? <CardContent className="p-6"><LoadingSkeleton /></CardContent> : (

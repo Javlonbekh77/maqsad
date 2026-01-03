@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import type { UserTask } from '@/lib/types';
-import { Coins, ShieldCheck } from 'lucide-react';
+import { Coins, Flame, ShieldCheck } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 interface TaskCompletionDialogProps {
@@ -24,6 +24,7 @@ interface TaskCompletionDialogProps {
 export default function TaskCompletionDialog({ task, onConfirm, onCancel }: TaskCompletionDialogProps) {
   const t = useTranslations('taskCompletionDialog');
   const tActions = useTranslations('actions');
+  const isPersonal = task.taskType === 'personal';
 
   return (
     <AlertDialog open onOpenChange={(isOpen) => !isOpen && onCancel()}>
@@ -42,9 +43,9 @@ export default function TaskCompletionDialog({ task, onConfirm, onCancel }: Task
             <p className="text-sm text-muted-foreground">
                 {t('integrityDescription')}
             </p>
-            <div className="flex items-center justify-end gap-2 text-lg font-bold text-amber-500 pt-2">
+            <div className={`flex items-center justify-end gap-2 text-lg font-bold pt-2 ${isPersonal ? 'text-blue-500' : 'text-amber-500'}`}>
                 {t('earn')}
-                <Coins className="h-5 w-5"/>
+                {isPersonal ? <Flame className="h-5 w-5"/> : <Coins className="h-5 w-5"/>}
                 <span>{t('coins', { count: task.coins })}</span>
             </div>
         </div>

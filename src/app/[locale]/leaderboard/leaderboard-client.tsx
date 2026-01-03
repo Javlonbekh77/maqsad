@@ -17,15 +17,17 @@ export default function LeaderboardClient() {
   const router = useRouter();
 
   const [topUsers, setTopUsers] = useState<User[]>([]);
+  const [topHabitUsers, setTopHabitUsers] = useState<User[]>([]);
   const [topGroups, setTopGroups] = useState<(Group & { coins: number })[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
   const fetchData = useCallback(async () => {
     setLoadingData(true);
     try {
-      const { topUsers, topGroups } = await getLeaderboardData();
+      const { topUsers, topGroups, topHabitUsers } = await getLeaderboardData();
       setTopUsers(topUsers);
       setTopGroups(topGroups);
+      setTopHabitUsers(topHabitUsers);
     } catch (error) {
       console.error("Failed to fetch leaderboard data:", error);
     } finally {
@@ -70,7 +72,7 @@ export default function LeaderboardClient() {
           <h1 className="text-3xl font-bold font-display">{t('title')}</h1>
           <p className="text-muted-foreground">{t('subtitle')}</p>
         </div>
-        <LeaderboardTabs topUsers={topUsers} topGroups={topGroups} isLoading={isLoading} />
+        <LeaderboardTabs topUsers={topUsers} topGroups={topGroups} topHabitUsers={topHabitUsers} isLoading={isLoading} />
       </div>
     </AppLayout>
   );

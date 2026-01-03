@@ -5,7 +5,7 @@ import AppLayout from "@/components/layout/app-layout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Coins, Briefcase, Settings } from "lucide-react";
+import { Coins, Briefcase, Settings, Flame } from "lucide-react";
 import HabitTracker from '@/components/profile/habit-tracker';
 import type { User, Group } from "@/lib/types";
 import { Separator } from '@/components/ui/separator';
@@ -136,10 +136,17 @@ export default function ProfileClient() {
                         <Briefcase className="h-5 w-5" />
                         <span className="text-lg">{user.occupation || 'Kasbi kiritilmagan'}</span>
                     </div>
-                    <div className="flex items-center gap-2 mt-2">
-                        <Coins className="h-6 w-6 text-amber-500" />
-                        <span className="text-2xl font-semibold">{user.coins}</span>
-                        <span className="text-muted-foreground">{t('coinsEarned')}</span>
+                    <div className="flex items-center gap-4 mt-2">
+                        <div className="flex items-center gap-2">
+                            <Coins className="h-6 w-6 text-amber-500" />
+                            <span className="text-2xl font-semibold">{user.coins || 0}</span>
+                            <span className="text-muted-foreground text-sm">guruh ballari</span>
+                        </div>
+                         <div className="flex items-center gap-2">
+                            <Flame className="h-6 w-6 text-blue-500" />
+                            <span className="text-2xl font-semibold">{user.habitCoins || 0}</span>
+                             <span className="text-muted-foreground text-sm">odat ballari</span>
+                        </div>
                     </div>
                 </div>
             </div>
