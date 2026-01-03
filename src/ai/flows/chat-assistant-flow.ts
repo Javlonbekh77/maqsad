@@ -36,13 +36,11 @@ const chatAssistantFlow = ai.defineFlow(
   async (input) => {
     const llmResponse = await ai.generate({
       model: 'googleai/gemini-1.5-flash-latest',
-      prompt: {
-        system: systemPrompt,
-        messages: [
-          ...(input.history || []),
-          { role: 'user', parts: [{ text: input.message }] },
-        ],
-      },
+      messages: [
+        { role: 'system', parts: [{ text: systemPrompt }] },
+        ...(input.history || []),
+        { role: 'user', parts: [{ text: input.message }] },
+      ],
       output: {
         schema: ChatOutputSchema,
       },
