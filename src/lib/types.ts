@@ -10,6 +10,15 @@ export type Task = {
   createdAt: FieldValue;
 };
 
+export type PersonalTask = {
+  id: string;
+  userId: string;
+  title: string;
+  description: string;
+  schedule: DayOfWeek[];
+  createdAt: FieldValue;
+}
+
 export type TaskHistory = {
   taskId: string;
   date: string; // YYYY-MM-DD

@@ -19,7 +19,7 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
-import type { User, Group, Task, UserTask, WeeklyMeeting, UserTaskSchedule, ChatMessage } from './types';
+import type { User, Group, Task, UserTask, WeeklyMeeting, UserTaskSchedule, ChatMessage, PersonalTask } from './types';
 import { format, isSameDay, startOfDay, isPast } from 'date-fns';
 
 type DayOfWeek = 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
@@ -116,6 +116,13 @@ export const getTasksForUserGroups = async (groupIds: string[]): Promise<Task[]>
   const tasksSnapshot = await getDocs(tasksQuery);
   return tasksSnapshot.docs.map(doc => ({ ...doc.data() as Task, id: doc.id }));
 }
+
+export const getPersonalTasksForUser = async (userId: string): Promise<PersonalTask[]> => {
+    if (!userId) return [];
+    const tasksQuery = query(collection(db, 'personal_tasks'), where('userId', '==', userId));
+    const tasksSnapshot = await getDocs(tasksQuery);
+    return tasksSnapshot.docs.map(doc => ({ ...doc.data() as PersonalTask, id: doc.id }));
+};
 
 export const getGroupAndDetails = async (groupId: string): Promise<{ group: Group, members: User[], tasks: Task[], meetings: WeeklyMeeting[] } | null> => {
     const groupDocRef = doc(db, 'groups', groupId);
@@ -281,6 +288,16 @@ export const createTask = async (taskData: Omit<Task, 'id'>): Promise<string> =>
     return docRef.id;
 };
 
+export const createPersonalTask = async (taskData: Omit<PersonalTask, 'id' | 'createdAt'>): Promise<PersonalTask> => {
+    const docRef = await addDoc(collection(db, 'personal_tasks'), {
+        ...taskData,
+        createdAt: serverTimestamp()
+    });
+    await updateDoc(docRef, { id: docRef.id });
+    const docSnap = await getDoc(docRef);
+    return { ...docSnap.data(), id: docRef.id } as PersonalTask;
+};
+
 export const updateTask = async (taskId: string, data: Partial<Pick<Task, 'title' | 'description' | 'coins' | 'time'>>): Promise<void> => {
     const taskDocRef = doc(db, 'tasks', taskId);
     await updateDoc(taskDocRef, data);
@@ -369,7 +386,8 @@ export const uploadAvatar = async (userId: string, file: Blob): Promise<string> 
     const filePath = `avatars/${userId}/${Date.now()}.jpg`;
     const storageRef = ref(storage, filePath);
     const snapshot = await uploadBytes(storageRef, file);
-    return getDownloadURL(snapshot.ref);
+    const newAvatarUrl = await getDownloadURL(snapshot.ref);
+    return newAvatarUrl;
 };
 
 export const updateGroupDetails = async (groupId: string, data: { name?: string, description?: string }): Promise<void> => {

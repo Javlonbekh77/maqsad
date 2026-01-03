@@ -11,6 +11,7 @@ export const pathnames = {
   '/': '/',
   '/dashboard': '/dashboard',
   '/groups': '/groups',
+  '/create-task': '/create-task',
   '/leaderboard': '/leaderboard',
   '/settings': '/settings',
   '/login': '/login',
