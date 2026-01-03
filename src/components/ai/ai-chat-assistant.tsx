@@ -81,7 +81,7 @@ export default function AiChatAssistant() {
   return (
     <>
       <Button
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 flex items-center justify-center"
+        className="fixed bottom-20 right-6 sm:bottom-6 h-14 w-14 rounded-full shadow-lg z-50 flex items-center justify-center"
         onClick={handleOpen}
         aria-label="Open AI Assistant"
       >
