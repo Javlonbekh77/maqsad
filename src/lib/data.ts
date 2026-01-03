@@ -399,17 +399,22 @@ export const completeUserTask = async (userId: string, task: UserTask): Promise<
 };
 
 
-export const updateUserProfile = async (userId: string, data: { goals?: string | null; habits?: string | null; avatarUrl?: string }): Promise<void> => {
+export const updateUserProfile = async (userId: string, data: Partial<Pick<User, 'firstName' | 'lastName' | 'goals' | 'habits' | 'avatarUrl'>>): Promise<void> => {
     const userDocRef = doc(db, 'users', userId);
     const updateData: { [key: string]: any } = {};
 
+    if (data.firstName && data.lastName) {
+        updateData.firstName = data.firstName;
+        updateData.lastName = data.lastName;
+        updateData.fullName = `${data.firstName} ${data.lastName}`.trim();
+    }
     if (data.goals !== undefined && data.goals !== null) {
         updateData.goals = data.goals;
     }
     if (data.habits !== undefined && data.habits !== null) {
         updateData.habits = data.habits;
     }
-     if (data.avatarUrl) {
+    if (data.avatarUrl) {
         updateData.avatarUrl = data.avatarUrl;
     }
     
@@ -422,8 +427,7 @@ export const uploadAvatar = async (userId: string, file: Blob): Promise<string> 
     const filePath = `avatars/${userId}/${Date.now()}.jpg`;
     const storageRef = ref(storage, filePath);
     const snapshot = await uploadBytes(storageRef, file);
-    const newAvatarUrl = await getDownloadURL(snapshot.ref);
-    return newAvatarUrl;
+    return await getDownloadURL(snapshot.ref);
 };
 
 export const updateGroupDetails = async (groupId: string, data: { name?: string, description?: string }): Promise<void> => {

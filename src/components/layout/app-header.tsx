@@ -13,10 +13,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Coins, Flame } from 'lucide-react';
 import { Link, useRouter } from '@/navigation';
 import { useTranslations } from 'next-intl';
-import LanguageSwitcher from '../language-switcher';
 import { useAuth } from '@/context/auth-context';
 import GlobalSearch from './global-search';
 import NotificationsDropdown from './notifications-dropdown';
+import ThemeSwitcher from '../theme-switcher';
 
 export default function AppHeader() {
   const t = useTranslations();
@@ -41,7 +41,7 @@ export default function AppHeader() {
        <GlobalSearch />
 
       <div className="flex items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-        <LanguageSwitcher />
+        <ThemeSwitcher />
         <NotificationsDropdown />
 
         <div className="flex items-center gap-2 text-sm font-semibold text-amber-500">

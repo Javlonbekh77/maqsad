@@ -13,6 +13,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
@@ -22,6 +23,8 @@ import { useRouter } from '@/navigation';
 import { useTransition, useEffect } from 'react';
 
 const profileFormSchema = z.object({
+  firstName: z.string().min(2, "First name must be at least 2 characters."),
+  lastName: z.string().min(2, "Last name must be at least 2 characters."),
   goals: z
     .string()
     .max(300, { message: 'Goals must not be longer than 300 characters.' })
@@ -43,6 +46,8 @@ export default function ProfileForm({ user }: { user: User }) {
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
       goals: user.goals || '',
       habits: user.habits || '',
     },
@@ -51,6 +56,8 @@ export default function ProfileForm({ user }: { user: User }) {
   
   useEffect(() => {
     form.reset({
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
       goals: user.goals || '',
       habits: user.habits || '',
     });
@@ -58,13 +65,9 @@ export default function ProfileForm({ user }: { user: User }) {
 
 
   async function onSubmit(data: ProfileFormValues) {
-    let profileUpdated = false;
     startTransition(async () => {
       try {
-        await updateUserProfile(user.id, {
-          goals: data.goals,
-          habits: data.habits,
-        });
+        await updateUserProfile(user.id, data);
         toast({
             title: t('toast.title'),
             description: t('toast.description'),
@@ -84,6 +87,34 @@ export default function ProfileForm({ user }: { user: User }) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <FormField
+              control={form.control}
+              name="firstName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>First Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="John" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="lastName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Last Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Doe" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+        </div>
         <FormField
           control={form.control}
           name="goals"
