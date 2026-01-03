@@ -6,7 +6,7 @@ import { Coins, CheckCircle, BarChart as BarChartIcon, TrendingUp, TrendingDown,
 import { Bar, XAxis, YAxis, CartesianGrid, BarChart } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
 import { useMemo } from 'react';
-import { format, subDays, startOfDay } from 'date-fns';
+import { format, subDays, startOfDay, startOfWeek, addDays, getDay } from 'date-fns';
 import { getLeaderboardData } from '@/lib/data';
 import useSWR from 'swr';
 import { Skeleton } from '../ui/skeleton';
@@ -91,63 +91,59 @@ function LeaderboardMotivation({ user }: { user: User }) {
     )
 }
 
-function MotivationalStat({ user }: { user: User }) {
-    const { last7DaysCount, percentageChange, isPositive } = useMemo(() => {
-        const today = startOfDay(new Date());
+function MotivationalStat({ user, tasks }: { user: User, tasks: UserTask[] }) {
+     const { message, title, Icon } = useMemo(() => {
+        const today = new Date();
+        const todayDayOfWeek = format(today, 'EEEE') as 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
+        const todayDateStr = format(today, 'yyyy-MM-dd');
         
-        const last7DaysStart = subDays(today, 6);
-        const last14DaysStart = subDays(today, 13);
+        const todaysTasks = tasks.filter(t => t.schedule?.includes(todayDayOfWeek));
         
-        const last7DaysCount = user.taskHistory.filter(h => {
-            const hDate = new Date(h.date);
-            return hDate >= last7DaysStart && hDate <= today;
-        }).length;
+        const completedTodaysTasks = todaysTasks.filter(t => 
+            user.taskHistory.some(h => h.taskId === t.id && h.date === todayDateStr)
+        );
 
-        const previous7DaysCount = user.taskHistory.filter(h => {
-            const hDate = new Date(h.date);
-            return hDate >= last14DaysStart && hDate < last7DaysStart;
-        }).length;
+        const remainingTasksCount = todaysTasks.length - completedTodaysTasks.length;
 
-        let percentageChange = 0;
-        if (previous7DaysCount > 0) {
-            percentageChange = ((last7DaysCount - previous7DaysCount) / previous7DaysCount) * 100;
-        } else if (last7DaysCount > 0) {
-            percentageChange = 100; // From 0 to something is a 100% "increase" in this context
+        if (todaysTasks.length === 0) {
+            return {
+                title: "Bugun Dam Oling!",
+                Icon: CheckCircle,
+                message: "Bugunga rejalashtirilgan vazifalar yo'q. Ajoyib imkoniyat!",
+            };
+        }
+        
+        if (remainingTasksCount === 0) {
+            return {
+                title: "Bugungi Vazifalar Bajarildi!",
+                Icon: Trophy,
+                message: "Barakalla! Bugungi barcha rejalarni muvaffaqiyatli yakunladingiz.",
+            };
         }
 
         return {
-            last7DaysCount,
-            percentageChange: Math.round(percentageChange),
-            isPositive: percentageChange >= 0
+            title: "Kunlik Maqsad",
+            Icon: TrendingUp,
+            message: `Bugun uchun ${remainingTasksCount} ta vazifa qoldi. Keling, ularni bajaramiz!`,
         };
 
-    }, [user.taskHistory]);
+    }, [user.taskHistory, tasks]);
+
 
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Haftalik Motivatsiya</CardTitle>
-              {isPositive ? <TrendingUp className="h-4 w-4 text-muted-foreground text-green-500" /> : <TrendingDown className="h-4 w-4 text-muted-foreground text-red-500" />}
+              <CardTitle className="text-sm font-medium">{title}</CardTitle>
+               <Icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{last7DaysCount} vazifa</div>
-              <p className="text-xs text-muted-foreground">
-                Oxirgi 7 kun ichida. Bu o'tgan haftadan 
-                <span className={isPositive ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
-                     {' '}{Math.abs(percentageChange)}% {isPositive ? "ko'p" : "kam"}.
-                </span>
-              </p>
+              <div className="text-lg font-bold">{message}</div>
             </CardContent>
         </Card>
     );
 }
 
 export default function DashboardStats({ user, tasks }: DashboardStatsProps) {
-    const completedTasksCount = useMemo(() => {
-        const today = format(new Date(), 'yyyy-MM-dd');
-        return user.taskHistory.filter(h => h.date === today).length;
-    }, [user.taskHistory]);
-
     const chartData = useMemo(() => {
         const last7Days = Array.from({ length: 7 }).map((_, i) => subDays(new Date(), i)).reverse();
         return last7Days.map(date => {
@@ -162,7 +158,7 @@ export default function DashboardStats({ user, tasks }: DashboardStatsProps) {
 
     return (
        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-            <MotivationalStat user={user} />
+            <MotivationalStat user={user} tasks={tasks} />
             <LeaderboardMotivation user={user} />
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

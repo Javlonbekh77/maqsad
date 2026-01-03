@@ -7,16 +7,16 @@ export type Task = {
   coins: number;
   groupId: string;
   time?: string; // Optional time for the task
-  createdAt: FieldValue;
+  createdAt: FieldValue | Timestamp;
 };
 
 export type PersonalTask = {
-  id: string;
+  id:string;
   userId: string;
   title: string;
   description: string;
   schedule: DayOfWeek[];
-  createdAt: FieldValue;
+  createdAt: FieldValue | Timestamp;
   // Personal tasks will have a fixed coin value, so no need to store it here.
 }
 
@@ -91,6 +91,7 @@ export type UserTask = (Task | PersonalTask) & {
   coins: number; // This will be gold for group, silver for personal
   schedule?: DayOfWeek[];
   history?: TaskHistory[];
+  createdAt: FieldValue | Timestamp;
 };
 
 

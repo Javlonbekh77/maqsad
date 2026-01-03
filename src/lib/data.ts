@@ -20,7 +20,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 import type { User, Group, Task, UserTask, WeeklyMeeting, UserTaskSchedule, ChatMessage, PersonalTask, TaskHistory } from './types';
-import { format, isSameDay, startOfDay, isPast } from 'date-fns';
+import { format, isSameDay, startOfDay, isPast, addDays } from 'date-fns';
 
 type DayOfWeek = 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
 
@@ -82,13 +82,13 @@ export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> 
         const taskIds = scheduledGroupTaskIds.slice(0, 30);
         const tasksQuery = query(collection(db, 'tasks'), where('__name__', 'in', taskIds));
         groupTasksPromise = getDocs(tasksQuery).then(snapshot => 
-            snapshot.docs.map(doc => ({ ...doc.data() as Task, id: doc.id }))
+            snapshot.docs.map(doc => ({ ...doc.data() as Task, id: doc.id, createdAt: doc.data().createdAt || serverTimestamp() }))
         );
     }
 
     const [personalTasksSnapshot, groupTasks] = await Promise.all([personalTasksPromise, groupTasksPromise]);
 
-    const personalTasks = personalTasksSnapshot.docs.map(doc => ({ ...doc.data() as PersonalTask, id: doc.id }));
+    const personalTasks = personalTasksSnapshot.docs.map(doc => ({ ...doc.data() as PersonalTask, id: doc.id, createdAt: doc.data().createdAt || serverTimestamp() }));
 
     // Get all group names in one go
     let groupMap = new Map();
@@ -108,7 +108,8 @@ export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> 
             isCompleted: false, // will be checked on the client
             taskType: 'personal',
             coins: PERSONAL_TASK_COINS,
-            history: user.taskHistory.filter(h => h.taskId === task.id)
+            history: user.taskHistory.filter(h => h.taskId === task.id),
+            createdAt: task.createdAt,
         });
     });
 
@@ -121,7 +122,8 @@ export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> 
                 isCompleted: false, // will be checked on the client
                 taskType: 'group',
                 schedule: schedule.days,
-                history: user.taskHistory.filter(h => h.taskId === task.id)
+                history: user.taskHistory.filter(h => h.taskId === task.id),
+                createdAt: task.createdAt,
             });
         }
     });
@@ -135,14 +137,14 @@ export const getTasksForUserGroups = async (groupIds: string[]): Promise<Task[]>
   const chunkedGroupIds = groupIds.slice(0, 30); // Firestore 'in' query limit
   const tasksQuery = query(collection(db, 'tasks'), where('groupId', 'in', chunkedGroupIds));
   const tasksSnapshot = await getDocs(tasksQuery);
-  return tasksSnapshot.docs.map(doc => ({ ...doc.data() as Task, id: doc.id }));
+  return tasksSnapshot.docs.map(doc => ({ ...doc.data() as Task, id: doc.id, createdAt: doc.data().createdAt || serverTimestamp() }));
 }
 
 export const getPersonalTasksForUser = async (userId: string): Promise<PersonalTask[]> => {
     if (!userId) return [];
     const tasksQuery = query(collection(db, 'personal_tasks'), where('userId', '==', userId));
     const tasksSnapshot = await getDocs(tasksQuery);
-    return tasksSnapshot.docs.map(doc => ({ ...doc.data() as PersonalTask, id: doc.id }));
+    return tasksSnapshot.docs.map(doc => ({ ...doc.data() as PersonalTask, id: doc.id, createdAt: doc.data().createdAt || serverTimestamp() }));
 };
 
 export const getGroupAndDetails = async (groupId: string): Promise<{ group: Group, members: User[], tasks: Task[], meetings: WeeklyMeeting[] } | null> => {
@@ -166,7 +168,7 @@ export const getGroupAndDetails = async (groupId: string): Promise<{ group: Grou
     ]);
 
     const members = membersData.filter(Boolean) as User[];
-    const tasks = tasksSnapshot.docs.map(d => ({ ...d.data() as Task, id: d.id }));
+    const tasks = tasksSnapshot.docs.map(d => ({ ...d.data() as Task, id: d.id, createdAt: d.data().createdAt || serverTimestamp() }));
     const meetings = meetingsSnapshot.docs
         .map(d => ({ ...d.data(), id: d.id } as WeeklyMeeting))
         .sort((a, b) => {
@@ -308,9 +310,10 @@ export const createGroup = async (groupData: Omit<Group, 'id' | 'firebaseId' | '
     return newGroup.id;
 };
 
-export const createTask = async (taskData: Omit<Task, 'id'>): Promise<string> => {
+export const createTask = async (taskData: Omit<Task, 'id' | 'createdAt'>): Promise<string> => {
     const newTaskRef = collection(db, 'tasks');
-    const docRef = await addDoc(newTaskRef, { ...taskData, createdAt: serverTimestamp() });
+    const dataToSave = { ...taskData, createdAt: serverTimestamp() };
+    const docRef = await addDoc(newTaskRef, dataToSave);
     await updateDoc(docRef, { id: docRef.id });
     return docRef.id;
 };

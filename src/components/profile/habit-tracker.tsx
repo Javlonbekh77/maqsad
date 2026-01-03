@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import type { User, DayOfWeek, PersonalTask, Task } from "@/lib/types";
+import type { User, DayOfWeek, PersonalTask, Task, UserTask } from "@/lib/types";
 import { format, add, startOfWeek, isSameDay, isToday } from 'date-fns';
 import { Check, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useEffect, useState, useCallback } from "react";
@@ -11,6 +11,7 @@ import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "../ui/skeleton";
 import { Badge } from "../ui/badge";
+import type { Timestamp } from "firebase/firestore";
 
 interface HabitTrackerProps {
   user: User;
@@ -24,9 +25,16 @@ const getWeekDates = (start: Date): Date[] => {
   return dates;
 };
 
+const toDate = (timestamp: Timestamp | Date): Date => {
+    if (timestamp instanceof Date) {
+        return timestamp;
+    }
+    return timestamp.toDate();
+}
+
 export default function HabitTracker({ user }: HabitTrackerProps) {
   const [weekStartDate, setWeekStartDate] = useState(startOfWeek(new Date()));
-  const [allTasks, setAllTasks] = useState<(Task | PersonalTask)[]>([]);
+  const [allTasks, setAllTasks] = useState<UserTask[]>([]);
   const [loading, setLoading] = useState(true);
   
   const dates = useMemo(() => getWeekDates(weekStartDate), [weekStartDate]);
@@ -46,7 +54,12 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
       const scheduledGroupTaskIds = new Set(userSchedules.map(s => s.taskId));
       const scheduledGroupTasks = groupTasks.filter(t => scheduledGroupTaskIds.has(t.id));
 
-      setAllTasks([...scheduledGroupTasks, ...personalTasks]);
+      const combinedTasks: UserTask[] = [
+          ...scheduledGroupTasks.map(t => ({...t, taskType: 'group'}) as UserTask),
+          ...personalTasks.map(t => ({...t, taskType: 'personal'}) as UserTask)
+      ];
+
+      setAllTasks(combinedTasks);
       setLoading(false);
   }, [user.groups, userSchedules, user.id]);
 
@@ -114,25 +127,32 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
               <TableBody>
                  {tasksToDisplay.map(task => {
                     let scheduleDays: DayOfWeek[] = [];
-                    if ('groupId' in task) { // Group Task
+                    if (task.taskType === 'group') { // Group Task
                         const schedule = userSchedules.find(s => s.taskId === task.id);
                         scheduleDays = schedule?.days || [];
                     } else { // Personal Task
-                        scheduleDays = task.schedule;
+                        scheduleDays = (task as PersonalTask).schedule;
                     }
+
+                    const taskCreationDate = toDate(task.createdAt as Timestamp);
 
                     return (
                         <TableRow key={task.id}>
                             <TableCell className="font-medium">
                                 <div className="flex flex-col">
                                     <span>{task.title}</span>
-                                    {'groupId' in task ? 
+                                    {task.taskType === 'group' ? 
                                         <Badge variant="outline" className="w-fit mt-1">Guruh</Badge> : 
                                         <Badge variant="secondary" className="w-fit mt-1">Shaxsiy</Badge>
                                     }
                                 </div>
                             </TableCell>
                             {dates.map(date => {
+                                // Don't show anything for dates before the task was created
+                                if (date < taskCreationDate) {
+                                    return <TableCell key={date.toISOString()} className="text-center"></TableCell>;
+                                }
+
                                 const dayOfWeek = format(date, 'EEEE') as DayOfWeek;
                                 const isTaskScheduledForThisDay = scheduleDays.includes(dayOfWeek);
 
