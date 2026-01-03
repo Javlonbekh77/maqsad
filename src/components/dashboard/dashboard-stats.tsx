@@ -6,7 +6,7 @@ import { Coins, CheckCircle, BarChart as BarChartIcon, TrendingUp, TrendingDown,
 import { Bar, XAxis, YAxis, CartesianGrid, BarChart } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
 import { useMemo } from 'react';
-import { format, subDays, startOfDay, startOfWeek, addDays, getDay } from 'date-fns';
+import { format, subDays, startOfDay, startOfWeek, endOfWeek } from 'date-fns';
 import { getLeaderboardData } from '@/lib/data';
 import useSWR from 'swr';
 import { Skeleton } from '../ui/skeleton';
@@ -91,53 +91,60 @@ function LeaderboardMotivation({ user }: { user: User }) {
     )
 }
 
-function MotivationalStat({ user, tasks }: { user: User, tasks: UserTask[] }) {
-     const { message, title, Icon } = useMemo(() => {
+function WeeklyMotivation({ user }: { user: User }) {
+    const { message, percentageChange, Icon, periodTotal } = useMemo(() => {
         const today = new Date();
-        const todayDayOfWeek = format(today, 'EEEE') as 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
-        const todayDateStr = format(today, 'yyyy-MM-dd');
-        
-        const todaysTasks = tasks.filter(t => t.schedule?.includes(todayDayOfWeek));
-        
-        const completedTodaysTasks = todaysTasks.filter(t => 
-            user.taskHistory.some(h => h.taskId === t.id && h.date === todayDateStr)
-        );
+        const startOfThisWeek = startOfWeek(today);
+        const endOfThisWeek = endOfWeek(today);
+        const startOfLastWeek = startOfWeek(subDays(today, 7));
+        const endOfLastWeek = endOfWeek(subDays(today, 7));
 
-        const remainingTasksCount = todaysTasks.length - completedTodaysTasks.length;
+        const completedThisWeek = user.taskHistory.filter(h => {
+            const historyDate = new Date(h.date);
+            return historyDate >= startOfThisWeek && historyDate <= endOfThisWeek;
+        }).length;
+        
+        const completedLastWeek = user.taskHistory.filter(h => {
+            const historyDate = new Date(h.date);
+            return historyDate >= startOfLastWeek && historyDate <= endOfLastWeek;
+        }).length;
 
-        if (todaysTasks.length === 0) {
-            return {
-                title: "Bugun Dam Oling!",
-                Icon: CheckCircle,
-                message: "Bugunga rejalashtirilgan vazifalar yo'q. Ajoyib imkoniyat!",
-            };
+        let percentageChange = 0;
+        if (completedLastWeek > 0) {
+            percentageChange = Math.round(((completedThisWeek - completedLastWeek) / completedLastWeek) * 100);
+        } else if (completedThisWeek > 0) {
+            percentageChange = 100; // From 0 to something is 100% growth for simplicity
         }
-        
-        if (remainingTasksCount === 0) {
-            return {
-                title: "Bugungi Vazifalar Bajarildi!",
-                Icon: Trophy,
-                message: "Barakalla! Bugungi barcha rejalarni muvaffaqiyatli yakunladingiz.",
-            };
+
+        let message;
+        if (percentageChange > 0) {
+            message = `Bu o'tgan haftadan ${percentageChange}% ko'p. Ajoyib natija!`;
+        } else if (percentageChange < 0) {
+            message = `Bu o'tgan haftadan ${Math.abs(percentageChange)}% kam. Keyingi hafta yanada harakat qilamiz!`;
+        } else {
+            message = "Natijangiz o'tgan haftadagi kabi. Barqarorlik - bu ham yutuq!";
         }
 
         return {
-            title: "Kunlik Maqsad",
-            Icon: TrendingUp,
-            message: `Bugun uchun ${remainingTasksCount} ta vazifa qoldi. Keling, ularni bajaramiz!`,
-        };
-
-    }, [user.taskHistory, tasks]);
+            message,
+            percentageChange,
+            Icon: percentageChange >= 0 ? TrendingUp : TrendingDown,
+            periodTotal: completedThisWeek,
+        }
+    }, [user.taskHistory]);
 
 
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{title}</CardTitle>
-               <Icon className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Haftalik Faollik</CardTitle>
+               <Icon className={`h-4 w-4 ${percentageChange >= 0 ? 'text-green-500' : 'text-red-500'}`} />
             </CardHeader>
             <CardContent>
-              <div className="text-lg font-bold">{message}</div>
+              <div className="text-2xl font-bold">{periodTotal} vazifa</div>
+              <p className="text-xs text-muted-foreground">
+                {message}
+              </p>
             </CardContent>
         </Card>
     );
@@ -158,11 +165,11 @@ export default function DashboardStats({ user, tasks }: DashboardStatsProps) {
 
     return (
        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-            <MotivationalStat user={user} tasks={tasks} />
+            <WeeklyMotivation user={user} />
             <LeaderboardMotivation user={user} />
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Haftalik Yutuqlar</CardTitle>
+                    <CardTitle className="text-sm font-medium">Oxirgi 7 kunlik yutuqlar</CardTitle>
                     <BarChartIcon className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent className="pb-2">
