@@ -67,7 +67,7 @@ export const getUserGroups = async(userId: string): Promise<Group[]> => {
 }
 
 export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> => {
-    // Ensure user.taskSchedules is a safe-to-use array
+    // Safely initialize userSchedules to prevent 'undefined' errors
     const userSchedules: UserTaskSchedule[] = Array.isArray(user.taskSchedules) ? user.taskSchedules : [];
     const scheduledGroupTaskIds = userSchedules.map(schedule => schedule.taskId);
     
@@ -125,6 +125,7 @@ export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> 
 
     // Process group tasks
     groupTasks.forEach(task => {
+        // Safely find the schedule for the current task
         const userScheduleForTask = userSchedules.find(s => s.taskId === task.id);
         if (userScheduleForTask) {
              allTasks.push({
@@ -610,12 +611,16 @@ export function isTaskScheduledForDate(task: UserTask, date: Date): boolean {
     if (date < taskCreationDate) return false;
 
     const schedule = task.schedule;
+    if (!schedule) return false;
+    
     switch(schedule.type) {
         case 'one-time':
             return schedule.date === format(date, 'yyyy-MM-dd');
         case 'date-range':
             if (schedule.startDate && schedule.endDate) {
-                return isWithinInterval(date, { start: parseISO(schedule.startDate), end: parseISO(schedule.endDate) });
+                 const start = parseISO(schedule.startDate);
+                 const end = parseISO(schedule.endDate);
+                 return isWithinInterval(date, { start, end }) || isSameDay(date, start) || isSameDay(date, end);
             }
             return false;
         case 'recurring':
