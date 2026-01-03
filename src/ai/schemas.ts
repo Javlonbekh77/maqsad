@@ -1,3 +1,4 @@
+'use server';
 
 import { z } from 'genkit';
 
@@ -13,5 +14,4 @@ export const ChatInputSchema = z.object({
 
 export const ChatOutputSchema = z.object({
   reply: z.string().describe('The assistant\'s response.'),
-  followUpQuestions: z.array(z.string()).optional().describe('A list of suggested follow-up questions.'),
 });

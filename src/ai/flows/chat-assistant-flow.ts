@@ -48,11 +48,12 @@ const chatAssistantFlow = ai.defineFlow(
         temperature: 0.7,
       },
     });
-
+    
     const output = llmResponse.output();
     if (!output) {
       throw new Error("Failed to get a response from the AI model.");
     }
+    
     return output;
   }
 );
