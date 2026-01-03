@@ -1,5 +1,4 @@
 
-import AiChatAssistant from "@/components/ai/ai-chat-assistant";
 import AppHeader from "./app-header";
 import AppSidebar from "./app-sidebar";
 import MobileBottomNav from "./mobile-bottom-nav";
@@ -15,7 +14,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </main>
       </div>
       <MobileBottomNav />
-      <AiChatAssistant />
     </div>
   )
 }
