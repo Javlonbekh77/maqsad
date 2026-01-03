@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { useAuth } from '@/context/auth-context';
@@ -31,7 +31,6 @@ import {
 import { Textarea } from '../ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { updateChatMessage, deleteChatMessage, updateUserLastRead } from '@/lib/data';
-import { useDebounce } from '@/hooks/use-debounce';
 
 
 interface GroupChatProps {
@@ -41,7 +40,7 @@ interface GroupChatProps {
 }
 
 export default function GroupChat({ groupId, members, latestMeeting }: GroupChatProps) {
-  const { user, refreshAuth } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -52,16 +51,8 @@ export default function GroupChat({ groupId, members, latestMeeting }: GroupChat
   const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
 
-  const debouncedUpdateLastRead = useDebounce(useCallback(() => {
-    if (user && groupId) {
-      updateUserLastRead(user.id, groupId);
-      // We don't need to refresh the entire auth context here,
-      // as the unread count will update on its own via SWR revalidation.
-    }
-  }, [user, groupId]), 2000); // 2 second debounce
-
   useEffect(() => {
-    if (!groupId) return;
+    if (!groupId || !user) return;
     
     setLoading(true);
     const messagesQuery = query(collection(db, `groups/${groupId}/messages`), orderBy('createdAt', 'asc'));
@@ -73,14 +64,15 @@ export default function GroupChat({ groupId, members, latestMeeting }: GroupChat
       });
       setMessages(msgs);
       setLoading(false);
-      debouncedUpdateLastRead();
+      // Mark messages as read when the component mounts or new messages arrive
+      updateUserLastRead(user.id, groupId);
     }, (error) => {
       console.error("Error fetching messages: ", error);
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [groupId, debouncedUpdateLastRead]);
+  }, [groupId, user]);
 
   useEffect(() => {
     // Auto-scroll to bottom on new messages
