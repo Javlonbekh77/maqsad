@@ -1,3 +1,4 @@
+
 import { db, storage } from './firebase';
 import {
   collection,
@@ -638,3 +639,5 @@ export const updateUserLastRead = async (userId: string, groupId: string) => {
         [`lastRead.${groupId}`]: Timestamp.now()
     });
 };
+
+    
