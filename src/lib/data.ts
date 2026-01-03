@@ -67,20 +67,31 @@ export const getUserGroups = async(userId: string): Promise<Group[]> => {
 }
 
 export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> => {
-    const userSchedules = user.taskSchedules || [];
+    // Ensure user.taskSchedules is a safe-to-use array
+    const userSchedules: UserTaskSchedule[] = Array.isArray(user.taskSchedules) ? user.taskSchedules : [];
     const scheduledGroupTaskIds = userSchedules.map(schedule => schedule.taskId);
     
     // Fetch personal tasks
     const personalTasksQuery = query(collection(db, 'personal_tasks'), where('userId', '==', user.id));
     const personalTasksPromise = getDocs(personalTasksQuery);
 
-    // Fetch group tasks
+    // Fetch group tasks that the user has specifically scheduled
     let groupTasksPromise: Promise<Task[]> = Promise.resolve([]);
     if (scheduledGroupTaskIds.length > 0) {
-        const taskIds = scheduledGroupTaskIds.slice(0, 30);
-        const tasksQuery = query(collection(db, 'tasks'), where('__name__', 'in', taskIds));
-        groupTasksPromise = getDocs(tasksQuery).then(snapshot => 
-            snapshot.docs.map(doc => ({ ...doc.data() as Task, id: doc.id, createdAt: doc.data().createdAt || serverTimestamp() }))
+        // Firestore 'in' query is limited to 30 elements in an array.
+        const taskIdsInChunks: string[][] = [];
+        for (let i = 0; i < scheduledGroupTaskIds.length; i += 30) {
+            taskIdsInChunks.push(scheduledGroupTaskIds.slice(i, i + 30));
+        }
+        
+        const taskPromises = taskIdsInChunks.map(chunk => 
+            getDocs(query(collection(db, 'tasks'), where('__name__', 'in', chunk)))
+        );
+
+        groupTasksPromise = Promise.all(taskPromises).then(snapshots => 
+            snapshots.flatMap(snapshot => 
+                snapshot.docs.map(doc => ({ ...doc.data() as Task, id: doc.id, createdAt: doc.data().createdAt || serverTimestamp() }))
+            )
         );
     }
 
@@ -88,7 +99,7 @@ export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> 
 
     const personalTasks = personalTasksSnapshot.docs.map(doc => ({ ...doc.data() as PersonalTask, id: doc.id, createdAt: doc.data().createdAt || serverTimestamp() }));
 
-    // Get all group names in one go
+    // Get all group names in one go for the fetched tasks
     let groupMap = new Map();
     if (groupTasks.length > 0) {
         const groupIds = [...new Set(groupTasks.map(t => t.groupId))].slice(0, 30);
@@ -100,17 +111,19 @@ export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> 
     
     const allTasks: UserTask[] = [];
 
+    // Process personal tasks
     personalTasks.forEach(task => {
         allTasks.push({
             ...task,
             isCompleted: false, // will be checked on the client
             taskType: 'personal',
             coins: PERSONAL_TASK_COINS,
-            history: user.taskHistory.filter(h => h.taskId === task.id),
+            history: user.taskHistory?.filter(h => h.taskId === task.id) || [],
             createdAt: task.createdAt,
         });
     });
 
+    // Process group tasks
     groupTasks.forEach(task => {
         const userScheduleForTask = userSchedules.find(s => s.taskId === task.id);
         if (userScheduleForTask) {
@@ -121,7 +134,7 @@ export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> 
                 taskType: 'group',
                 // Use the user's specific schedule for this group task
                 schedule: userScheduleForTask.schedule,
-                history: user.taskHistory.filter(h => h.taskId === task.id),
+                history: user.taskHistory?.filter(h => h.taskId === task.id) || [],
                 createdAt: task.createdAt,
             });
         }
@@ -129,6 +142,7 @@ export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> 
 
     return allTasks;
 };
+
 
 
 export const getTasksForUserGroups = async (groupIds: string[]): Promise<Task[]> => {
