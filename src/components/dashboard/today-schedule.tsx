@@ -1,16 +1,17 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import type { UserTask } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, Coins, Clock, CalendarPlus } from 'lucide-react';
+import { Check, Coins, Clock, ChevronLeft, ChevronRight, Flame } from 'lucide-react';
 import TaskCompletionDialog from './task-completion-dialog';
 import { useTranslations } from 'next-intl';
 import { completeUserTask } from '@/lib/data';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
-import { Flame } from 'lucide-react';
+import { addDays, format, isToday, isYesterday, isTomorrow, startOfDay } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface TodayScheduleProps {
   tasks: UserTask[];
@@ -21,6 +22,7 @@ interface TodayScheduleProps {
 export default function TodaySchedule({ tasks, userId, onTaskCompletion }: TodayScheduleProps) {
   const t = useTranslations('todoList');
   const [selectedTask, setSelectedTask] = useState<UserTask | null>(null);
+  const [displayDate, setDisplayDate] = useState(() => startOfDay(new Date()));
 
   const handleCompleteClick = useCallback((task: UserTask) => {
     setSelectedTask(task);
@@ -32,18 +34,63 @@ export default function TodaySchedule({ tasks, userId, onTaskCompletion }: Today
     await completeUserTask(userId, selectedTask);
 
     setSelectedTask(null);
-    onTaskCompletion(userId); // Re-fetch all data to ensure consistency
+    onTaskCompletion(userId);
   }, [selectedTask, userId, onTaskCompletion]);
-  
-  const activeTasks = tasks.filter(t => !t.isCompleted);
-  const completedTasks = tasks.filter(t => t.isCompleted);
+
+  const changeDay = (amount: number) => {
+    setDisplayDate(prev => addDays(prev, amount));
+  };
+
+  const { activeTasks, completedTasks } = useMemo(() => {
+    const displayDateStr = format(displayDate, 'yyyy-MM-dd');
+    const dayOfWeek = format(displayDate, 'EEEE') as 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
+
+    const tasksForDay = tasks.filter(task => {
+        const schedule = 'groupId' in task 
+            ? task.schedule // This will be pre-filtered now
+            : (task as any).schedule; // Personal Task
+        return schedule.includes(dayOfWeek);
+    });
+
+    const active = tasksForDay.filter(t => {
+      const history = (t as any).history || [];
+      return !history.some((h: any) => h.date === displayDateStr);
+    });
+
+    const completed = tasksForDay.filter(t => {
+       const history = (t as any).history || [];
+       return history.some((h: any) => h.date === displayDateStr);
+    });
+
+    return { activeTasks: active, completedTasks: completed };
+
+  }, [tasks, displayDate]);
+
+  const dateTitle = useMemo(() => {
+    if (isToday(displayDate)) return "Bugungi Reja";
+    if (isYesterday(displayDate)) return "Kechagi Reja";
+    if (isTomorrow(displayDate)) return "Ertangi Reja";
+    return format(displayDate, 'MMMM d, yyyy');
+  }, [displayDate]);
 
   return (
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Bugungi Reja</CardTitle>
-          <CardDescription>Bugungi vazifalaringiz va ularning holati.</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>{dateTitle}</CardTitle>
+              <CardDescription>Sizning rejalashtirgan vazifalaringiz.</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="icon" onClick={() => changeDay(-1)}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon" onClick={() => changeDay(1)} disabled={isToday(displayDate)}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {activeTasks.length > 0 ? (
@@ -73,7 +120,7 @@ export default function TodaySchedule({ tasks, userId, onTaskCompletion }: Today
                         </div>
                     </TableCell>
                     <TableCell className="text-right">
-                       <Button size="sm" onClick={() => handleCompleteClick(task)}>
+                       <Button size="sm" onClick={() => handleCompleteClick(task)} disabled={!isToday(displayDate)}>
                         <Check className="w-4 h-4 mr-2" />
                         {t('completeButton')}
                       </Button>
@@ -85,8 +132,8 @@ export default function TodaySchedule({ tasks, userId, onTaskCompletion }: Today
           ) : (
             <div className="text-center py-8">
               <Check className="mx-auto h-12 w-12 text-green-500" />
-              <h3 className="mt-2 text-lg font-medium">{t('allTasksCompleted')}</h3>
-              <p className="mt-1 text-sm text-muted-foreground">{t('allTasksCompletedSub')}</p>
+              <h3 className="mt-2 text-lg font-medium">Ushbu kunga vazifalar yo'q</h3>
+              <p className="mt-1 text-sm text-muted-foreground">Yoki barcha vazifalar bajarilgan!</p>
             </div>
           )}
 

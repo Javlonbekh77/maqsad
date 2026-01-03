@@ -19,7 +19,7 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
-import type { User, Group, Task, UserTask, WeeklyMeeting, UserTaskSchedule, ChatMessage, PersonalTask } from './types';
+import type { User, Group, Task, UserTask, WeeklyMeeting, UserTaskSchedule, ChatMessage, PersonalTask, TaskHistory } from './types';
 import { format, isSameDay, startOfDay, isPast } from 'date-fns';
 
 type DayOfWeek = 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
@@ -68,68 +68,65 @@ export const getUserGroups = async(userId: string): Promise<Group[]> => {
     return snapshot.docs.map(d => ({...d.data() as Group, id: d.id, firebaseId: d.id}));
 }
 
-export const getUserTasks = async (user: User): Promise<UserTask[]> => {
-    const today = format(new Date(), 'yyyy-MM-dd');
-    const dayOfWeek = format(new Date(), 'EEEE') as DayOfWeek;
-
-    // Fetch personal tasks
-    const personalTasksQuery = query(collection(db, 'personal_tasks'), where('userId', '==', user.id));
-    const personalTasksSnapshot = await getDocs(personalTasksQuery);
-    const personalTasks = personalTasksSnapshot.docs.map(doc => ({ ...doc.data() as PersonalTask, id: doc.id }));
-
-    // Fetch group tasks
+export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> => {
     const userSchedules = user.taskSchedules || [];
     const scheduledGroupTaskIds = userSchedules.map(schedule => schedule.taskId);
-    let groupTasks: Task[] = [];
+    
+    // Fetch personal tasks
+    const personalTasksQuery = query(collection(db, 'personal_tasks'), where('userId', '==', user.id));
+    const personalTasksPromise = getDocs(personalTasksQuery);
+
+    // Fetch group tasks
+    let groupTasksPromise: Promise<Task[]> = Promise.resolve([]);
     if (scheduledGroupTaskIds.length > 0) {
         const taskIds = scheduledGroupTaskIds.slice(0, 30);
         const tasksQuery = query(collection(db, 'tasks'), where('__name__', 'in', taskIds));
-        const tasksSnapshot = await getDocs(tasksQuery);
-        groupTasks = tasksSnapshot.docs.map(doc => ({ ...doc.data() as Task, id: doc.id }));
+        groupTasksPromise = getDocs(tasksQuery).then(snapshot => 
+            snapshot.docs.map(doc => ({ ...doc.data() as Task, id: doc.id }))
+        );
     }
 
-    const allTasksForToday: UserTask[] = [];
+    const [personalTasksSnapshot, groupTasks] = await Promise.all([personalTasksPromise, groupTasksPromise]);
 
-    // Process personal tasks for today
-    personalTasks.forEach(task => {
-        if (task.schedule.includes(dayOfWeek)) {
-            const isCompletedToday = user.taskHistory.some(h => h.taskId === task.id && h.date === today);
-            allTasksForToday.push({
-                ...task,
-                isCompleted: isCompletedToday,
-                taskType: 'personal',
-                coins: PERSONAL_TASK_COINS,
-            });
-        }
-    });
+    const personalTasks = personalTasksSnapshot.docs.map(doc => ({ ...doc.data() as PersonalTask, id: doc.id }));
 
-    // Process group tasks for today
-    const todaysScheduledGroupTasks = userSchedules.filter(schedule => schedule.days.includes(dayOfWeek));
-    const todaysGroupTaskIds = todaysScheduledGroupTasks.map(schedule => schedule.taskId);
-    
-    if (todaysGroupTaskIds.length > 0 && groupTasks.length > 0) {
+    // Get all group names in one go
+    let groupMap = new Map();
+    if (groupTasks.length > 0) {
         const groupIds = [...new Set(groupTasks.map(t => t.groupId))].slice(0, 30);
-        let groupMap = new Map();
         if (groupIds.length > 0) {
             const allGroupsSnapshot = await getDocs(query(collection(db, 'groups'), where('__name__', 'in', groupIds)));
             groupMap = new Map(allGroupsSnapshot.docs.map(doc => [doc.id, doc.data().name]));
         }
-
-        groupTasks.forEach(task => {
-            if (todaysGroupTaskIds.includes(task.id)) {
-                const isCompletedToday = user.taskHistory.some(h => h.taskId === task.id && h.date === today);
-                allTasksForToday.push({
-                    ...task,
-                    groupName: groupMap.get(task.groupId) || 'Unknown Group',
-                    isCompleted: isCompletedToday,
-                    taskType: 'group',
-                    // coins are already on the task object
-                });
-            }
-        });
     }
+    
+    const allTasks: UserTask[] = [];
 
-    return allTasksForToday;
+    personalTasks.forEach(task => {
+        allTasks.push({
+            ...task,
+            isCompleted: false, // will be checked on the client
+            taskType: 'personal',
+            coins: PERSONAL_TASK_COINS,
+            history: user.taskHistory.filter(h => h.taskId === task.id)
+        });
+    });
+
+    groupTasks.forEach(task => {
+        const schedule = userSchedules.find(s => s.taskId === task.id);
+        if (schedule) {
+            allTasks.push({
+                ...task,
+                groupName: groupMap.get(task.groupId) || 'Unknown Group',
+                isCompleted: false, // will be checked on the client
+                taskType: 'group',
+                schedule: schedule.days,
+                history: user.taskHistory.filter(h => h.taskId === task.id)
+            });
+        }
+    });
+
+    return allTasks;
 };
 
 
@@ -543,13 +540,45 @@ export const getNotificationsData = async (user: User): Promise<{
         });
     }
 
-    // 2. Get All Tasks (Group & Personal)
-    const allUserTasks = await getUserTasks(user);
-    const todayIncompletedTasks: UserTask[] = allUserTasks.filter(task => !task.isCompleted);
+    // 2. Get All Scheduled Tasks (to find today's and overdue)
+    const allScheduledTasks = await getScheduledTasksForUser(user);
     
-    // This logic is simplified as getUserTasks now only returns today's tasks.
-    // Overdue logic might need a separate, more complex function if needed, but for now we focus on today.
-    const overdueTasks: UserTask[] = []; // Simplified for now
+    const todayIncompletedTasks: UserTask[] = [];
+    const overdueTasks: UserTask[] = [];
+
+    allScheduledTasks.forEach(task => {
+        const schedule = (task as any).schedule;
+        if (!schedule) return;
+
+        // Check for overdue tasks
+        for (let i = 1; i < 7; i++) { // Check last 6 days
+            const pastDate = startOfDay(addDays(today, -i));
+            const pastDayOfWeek = format(pastDate, 'EEEE') as DayOfWeek;
+            const pastDateStr = format(pastDate, 'yyyy-MM-dd');
+            
+            const isScheduled = schedule.includes(pastDayOfWeek);
+            const isCompleted = user.taskHistory.some(h => h.taskId === task.id && h.date === pastDateStr);
+
+            if (isScheduled && !isCompleted) {
+                // To avoid duplicates, add only if not already in the list
+                if (!overdueTasks.some(ot => ot.id === task.id)) {
+                    overdueTasks.push(task);
+                }
+            }
+        }
+        
+        // Check for today's tasks
+        const todayDayOfWeek = format(today, 'EEEE') as DayOfWeek;
+        const todayDateStr = format(today, 'yyyy-MM-dd');
+
+        const isScheduledForToday = schedule.includes(todayDayOfWeek);
+        const isCompletedToday = user.taskHistory.some(h => h.taskId === task.id && h.date === todayDateStr);
+
+        if (isScheduledForToday && !isCompletedToday) {
+            todayIncompletedTasks.push(task);
+        }
+    });
+
 
     return { todayTasks: todayIncompletedTasks, overdueTasks, todayMeetings };
 };

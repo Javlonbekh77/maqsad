@@ -6,10 +6,9 @@ import AppLayout from "@/components/layout/app-layout";
 import TodaySchedule from "@/components/dashboard/today-schedule";
 import type { User, UserTask } from "@/lib/types";
 import { useTranslations } from "next-intl";
-import HabitTracker from "@/components/profile/habit-tracker";
 import { useAuth } from '@/context/auth-context';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getUserTasks } from '@/lib/data';
+import { getUser, getScheduledTasksForUser } from '@/lib/data';
 import DashboardStats from '@/components/dashboard/dashboard-stats';
 import QuickAccess from '@/components/dashboard/quick-access';
 
@@ -20,6 +19,23 @@ export default function DashboardClient() {
 
   const [tasks, setTasks] = useState<UserTask[]>([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
+  const [user, setUser] = useState<User | null>(authUser);
+
+  const fetchDashboardData = useCallback(async (userToFetch: User) => {
+    setLoadingTasks(true);
+    try {
+      const [fetchedUser, userTasks] = await Promise.all([
+        getUser(userToFetch.id),
+        getScheduledTasksForUser(userToFetch)
+      ]);
+      setUser(fetchedUser);
+      setTasks(userTasks);
+    } catch (error) {
+      console.error("Failed to fetch dashboard data:", error);
+    } finally {
+      setLoadingTasks(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!authLoading && !authUser) {
@@ -28,28 +44,21 @@ export default function DashboardClient() {
     }
 
     if (authUser) {
-      setLoadingTasks(true);
-      getUserTasks(authUser)
-        .then(userTasks => {
-          setTasks(userTasks);
-        })
-        .catch(error => {
-          console.error("Failed to fetch dashboard tasks:", error);
-        })
-        .finally(() => {
-          setLoadingTasks(false);
-        });
+      fetchDashboardData(authUser);
     }
-  }, [authUser, authLoading, router]);
+  }, [authUser, authLoading, router, fetchDashboardData]);
 
   const handleTaskCompletion = async () => {
     // Refresh all auth context data, which will trigger a re-render and re-fetch of tasks.
-    await refreshAuth();
+    if (authUser) {
+      await refreshAuth();
+      fetchDashboardData(authUser);
+    }
   };
 
-  const isLoading = authLoading || loadingTasks;
+  const isLoading = authLoading || loadingTasks || !user;
 
-  if (isLoading || !authUser) {
+  if (isLoading || !user) {
     return (
       <AppLayout>
         <div className="grid gap-8">
@@ -78,22 +87,22 @@ export default function DashboardClient() {
     <AppLayout>
       <div className="grid gap-8">
         <div className="rounded-lg bg-background/50 backdrop-blur-sm p-6 border">
-          <h1 className="text-3xl font-bold font-display">{t('welcome', { name: authUser.firstName })}</h1>
+          <h1 className="text-3xl font-bold font-display">{t('welcome', { name: user.firstName })}</h1>
           <p className="text-muted-foreground mt-1">{t('welcomeSubtitle')}</p>
         </div>
 
-        <DashboardStats user={authUser} tasks={tasks} />
+        <DashboardStats user={user} tasks={tasks} />
 
         <div className="grid lg:grid-cols-3 gap-8 items-start">
             <div className="lg:col-span-2">
                  <TodaySchedule
                     tasks={tasks}
-                    userId={authUser.id}
+                    userId={user.id}
                     onTaskCompletion={handleTaskCompletion}
                 />
             </div>
             <div className="space-y-8">
-                <QuickAccess userGroups={authUser.groups || []} />
+                <QuickAccess userGroups={user.groups || []} />
             </div>
         </div>
       </div>

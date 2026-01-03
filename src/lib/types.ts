@@ -89,6 +89,8 @@ export type UserTask = (Task | PersonalTask) & {
   isCompleted: boolean;
   taskType: 'group' | 'personal';
   coins: number; // This will be gold for group, silver for personal
+  schedule?: DayOfWeek[];
+  history?: TaskHistory[];
 };
 
 
