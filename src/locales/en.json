@@ -1,0 +1,131 @@
+{
+    "actions": {
+        "cancel": "Cancel",
+        "goBack": "Go Back"
+    },
+    "nav": {
+        "dashboard": "Dashboard",
+        "groups": "Groups",
+        "leaderboard": "Leaderboard",
+        "profile": "Profile"
+    },
+    "header": {
+        "searchPlaceholder": "Search...",
+        "toggleNotifications": "Toggle notifications",
+        "myAccount": "My Account",
+        "settings": "Settings",
+        "logout": "Logout"
+    },
+    "landing": {
+        "login": "Log In",
+        "signUp": "Sign Up",
+        "heroTitle": "Achieve More, Together.",
+        "heroSubtitle": "Welcome to MaqsadM, the platform where your goals get the power of community. Define your purpose, join forces, and grow.",
+        "getStarted": "Get Started",
+        "whyTitle": "Why MaqsadM?",
+        "whySubtitle": "A clean, focused, and collaborative environment designed to help you succeed.",
+        "feature1Title": "Collaborative Groups",
+        "feature1Desc": "Create or join groups to connect with others who share your ambitions and keep each other motivated.",
+        "feature2Title": "Shared Task Management",
+        "feature2Desc": "Work together on tasks within your group, track progress, and celebrate collective achievements.",
+        "feature3Title": "Earn & Compete",
+        "feature3Desc": "Earn coins for completing tasks and climb the leaderboards. Healthy competition to fuel your drive.",
+        "footerRights": "© 2024 MaqsadM. All rights reserved.",
+        "footerTerms": "Terms of Service",
+        "footerPrivacy": "Privacy"
+    },
+    "dashboard": {
+        "welcome": "Welcome back, {name}!",
+        "welcomeSubtitle": "Here's what's on your plate for today. Let's make it a productive one.",
+        "userNotFound": "User not found."
+    },
+    "todoList": {
+        "title": "Your To-Do List",
+        "description": "Tasks from all the groups you've joined. Keep up the great work!",
+        "completeButton": "Complete",
+        "allTasksCompleted": "All tasks completed!",
+        "allTasksCompletedSub": "Great job! Time to relax or find a new challenge.",
+        "completedTasksTitle": "Completed Tasks"
+    },
+    "taskCompletionDialog": {
+        "title": "Confirm Task Completion",
+        "description": "You are about to mark the task \"{taskTitle}\" as complete.",
+        "integrityTitle": "A quick reminder on integrity:",
+        "integrityDescription": "By confirming, you agree that you have completed this task to the best of your ability. Honesty is key to personal growth and community trust.",
+        "earn": "You will earn",
+        "coins": "{count} coins",
+        "confirmButton": "Confirm & Earn"
+    },
+    "groups": {
+        "title": "Discover Groups",
+        "subtitle": "Find your tribe and start achieving goals together.",
+        "searchPlaceholder": "Search groups...",
+        "createGroup": "Create Group"
+    },
+    "groupCard": {
+        "members": "{count, plural, one {# member} other {# members}}",
+        "view": "View"
+    },
+    "groupDetail": {
+        "joinGroup": "Join Group",
+        "tasksTitle": "Tasks",
+        "tasksDescription": "Available tasks for group members.",
+        "taskColumn": "Task",
+        "rewardColumn": "Reward",
+        "membersTitle": "Members ({count})",
+        "adminBadge": "Admin"
+    },
+    "createTaskDialog": {
+        "addTaskButton": "Add Task",
+        "title": "Create New Task",
+        "description": "Add a new task for your group members to complete.",
+        "titleLabel": "Title",
+        "titlePlaceholder": "e.g., Run 5km",
+        "descriptionLabel": "Description",
+        "descriptionPlaceholder": "Add details about the task",
+        "coinsLabel": "Coins",
+        "coinsPlaceholder": "e.g., 50",
+        "createTaskButton": "Create Task"
+    },
+    "leaderboard": {
+        "title": "Leaderboard",
+        "subtitle": "See who's leading the pack. Keep pushing forward!",
+        "topUsers": "Top Users",
+        "topGroups": "Top Groups",
+        "rank": "Rank",
+        "user": "User",
+        "group": "Group",
+        "coins": "Coins",
+        "totalCoins": "Total Coins"
+    },
+    "profile": {
+        "title": "My Profile",
+        "subtitle": "Manage your personal information, goals, and habits.",
+        "coinsEarned": "coins earned",
+        "myGoals": "My Goals",
+        "myGoalsDescription": "What are you trying to achieve? Be specific! (e.g., Run a marathon, learn to code, read 20 books)",
+        "myGoalsPlaceholder": "Tell us about your goals...",
+        "myHabits": "My Habits",
+        "myHabitsDescription": "What are the daily/weekly habits you are building? (e.g., Meditate daily, workout 3x a week)",
+        "myHabitsPlaceholder": "Tell us about your habits...",
+        "updateButton": "Update Profile",
+        "toast": {
+            "title": "Profile Updated",
+            "description": "Your goals and habits have been saved successfully."
+        },
+        "goalMates": "Goal Mates",
+        "goalMatesDescription": "Teammates from your groups.",
+        "settings": {
+            "title": "Settings"
+        }
+    },
+    "settings": {
+        "title": "Settings",
+        "subtitle": "Manage your personal information."
+    },
+    "languageSwitcher": {
+        "label": "Language",
+        "uz": "O'zbekcha",
+        "en": "English"
+    }
+}

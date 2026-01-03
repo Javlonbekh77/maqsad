@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Coins } from 'lucide-react';
+import { Coins, Flame } from 'lucide-react';
 import { Link, useRouter } from '@/navigation';
 import { useTranslations } from 'next-intl';
 import LanguageSwitcher from '../language-switcher';
@@ -47,6 +47,10 @@ export default function AppHeader() {
         <div className="flex items-center gap-2 text-sm font-semibold text-amber-500">
             <Coins className="h-5 w-5"/>
             <span>{user?.coins || 0}</span>
+        </div>
+        <div className="flex items-center gap-2 text-sm font-semibold text-slate-500">
+            <Flame className="h-5 w-5"/>
+            <span>{user?.silverCoins || 0}</span>
         </div>
 
         <DropdownMenu>

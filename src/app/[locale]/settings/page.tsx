@@ -38,6 +38,15 @@ export default function SettingsPage() {
                         <Skeleton className="h-4 w-1/3 mt-1" />
                     </CardHeader>
                     <CardContent>
+                         <Skeleton className="h-24 w-full" />
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader>
+                        <Skeleton className="h-8 w-1/4" />
+                        <Skeleton className="h-4 w-1/3 mt-1" />
+                    </CardHeader>
+                    <CardContent>
                         <Skeleton className="h-64 w-full" />
                     </CardContent>
                 </Card>
@@ -62,6 +71,18 @@ export default function SettingsPage() {
                     <h1 className="text-3xl font-bold font-display">{tProfile('settings.title')}</h1>
                     <p className="text-muted-foreground">{tSettings('subtitle')}</p>
                 </div>
+                
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Profil Rasmi</CardTitle>
+                        <CardDescription>
+                            Profil rasmingizni yangilang.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <AvatarUpload user={user} onUploadComplete={refreshAuth} />
+                    </CardContent>
+                </Card>
 
                 <Card>
                     <CardHeader>

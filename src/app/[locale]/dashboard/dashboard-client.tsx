@@ -10,6 +10,8 @@ import HabitTracker from "@/components/profile/habit-tracker";
 import { useAuth } from '@/context/auth-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getUserTasks } from '@/lib/data';
+import DashboardStats from '@/components/dashboard/dashboard-stats';
+import QuickAccess from '@/components/dashboard/quick-access';
 
 export default function DashboardClient() {
   const t = useTranslations('dashboard');
@@ -55,9 +57,17 @@ export default function DashboardClient() {
             <Skeleton className="h-10 w-1/2" />
             <Skeleton className="h-4 w-3/4 mt-2" />
           </div>
-          <div className="grid lg:grid-cols-2 gap-8 items-start">
-            <Skeleton className="h-96 w-full" />
-            <Skeleton className="h-96 w-full" />
+           <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+              <Skeleton className="h-28 w-full" />
+              <Skeleton className="h-28 w-full" />
+              <Skeleton className="h-28 w-full" />
+            </div>
+          <div className="grid lg:grid-cols-3 gap-8 items-start">
+            <Skeleton className="h-96 w-full lg:col-span-2" />
+            <div className="space-y-8">
+                <Skeleton className="h-48 w-full" />
+                <Skeleton className="h-48 w-full" />
+            </div>
           </div>
         </div>
       </AppLayout>
@@ -72,13 +82,19 @@ export default function DashboardClient() {
           <p className="text-muted-foreground">{t('welcomeSubtitle')}</p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8 items-start">
-          <TodaySchedule
-            tasks={tasks}
-            userId={authUser.id}
-            onTaskCompletion={handleTaskCompletion}
-          />
-          <HabitTracker user={authUser} />
+        <DashboardStats user={authUser} tasks={tasks} />
+
+        <div className="grid lg:grid-cols-3 gap-8 items-start">
+            <div className="lg:col-span-2">
+                 <TodaySchedule
+                    tasks={tasks}
+                    userId={authUser.id}
+                    onTaskCompletion={handleTaskCompletion}
+                />
+            </div>
+            <div className="space-y-8">
+                <QuickAccess userGroups={authUser.groups || []} />
+            </div>
         </div>
       </div>
     </AppLayout>

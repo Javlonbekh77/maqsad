@@ -1,0 +1,131 @@
+{
+    "actions": {
+        "cancel": "Bekor qilish",
+        "goBack": "Ortga qaytish"
+    },
+    "nav": {
+        "dashboard": "Boshqaruv paneli",
+        "groups": "Guruhlar",
+        "leaderboard": "Peshqadamlar ro'yxati",
+        "profile": "Profil"
+    },
+    "header": {
+        "searchPlaceholder": "Qidirish...",
+        "toggleNotifications": "Bildirishnomalarni yoqish/o'chirish",
+        "myAccount": "Mening hisobim",
+        "settings": "Sozlamalar",
+        "logout": "Chiqish"
+    },
+    "landing": {
+        "login": "Kirish",
+        "signUp": "Ro'yxatdan o'tish",
+        "heroTitle": "Birgalikda ko'proqqa erishing.",
+        "heroSubtitle": "MaqsadM'ga xush kelibsiz! Bu yerda sizning maqsadlaringiz hamjamiyat kuchi bilan qo'llab-quvvatlanadi. Maqsadingizni aniqlang, kuchlarni birlashtiring va o'sing.",
+        "getStarted": "Boshlash",
+        "whyTitle": "Nima uchun MaqsadM?",
+        "whySubtitle": "Muvaffaqiyatga erishishingiz uchun mo'ljallangan toza, diqqatni jamlovchi va hamkorlikka asoslangan muhit.",
+        "feature1Title": "Hamkorlikdagi guruhlar",
+        "feature1Desc": "Maqsadlaringiz bilan o'rtoqlashadigan va bir-biringizni rag'batlantiradigan boshqalar bilan bog'lanish uchun guruhlar yarating yoki ularga qo'shiling.",
+        "feature2Title": "Umumiy vazifalarni boshqarish",
+        "feature2Desc": "Guruhingizda vazifalar ustida birgalikda ishlang, yutuqlarni kuzatib boring va umumiy yutuqlarni nishonlang.",
+        "feature3Title": "Ishlang va raqobatlashing",
+        "feature3Desc": "Vazifalarni bajarish uchun tangalar ishlab oling va peshqadamlar ro'yxatida yuqorilang. Intilishingizni kuchaytiradigan sog'lom raqobat.",
+        "footerRights": "© 2024 MaqsadM. Barcha huquqlar himoyalangan.",
+        "footerTerms": "Xizmat ko'rsatish shartlari",
+        "footerPrivacy": "Maxfiylik siyosati"
+    },
+    "dashboard": {
+        "welcome": "Xush kelibsiz, {name}!",
+        "welcomeSubtitle": "Bugungi rejalaringiz bilan tanishing. Keling, bugunni samarali o'tkazaylik.",
+        "userNotFound": "Foydalanuvchi topilmadi."
+    },
+    "todoList": {
+        "title": "Sizning vazifalar ro'yxatingiz",
+        "description": "Siz a'zo bo'lgan barcha guruhlardagi vazifalar. Ishlaringizga omad!",
+        "completeButton": "Bajarildi",
+        "allTasksCompleted": "Barcha vazifalar bajarildi!",
+        "allTasksCompletedSub": "Ajoyib ish! Dam olish yoki yangi vazifalar topish vaqti keldi.",
+        "completedTasksTitle": "Bajarilgan vazifalar"
+    },
+    "taskCompletionDialog": {
+        "title": "Vazifa bajarilishini tasdiqlang",
+        "description": "\"{taskTitle}\" vazifasini bajarilgan deb belgilamoqchisiz.",
+        "integrityTitle": "Halollik haqida qisqacha eslatma:",
+        "integrityDescription": "Tasdiqlash orqali siz ushbu vazifani imkon qadar yaxshi bajarganingizga rozilik bildirasiz. Halollik shaxsiy o'sish va jamiyat ishonchining kalitidir.",
+        "earn": "Sizga taqdim etiladi",
+        "coins": "{count} tanga",
+        "confirmButton": "Tasdiqlash"
+    },
+    "groups": {
+        "title": "Guruhlarni toping",
+        "subtitle": "O'z jamoangizni toping va maqsadlarga birgalikda erishishni boshlang.",
+        "searchPlaceholder": "Guruhlarni qidirish...",
+        "createGroup": "Guruh yaratish"
+    },
+    "groupCard": {
+        "members": "{count, plural, one {# a'zo} other {# a'zo}}",
+        "view": "Ko'rish"
+    },
+    "groupDetail": {
+        "joinGroup": "Guruhga qo'shilish",
+        "tasksTitle": "Vazifalar",
+        "tasksDescription": "Guruh a'zolari uchun mavjud vazifalar.",
+        "taskColumn": "Vazifa",
+        "rewardColumn": "Mukofot",
+        "membersTitle": "A'zolar ({count})",
+        "adminBadge": "Admin"
+    },
+    "createTaskDialog": {
+        "addTaskButton": "Vazifa qo'shish",
+        "title": "Yangi vazifa yaratish",
+        "description": "Guruh a'zolaringiz bajarishi uchun yangi vazifa qo'shing.",
+        "titleLabel": "Sarlavha",
+        "titlePlaceholder": "Masalan, 5 km yugurish",
+        "descriptionLabel": "Tavsif",
+        "descriptionPlaceholder": "Vazifa haqida batafsil ma'lumot qo'shing",
+        "coinsLabel": "Tangalar",
+        "coinsPlaceholder": "Masalan, 50",
+        "createTaskButton": "Vazifa yaratish"
+    },
+    "leaderboard": {
+        "title": "Peshqadamlar ro'yxati",
+        "subtitle": "Kimlar yetakchilik qilayotganini ko'ring. Oldinga intilishda davom eting!",
+        "topUsers": "Eng yaxshi foydalanuvchilar",
+        "topGroups": "Eng yaxshi guruhlar",
+        "rank": "O'rin",
+        "user": "Foydalanuvchi",
+        "group": "Guruh",
+        "coins": "Tangalar",
+        "totalCoins": "Umumiy tangalar"
+    },
+    "profile": {
+        "title": "Mening profilim",
+        "subtitle": "Shaxsiy ma'lumotlaringiz, maqsadlaringiz va odatlaringizni boshqaring.",
+        "coinsEarned": "ishlab topilgan tanga",
+        "myGoals": "Mening maqsadlarim",
+        "myGoalsDescription": "Nimaga erishmoqchisiz? Aniq bo'ling! (Masalan, marafon yugurish, kodlashni o'rganish, 20 ta kitob o'qish)",
+        "myGoalsPlaceholder": "Maqsadlaringiz haqida bizga gapirib bering...",
+        "myHabits": "Mening odatlarim",
+        "myHabitsDescription": "Siz qanday kunlik/haftalik odatlarni shakllantiryapsiz? (Masalan, har kuni meditatsiya qilish, haftada 3 marta mashq qilish)",
+        "myHabitsPlaceholder": "Odatlaringiz haqida bizga gapirib bering...",
+        "updateButton": "Profilni yangilash",
+        "toast": {
+            "title": "Profil yangilandi",
+            "description": "Sizning maqsadlaringiz va odatlaringiz muvaffaqiyatli saqlandi."
+        },
+        "goalMates": "Maqsaddoshlar",
+        "goalMatesDescription": "Guruhlaringizdagi jamoa a'zolari.",
+        "settings": {
+            "title": "Sozlamalar"
+        }
+    },
+    "settings": {
+        "title": "Sozlamalar",
+        "subtitle": "Shaxsiy ma'lumotlaringizni boshqaring."
+    },
+    "languageSwitcher": {
+        "label": "Til",
+        "uz": "O'zbekcha",
+        "en": "English"
+    }
+}

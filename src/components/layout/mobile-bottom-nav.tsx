@@ -17,11 +17,11 @@ export default function MobileBottomNav() {
   const { user } = useAuth();
 
   const navItems = [
-    { href: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard },
-    { href: '/groups', labelKey: 'groups', icon: Users },
-    { href: '/create-task', labelKey: "Qo'shish", icon: PlusSquare },
-    { href: '/leaderboard', labelKey: 'leaderboard', icon: Trophy },
-    { href: `/profile/${user?.id}`, labelKey: 'profile', icon: UserCircle },
+    { href: '/dashboard', labelKey: 'Dashboard', icon: LayoutDashboard },
+    { href: '/groups', labelKey: 'Groups', icon: Users },
+    { href: '/create-task', labelKey: 'Add', icon: PlusSquare },
+    { href: '/leaderboard', labelKey: 'Leaders', icon: Trophy },
+    { href: `/profile/${user?.id}`, labelKey: 'Profile', icon: UserCircle },
   ];
 
   return (
@@ -29,7 +29,7 @@ export default function MobileBottomNav() {
       <div className="grid h-full max-w-lg grid-cols-5 mx-auto font-medium">
         {navItems.map((item) => (
            // Don't render profile link if user is not loaded
-          (item.labelKey === 'profile' && !user) ? null :
+          (item.labelKey === 'Profile' && !user) ? null :
           <Link
             key={item.href}
             href={item.href}
@@ -40,7 +40,7 @@ export default function MobileBottomNav() {
             } ${pathname === item.href && item.href === '/create-task' ? 'text-primary' : ''}`}
           >
             <item.icon className="w-5 h-5 mb-1" />
-            <span className="text-xs">{item.labelKey.includes('.') ? t(item.labelKey as any) : item.labelKey}</span>
+            <span className="text-xs">{item.labelKey}</span>
           </Link>
         ))}
       </div>

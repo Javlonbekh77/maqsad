@@ -93,11 +93,11 @@ export default function AppSidebar() {
 
 
   const navItems = [
-    { href: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard },
-    { href: '/groups', labelKey: 'groups', icon: Users },
-    { href: '/create-task', labelKey: 'Vazifa qo\'shish', icon: PlusSquare },
-    { href: '/leaderboard', labelKey: 'leaderboard', icon: Trophy },
-    { href: `/profile/${user?.id}`, labelKey: 'profile', icon: UserCircle },
+    { href: '/dashboard', labelKey: 'Dashboard', icon: LayoutDashboard },
+    { href: '/groups', labelKey: 'Groups', icon: Users },
+    { href: '/create-task', labelKey: 'Add Task', icon: PlusSquare },
+    { href: '/leaderboard', labelKey: 'Leaderboard', icon: Trophy },
+    { href: `/profile/${user?.id}`, labelKey: 'Profile', icon: UserCircle },
   ];
 
   return (
@@ -112,7 +112,7 @@ export default function AppSidebar() {
                 <ul className="grid items-start px-4 text-sm font-medium">
                     {navItems.map((item) => (
                         // Don't render profile link if user is not loaded
-                        (item.labelKey === 'profile' && !user) ? null :
+                        (item.labelKey === 'Profile' && !user) ? null :
                         <li key={item.href}>
                             <Link
                             href={item.href}
@@ -122,7 +122,7 @@ export default function AppSidebar() {
                             )}
                             >
                             <item.icon className="h-4 w-4" />
-                            {item.labelKey.includes('.') ? t(item.labelKey as any) : item.labelKey}
+                            {item.labelKey}
                             </Link>
                         </li>
                     ))}
