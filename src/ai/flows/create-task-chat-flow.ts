@@ -75,10 +75,8 @@ const createTaskChatFlow = ai.defineFlow(
     ${history.map(msg => `${msg.role}: ${msg.content}`).join('\n')}
     `;
 
-    const model = ai.getModel('googleai/gemini-2.5-flash-preview');
-
     const result = await ai.generate({
-      model,
+      model: 'googleai/gemini-2.5-flash-preview',
       prompt: systemPrompt,
       config: {
         // Force the model to use a tool if it thinks it's ready.
