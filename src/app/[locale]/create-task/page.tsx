@@ -285,53 +285,53 @@ export default function CreatePersonalTaskPage() {
                                 )}
 
                                 {scheduleType === 'date-range' && (
-                                    <Controller
+                                    <FormField
                                         control={form.control}
                                         name="schedule"
-                                        render={({ field: { onChange, value }}) => {
-                                            const dateRange: DateRange | undefined = value.startDate && value.endDate ? { from: new Date(value.startDate), to: new Date(value.endDate) } : undefined;
-                                            return (
-                                                <FormItem className="flex flex-col">
-                                                    <FormLabel>Sana Oralig'i</FormLabel>
-                                                    <Popover>
-                                                    <PopoverTrigger asChild>
-                                                        <Button variant={"outline"}>
-                                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                                        {dateRange?.from ? (
-                                                            dateRange.to ? (
-                                                            <>
-                                                                {format(dateRange.from, "LLL dd, y")} -{" "}
-                                                                {format(dateRange.to, "LLL dd, y")}
-                                                            </>
-                                                            ) : (
-                                                            format(dateRange.from, "LLL dd, y")
-                                                            )
-                                                        ) : (
-                                                            <span>Oraliqni tanlang</span>
-                                                        )}
-                                                        </Button>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent className="w-auto p-0" align="start">
-                                                        <Calendar
-                                                        initialFocus
-                                                        mode="range"
-                                                        defaultMonth={dateRange?.from}
-                                                        selected={dateRange}
-                                                        onSelect={(range) => {
-                                                            onChange({
-                                                                ...value,
-                                                                startDate: range?.from ? format(range.from, 'yyyy-MM-dd') : undefined,
-                                                                endDate: range?.to ? format(range.to, 'yyyy-MM-dd') : undefined,
-                                                            })
-                                                        }}
-                                                        numberOfMonths={2}
-                                                        />
-                                                    </PopoverContent>
-                                                    </Popover>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )
-                                        }}
+                                        render={({ field }) => (
+                                        <FormItem className="flex flex-col">
+                                            <FormLabel>Sana Oralig'i</FormLabel>
+                                            <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button variant={"outline"}>
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {field.value.startDate ? (
+                                                    field.value.endDate ? (
+                                                    <>
+                                                        {format(new Date(field.value.startDate), "LLL dd, y")} -{" "}
+                                                        {format(new Date(field.value.endDate), "LLL dd, y")}
+                                                    </>
+                                                    ) : (
+                                                    format(new Date(field.value.startDate), "LLL dd, y")
+                                                    )
+                                                ) : (
+                                                    <span>Oraliqni tanlang</span>
+                                                )}
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <Calendar
+                                                initialFocus
+                                                mode="range"
+                                                defaultMonth={field.value.startDate ? new Date(field.value.startDate) : undefined}
+                                                selected={{
+                                                    from: field.value.startDate ? new Date(field.value.startDate) : undefined,
+                                                    to: field.value.endDate ? new Date(field.value.endDate) : undefined,
+                                                }}
+                                                onSelect={(range) => {
+                                                    field.onChange({
+                                                        ...field.value,
+                                                        startDate: range?.from ? format(range.from, 'yyyy-MM-dd') : undefined,
+                                                        endDate: range?.to ? format(range.to, 'yyyy-MM-dd') : undefined,
+                                                    });
+                                                }}
+                                                numberOfMonths={2}
+                                                />
+                                            </PopoverContent>
+                                            </Popover>
+                                            <FormMessage />
+                                        </FormItem>
+                                        )}
                                     />
                                 )}
                             </CardContent>
