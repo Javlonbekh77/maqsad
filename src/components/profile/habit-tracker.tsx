@@ -11,7 +11,7 @@ import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "../ui/skeleton";
 import { Badge } from "../ui/badge";
-import type { Timestamp } from "firebase/firestore";
+import { Timestamp } from "firebase/firestore";
 
 interface HabitTrackerProps {
   user: User;
