@@ -6,8 +6,8 @@ import { Coins, CheckCircle, BarChart as BarChartIcon, TrendingUp, TrendingDown,
 import { Bar, XAxis, YAxis, CartesianGrid, BarChart } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
 import { useMemo } from 'react';
-import { format, subDays, startOfDay } from 'date-fns';
-import { getLeaderboardData } from '@/lib/data';
+import { format, subDays, startOfDay, isToday } from 'date-fns';
+import { getLeaderboardData, isTaskScheduledForDate } from '@/lib/data';
 import useSWR from 'swr';
 import { Skeleton } from '../ui/skeleton';
 import { Link } from '@/navigation';
@@ -157,7 +157,19 @@ function WeeklyMotivation({ user, tasks }: { user: User, tasks: UserTask[] }) {
 }
 
 export default function DashboardStats({ user, tasks }: DashboardStatsProps) {
-    const tasksToday = useMemo(() => tasks.filter(t => !t.isCompleted), [tasks]);
+    const tasksToday = useMemo(() => {
+        const today = new Date();
+        return tasks.filter(task => {
+            const isScheduledToday = isTaskScheduledForDate(task, today);
+            if (!isScheduledToday) return false;
+            
+            const isCompletedToday = user.taskHistory.some(h => 
+                h.taskId === task.id && h.date === format(today, 'yyyy-MM-dd')
+            );
+            return !isCompletedToday;
+        });
+    }, [tasks, user]);
+
 
     return (
        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
