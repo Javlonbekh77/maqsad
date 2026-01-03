@@ -10,7 +10,7 @@ import { useTranslations } from 'next-intl';
 import { completeUserTask } from '@/lib/data';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
-import { addDays, format, isToday, isYesterday, isTomorrow, startOfDay, isWithinInterval, parseISO } from 'date-fns';
+import { addDays, format, isToday, isYesterday, isTomorrow, startOfDay, isWithinInterval, parseISO, isSameDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Timestamp } from 'firebase/firestore';
 
