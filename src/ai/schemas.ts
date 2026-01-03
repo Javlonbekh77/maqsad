@@ -1,42 +1,24 @@
 import { z } from 'genkit';
 
-// Define the structure for the TaskHistory using Zod for validation
-export const TaskHistorySchema = z.object({
-    taskId: z.string(),
-    date: z.string(),
-    taskType: z.enum(['group', 'personal']),
-});
-
 // === Progress Analysis Schemas ===
+// This functionality has been removed in favor of the AI Chat Assistant.
 
-export const ProgressAnalysisInputSchema = z.object({
-  goals: z.string().optional().describe("The user's long-term goals."),
-  habits: z.string().optional().describe("The user's desired daily/weekly habits."),
-  taskHistory: z.array(TaskHistorySchema).describe("The user's recent task completion history."),
-});
-export type ProgressAnalysisInput = z.infer<typeof ProgressAnalysisInputSchema>;
+// === AI Chat Assistant Schemas ===
 
-export const ProgressAnalysisOutputSchema = z.object({
-  text: z.string().describe("A short, insightful, and motivational analysis of the user's progress. Max 2-3 sentences."),
-});
-export type ProgressAnalysisOutput = z.infer<typeof ProgressAnalysisOutputSchema>;
-
-
-// === Create Task Chat Schemas ===
-
-const ChatMessageSchema = z.object({
+export const ChatHistorySchema = z.object({
   role: z.enum(['user', 'model']),
   content: z.string(),
 });
+export type ChatHistory = z.infer<typeof ChatHistorySchema>;
 
-export const CreateTaskChatInputSchema = z.object({
-  userId: z.string().describe("The ID of the user creating the task."),
-  history: z.array(ChatMessageSchema).describe("The conversation history so far."),
+
+export const ChatAssistantInputSchema = z.object({
+  userId: z.string().describe("The ID of the user."),
+  history: z.array(ChatHistorySchema).describe("The conversation history so far."),
 });
-export type CreateTaskChatInput = z.infer<typeof CreateTaskChatInputSchema>;
+export type ChatAssistantInput = z.infer<typeof ChatAssistantInputSchema>;
 
-export const CreateTaskChatOutputSchema = z.object({
+export const ChatAssistantOutputSchema = z.object({
   response: z.string().describe("The AI's response to the user."),
-  isTaskCreated: z.boolean().describe("True if the task was successfully created in this turn."),
 });
-export type CreateTaskChatOutput = z.infer<typeof CreateTaskChatOutputSchema>;
+export type ChatAssistantOutput = z.infer<typeof ChatAssistantOutputSchema>;

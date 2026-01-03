@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Coins, Flame } from 'lucide-react';
+import { Coins, Flame, CheckCheck } from 'lucide-react';
 import { Link, useRouter } from '@/navigation';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/context/auth-context';

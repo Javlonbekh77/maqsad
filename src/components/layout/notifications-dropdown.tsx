@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import useSWR from 'swr';
+import useSWR, { useSWRConfig } from 'swr';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,6 +9,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuFooter,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Bell, AlertCircle, CalendarClock, ListTodo, History, CheckCheck } from 'lucide-react';
@@ -39,8 +40,9 @@ function showBrowserNotification(title: string, options: NotificationOptions) {
 export default function NotificationsDropdown() {
   const { user } = useAuth();
   const [hasShownOverdue, setHasShownOverdue] = useState(false);
-  const { data, isLoading, mutate } = useSWR(
-    ['notifications', user], 
+  const { mutate } = useSWRConfig()
+  const { data, isLoading } = useSWR(
+    user ? ['notifications', user] : null, 
     fetcher,
     {
       refreshInterval: 30000,
@@ -62,9 +64,12 @@ export default function NotificationsDropdown() {
   
   const handleMarkAllRead = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     // In a real app, you'd call a function here to mark all as read on the backend.
     // For now, we'll just clear them on the client side for an immediate visual effect.
-    mutate({ todayTasks: [], overdueTasks: [], todayMeetings: [] }, false);
+    if (user) {
+        mutate(['notifications', user], { todayTasks: [], overdueTasks: [], todayMeetings: [] }, false);
+    }
   };
 
   const totalNotifications = data ? (data.todayTasks.length + data.overdueTasks.length + data.todayMeetings.length) : 0;
@@ -83,15 +88,7 @@ export default function NotificationsDropdown() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
-        <div className="flex items-center justify-between pr-2">
-            <DropdownMenuLabel>Bildirishnomalar</DropdownMenuLabel>
-            {totalNotifications > 0 && (
-                 <button onClick={handleMarkAllRead} className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1">
-                    <CheckCheck className="h-3 w-3" />
-                    Barchasini o'qish
-                </button>
-            )}
-        </div>
+        <DropdownMenuLabel>Bildirishnomalar</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {isLoading && !data ? (
           <div className="p-2 space-y-2">
@@ -122,9 +119,9 @@ export default function NotificationsDropdown() {
                                 <DropdownMenuItem className="flex justify-between items-center">
                                     <div>
                                         <p className="font-medium">{task.title}</p>
-                                        <p className="text-xs text-muted-foreground">{task.groupName}</p>
+                                        {task.groupName && <p className="text-xs text-muted-foreground">{task.groupName}</p>}
                                     </div>
-                                    <Badge variant="outline">{task.coins} coins</Badge>
+                                    <Badge variant="outline">{task.taskType === 'group' ? `${task.coins} oltin` : '1 kumush'}</Badge>
                                 </DropdownMenuItem>
                             </Link>
                         ))}
@@ -139,7 +136,7 @@ export default function NotificationsDropdown() {
                                 <DropdownMenuItem className="flex justify-between items-center">
                                      <div>
                                         <p className="font-medium">{task.title}</p>
-                                        <p className="text-xs text-muted-foreground">{task.groupName}</p>
+                                        {task.groupName && <p className="text-xs text-muted-foreground">{task.groupName}</p>}
                                     </div>
                                 </DropdownMenuItem>
                             </Link>
@@ -152,6 +149,17 @@ export default function NotificationsDropdown() {
              <AlertCircle className="mx-auto h-8 w-8 mb-2" />
             <p>Hozircha yangi bildirishnomalar yo'q.</p>
           </div>
+        )}
+        {totalNotifications > 0 && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuFooter>
+              <Button variant="ghost" size="sm" className="w-full" onClick={handleMarkAllRead}>
+                <CheckCheck className="mr-2 h-4 w-4" />
+                Barchasini o'qilgan deb belgilash
+              </Button>
+            </DropdownMenuFooter>
+          </>
         )}
       </DropdownMenuContent>
     </DropdownMenu>

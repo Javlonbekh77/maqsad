@@ -13,7 +13,7 @@ import { Skeleton } from '../ui/skeleton';
 import { Link } from '@/navigation';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
-import { analyzeProgress } from '@/ai/flows/analyze-progress-flow';
+
 
 interface DashboardStatsProps {
     user: User;
@@ -27,57 +27,6 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-function AiAnalyst({ user }: { user: User }) {
-    const { data: analysis, isLoading, error } = useSWR(
-      user ? ['ai-analysis', user.id, user.goals, user.habits, user.taskHistory.length] : null,
-      () => analyzeProgress({
-          goals: user.goals,
-          habits: user.habits,
-          taskHistory: user.taskHistory.slice(-20), // Send recent history
-      })
-    );
-  
-    if (isLoading) {
-      return (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">AI Tahlilchi</CardTitle>
-            <BrainCircuit className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-4 w-full mb-2" />
-            <Skeleton className="h-4 w-3/4" />
-          </CardContent>
-        </Card>
-      )
-    }
-
-    if (error || !analysis) {
-        return (
-             <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">AI Tahlilchi</CardTitle>
-                    <BrainCircuit className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <p className="text-xs text-muted-foreground">Tahlil qilishda xatolik yuz berdi.</p>
-                </CardContent>
-            </Card>
-        )
-    }
-  
-    return (
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">AI Tahlilchi</CardTitle>
-          <BrainCircuit className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-            <p className="text-sm font-medium">{analysis.text}</p>
-        </CardContent>
-      </Card>
-    );
-  }
 
 function LeaderboardMotivation({ user }: { user: User }) {
     const { data: leaderboardData, isLoading } = useSWR('leaderboardData', getLeaderboardData);
@@ -168,12 +117,16 @@ function WeeklyMotivation({ user, tasks }: { user: User, tasks: UserTask[] }) {
         } else if (completedLast7Days > 0) {
             percentageChange = 100; // From 0 to something is 100% growth for simplicity
         }
+        
+        const percentageText = percentageChange !== 0 
+            ? <span className={cn("font-bold", percentageChange > 0 ? "text-green-500" : "text-red-500")}>{Math.abs(percentageChange)}%</span>
+            : null;
 
         let message;
         if (percentageChange > 0) {
-            message = <>avvalgi 7 kundan <span className="text-green-500 font-bold">{percentageChange}%</span> ko'proq. Ajoyib natija!</>;
+            message = <>avvalgi 7 kundan {percentageText} ko'proq. Ajoyib natija!</>;
         } else if (percentageChange < 0) {
-            message = <>avvalgi 7 kundan <span className="text-red-500 font-bold">{Math.abs(percentageChange)}%</span> kam. Keyingi hafta yanada harakat qilamiz!</>;
+            message = <>avvalgi 7 kundan {percentageText} kam. Keyingi hafta yanada harakat qilamiz!</>;
         } else {
             message = "Natijangiz o'tgan haftadagi kabi. Barqarorlik - bu ham yutuq!";
         }
@@ -204,9 +157,26 @@ function WeeklyMotivation({ user, tasks }: { user: User, tasks: UserTask[] }) {
 }
 
 export default function DashboardStats({ user, tasks }: DashboardStatsProps) {
+    const tasksToday = useMemo(() => tasks.filter(t => !t.isCompleted), [tasks]);
+
     return (
        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-            <AiAnalyst user={user} />
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                    Bugun Bajarilmagan Vazifalar
+                </CardTitle>
+                <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                <div className="text-2xl font-bold">
+                    {tasksToday.length}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                    {tasksToday.length > 0 ? "Qolgan vazifalarni bajaring" : "Bugungi barcha vazifalar bajarildi!"}
+                </p>
+                </CardContent>
+            </Card>
             <WeeklyMotivation user={user} tasks={tasks} />
             <LeaderboardMotivation user={user} />
        </div>
