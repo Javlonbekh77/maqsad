@@ -13,27 +13,56 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { PlusCircle, Coins, Clock } from 'lucide-react';
+import { PlusCircle, Coins, Clock, CalendarIcon } from 'lucide-react';
 import { useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
 import { createTask } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
+import type { TaskSchedule, DayOfWeek } from '@/lib/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Calendar } from '../ui/calendar';
+import { format, addDays } from 'date-fns';
+import { DateRange } from 'react-day-picker';
+import { Slider } from '../ui/slider';
+
+const scheduleSchema = z.object({
+  type: z.enum(['one-time', 'date-range', 'recurring']),
+  date: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  days: z.array(z.string()).optional(),
+}).refine(data => {
+    if (data.type === 'one-time' && !data.date) return false;
+    if (data.type === 'date-range' && (!data.startDate || !data.endDate)) return false;
+    if (data.type === 'recurring' && (!data.days || data.days.length === 0)) return false;
+    return true;
+}, {
+    message: "Please select a date, date range, or recurring days.",
+    path: ['date'], // Show error on the first field of the union
+});
+
 
 const taskSchema = z.object({
   title: z.string().min(3, { message: "Title must be at least 3 characters." }),
   description: z.string().min(10, { message: "Description must be at least 10 characters." }),
   coins: z.coerce.number().min(1, { message: "Coins must be at least 1." }),
-  time: z.string().optional(),
+  estimatedTime: z.string().optional(),
+  satisfactionRating: z.number().min(1).max(10),
+  schedule: scheduleSchema,
 });
 
 interface CreateTaskDialogProps {
   groupId: string;
   onTaskCreated: () => void;
 }
+
+const daysOfWeek: DayOfWeek[] = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export default function CreateTaskDialog({ groupId, onTaskCreated }: CreateTaskDialogProps) {
   const t = useTranslations('createTaskDialog');
@@ -48,7 +77,12 @@ export default function CreateTaskDialog({ groupId, onTaskCreated }: CreateTaskD
       title: "",
       description: "",
       coins: 10,
-      time: "",
+      estimatedTime: "",
+      satisfactionRating: 5,
+      schedule: {
+          type: 'recurring',
+          days: [],
+      }
     },
   });
 
@@ -73,6 +107,8 @@ export default function CreateTaskDialog({ groupId, onTaskCreated }: CreateTaskD
       }
     });
   };
+  
+  const scheduleType = form.watch('schedule.type');
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -82,13 +118,13 @@ export default function CreateTaskDialog({ groupId, onTaskCreated }: CreateTaskD
           {t('addTaskButton')}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
           <DialogDescription>{t('description')}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
             <FormField
               control={form.control}
               name="title"
@@ -131,19 +167,176 @@ export default function CreateTaskDialog({ groupId, onTaskCreated }: CreateTaskD
               />
               <FormField
                 control={form.control}
-                name="time"
+                name="estimatedTime"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className='flex items-center gap-1'><Clock className="h-4 w-4" /> Time (Optional)</FormLabel>
+                    <FormLabel className='flex items-center gap-1'><Clock className="h-4 w-4" /> Taxminiy Vaqt (ixtiyoriy)</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., 9:00 AM" {...field} />
+                      <Input placeholder="masalan, 30 daqiqa" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
-            <DialogFooter>
+             <FormField
+                control={form.control}
+                name="satisfactionRating"
+                render={({ field: { onChange, value } }) => (
+                  <FormItem>
+                    <FormLabel>Qoniqish Reytingi: {value}</FormLabel>
+                     <FormControl>
+                        <Slider
+                            defaultValue={[value]}
+                            onValueChange={(values) => onChange(values[0])}
+                            max={10}
+                            min={1}
+                            step={1}
+                        />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+             <FormField
+                control={form.control}
+                name="schedule.type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Vazifa Jadvali</FormLabel>
+                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Jadval turini tanlang" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="recurring">Haftalik Takrorlanuvchi</SelectItem>
+                            <SelectItem value="one-time">Bir Martalik</SelectItem>
+                            <SelectItem value="date-range">Sana Oralig'i</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {scheduleType === 'recurring' && (
+                <FormField
+                    control={form.control}
+                    name="schedule.days"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Hafta Kunlari</FormLabel>
+                        <FormControl>
+                            <ToggleGroup
+                                type="multiple"
+                                variant="outline"
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                                className="flex-wrap justify-start"
+                            >
+                                {daysOfWeek.map(day => (
+                                    <ToggleGroupItem key={day} value={day}>{day.slice(0,3)}</ToggleGroupItem>
+                                ))}
+                            </ToggleGroup>
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+              )}
+
+            {scheduleType === 'one-time' && (
+                 <FormField
+                    control={form.control}
+                    name="schedule.date"
+                    render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                        <FormLabel>Sana</FormLabel>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <FormControl>
+                                <Button
+                                    variant={"outline"}
+                                >
+                                    {field.value ? (
+                                    format(new Date(field.value), "PPP")
+                                    ) : (
+                                    <span>Sanani tanlang</span>
+                                    )}
+                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                                </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                mode="single"
+                                selected={field.value ? new Date(field.value) : undefined}
+                                onSelect={(date) => field.onChange(date ? format(date, 'yyyy-MM-dd') : '')}
+                                disabled={(date) => date < new Date("1900-01-01")}
+                                initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+            )}
+
+            {scheduleType === 'date-range' && (
+                 <Controller
+                    control={form.control}
+                    name="schedule"
+                    render={({ field: { onChange, value }}) => {
+                        const dateRange: DateRange | undefined = value.startDate && value.endDate ? { from: new Date(value.startDate), to: new Date(value.endDate) } : undefined;
+                        return (
+                            <FormItem className="flex flex-col">
+                                <FormLabel>Sana Oralig'i</FormLabel>
+                                <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant={"outline"}>
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {dateRange?.from ? (
+                                        dateRange.to ? (
+                                        <>
+                                            {format(dateRange.from, "LLL dd, y")} -{" "}
+                                            {format(dateRange.to, "LLL dd, y")}
+                                        </>
+                                        ) : (
+                                        format(dateRange.from, "LLL dd, y")
+                                        )
+                                    ) : (
+                                        <span>Oraliqni tanlang</span>
+                                    )}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                    initialFocus
+                                    mode="range"
+                                    defaultMonth={dateRange?.from}
+                                    selected={dateRange}
+                                    onSelect={(range) => {
+                                        onChange({
+                                            ...value,
+                                            startDate: range?.from ? format(range.from, 'yyyy-MM-dd') : undefined,
+                                            endDate: range?.to ? format(range.to, 'yyyy-MM-dd') : undefined,
+                                        })
+                                    }}
+                                    numberOfMonths={2}
+                                    />
+                                </PopoverContent>
+                                </Popover>
+                                <FormMessage />
+                            </FormItem>
+                        )
+                    }}
+                />
+            )}
+
+            <DialogFooter className="pt-4">
                 <DialogClose asChild>
                     <Button variant="outline">{tActions('cancel')}</Button>
                 </DialogClose>

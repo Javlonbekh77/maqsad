@@ -1,5 +1,20 @@
 import { FieldValue, Timestamp } from "firebase/firestore";
 
+export type DayOfWeek = 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
+
+export type ScheduleType = 'one-time' | 'date-range' | 'recurring';
+
+export type TaskSchedule = {
+  type: ScheduleType;
+  // For 'one-time'
+  date?: string; // YYYY-MM-DD
+  // For 'date-range'
+  startDate?: string; // YYYY-MM-DD
+  endDate?: string; // YYYY-MM-DD
+  // For 'recurring'
+  days?: DayOfWeek[];
+}
+
 export type Task = {
   id: string;
   title: string;
@@ -8,6 +23,10 @@ export type Task = {
   groupId: string;
   time?: string; // Optional time for the task
   createdAt: FieldValue | Timestamp;
+  // New fields
+  estimatedTime?: string;
+  satisfactionRating?: number;
+  schedule: TaskSchedule;
 };
 
 export type PersonalTask = {
@@ -15,9 +34,11 @@ export type PersonalTask = {
   userId: string;
   title: string;
   description: string;
-  schedule: DayOfWeek[];
   createdAt: FieldValue | Timestamp;
-  // Personal tasks will have a fixed coin value, so no need to store it here.
+  // New fields
+  estimatedTime?: string;
+  satisfactionRating?: number;
+  schedule: TaskSchedule;
 }
 
 export type TaskHistory = {
@@ -26,11 +47,9 @@ export type TaskHistory = {
   taskType: 'group' | 'personal';
 };
 
-export type DayOfWeek = 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
-
 export type UserTaskSchedule = {
   taskId: string;
-  days: DayOfWeek[];
+  schedule: TaskSchedule;
 };
 
 export type LastRead = {
@@ -52,7 +71,7 @@ export type User = {
   groups: string[]; // array of group IDs
   occupation: string;
   taskHistory: TaskHistory[];
-  taskSchedules?: UserTaskSchedule[]; // New field for task schedules
+  taskSchedules?: UserTaskSchedule[]; // User's specific schedules for group tasks
   university?: string;
   specialization?: string;
   course?: string;
@@ -89,7 +108,7 @@ export type UserTask = (Task | PersonalTask) & {
   isCompleted: boolean;
   taskType: 'group' | 'personal';
   coins: number; // This will be gold for group, silver for personal
-  schedule?: DayOfWeek[];
+  schedule: TaskSchedule; // Now unified
   history?: TaskHistory[];
   createdAt: FieldValue | Timestamp;
 };

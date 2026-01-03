@@ -6,7 +6,7 @@ import { Coins, CheckCircle, BarChart as BarChartIcon, TrendingUp, TrendingDown,
 import { Bar, XAxis, YAxis, CartesianGrid, BarChart } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
 import { useMemo } from 'react';
-import { format, subDays, startOfDay, startOfWeek, endOfWeek } from 'date-fns';
+import { format, subDays, startOfDay } from 'date-fns';
 import { getLeaderboardData } from '@/lib/data';
 import useSWR from 'swr';
 import { Skeleton } from '../ui/skeleton';
@@ -29,7 +29,7 @@ const chartConfig = {
 
 function AiAnalyst({ user }: { user: User }) {
     const { data: analysis, isLoading, error } = useSWR(
-      ['ai-analysis', user.id], 
+      user ? ['ai-analysis', user.id, user.goals, user.habits, user.taskHistory.length] : null,
       () => analyzeProgress({
           goals: user.goals,
           habits: user.habits,
@@ -148,32 +148,32 @@ function LeaderboardMotivation({ user }: { user: User }) {
 function WeeklyMotivation({ user, tasks }: { user: User, tasks: UserTask[] }) {
     const { message, percentageChange, Icon, periodTotal } = useMemo(() => {
         const today = new Date();
-        const startOfThisWeek = startOfWeek(today, { weekStartsOn: 1 }); // Monday
-        const startOfLastWeek = subDays(startOfThisWeek, 7);
-        const endOfLastWeek = endOfWeek(startOfLastWeek, { weekStartsOn: 1 });
+        const last7DaysStart = startOfDay(subDays(today, 6));
+        const previous7DaysStart = startOfDay(subDays(today, 13));
+        const previous7DaysEnd = startOfDay(subDays(today, 7));
 
-        const completedThisWeek = user.taskHistory.filter(h => {
+        const completedLast7Days = user.taskHistory.filter(h => {
             const historyDate = new Date(h.date);
-            return historyDate >= startOfThisWeek && historyDate <= today;
+            return historyDate >= last7DaysStart && historyDate <= today;
         }).length;
 
-        const completedLastWeek = user.taskHistory.filter(h => {
+        const completedPrevious7Days = user.taskHistory.filter(h => {
             const historyDate = new Date(h.date);
-            return historyDate >= startOfLastWeek && historyDate <= endOfLastWeek;
+            return historyDate >= previous7DaysStart && historyDate <= previous7DaysEnd;
         }).length;
 
         let percentageChange = 0;
-        if (completedLastWeek > 0) {
-            percentageChange = Math.round(((completedThisWeek - completedLastWeek) / completedLastWeek) * 100);
-        } else if (completedThisWeek > 0) {
+        if (completedPrevious7Days > 0) {
+            percentageChange = Math.round(((completedLast7Days - completedPrevious7Days) / completedPrevious7Days) * 100);
+        } else if (completedLast7Days > 0) {
             percentageChange = 100; // From 0 to something is 100% growth for simplicity
         }
 
         let message;
         if (percentageChange > 0) {
-            message = <>Bu o'tgan haftadan <span className="text-green-500 font-bold">{percentageChange}%</span> ko'proq. Ajoyib natija!</>;
+            message = <>avvalgi 7 kundan <span className="text-green-500 font-bold">{percentageChange}%</span> ko'proq. Ajoyib natija!</>;
         } else if (percentageChange < 0) {
-            message = <>Bu o'tgan haftadan <span className="text-red-500 font-bold">{Math.abs(percentageChange)}%</span> kam. Keyingi hafta yanada harakat qilamiz!</>;
+            message = <>avvalgi 7 kundan <span className="text-red-500 font-bold">{Math.abs(percentageChange)}%</span> kam. Keyingi hafta yanada harakat qilamiz!</>;
         } else {
             message = "Natijangiz o'tgan haftadagi kabi. Barqarorlik - bu ham yutuq!";
         }
@@ -182,15 +182,15 @@ function WeeklyMotivation({ user, tasks }: { user: User, tasks: UserTask[] }) {
             message,
             percentageChange,
             Icon: percentageChange > 0 ? TrendingUp : (percentageChange < 0 ? TrendingDown : BarChartIcon),
-            periodTotal: completedThisWeek,
+            periodTotal: completedLast7Days,
         }
-    }, [user.taskHistory, tasks]);
+    }, [user.taskHistory]);
 
 
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Haftalik Faollik</CardTitle>
+              <CardTitle className="text-sm font-medium">Oxirgi 7 kunlik Faollik</CardTitle>
                <Icon className={cn("h-4 w-4", percentageChange > 0 ? "text-green-500" : percentageChange < 0 ? "text-red-500" : "text-muted-foreground")} />
             </CardHeader>
             <CardContent>

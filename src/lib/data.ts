@@ -19,10 +19,8 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
-import type { User, Group, Task, UserTask, WeeklyMeeting, UserTaskSchedule, ChatMessage, PersonalTask, TaskHistory } from './types';
-import { format, isSameDay, startOfDay, isPast, addDays } from 'date-fns';
-
-type DayOfWeek = 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
+import type { User, Group, Task, UserTask, WeeklyMeeting, UserTaskSchedule, ChatMessage, PersonalTask, TaskSchedule, DayOfWeek } from './types';
+import { format, isSameDay, startOfDay, isPast, addDays, isWithinInterval, parseISO } from 'date-fns';
 
 const PERSONAL_TASK_COINS = 1; // 1 Silver Coin
 
@@ -114,14 +112,15 @@ export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> 
     });
 
     groupTasks.forEach(task => {
-        const schedule = userSchedules.find(s => s.taskId === task.id);
-        if (schedule) {
-            allTasks.push({
+        const userScheduleForTask = userSchedules.find(s => s.taskId === task.id);
+        if (userScheduleForTask) {
+             allTasks.push({
                 ...task,
                 groupName: groupMap.get(task.groupId) || 'Unknown Group',
                 isCompleted: false, // will be checked on the client
                 taskType: 'group',
-                schedule: schedule.days,
+                // Use the user's specific schedule for this group task
+                schedule: userScheduleForTask.schedule,
                 history: user.taskHistory.filter(h => h.taskId === task.id),
                 createdAt: task.createdAt,
             });
@@ -289,7 +288,7 @@ export async function getUnreadMessageCount(groupId: string, lastRead: Timestamp
 
 // --- Write Functions ---
 
-export const createGroup = async (groupData: Omit<Group, 'id' | 'firebaseId' | 'members'>, adminId: string): Promise<string> => {
+export const createGroup = async (groupData: Omit<Group, 'id' | 'firebaseId' | 'members' | 'createdAt'>, adminId: string): Promise<string> => {
     const newGroupRef = doc(collection(db, 'groups'));
     
     const newGroup: Group = {
@@ -328,7 +327,7 @@ export const createPersonalTask = async (taskData: Omit<PersonalTask, 'id' | 'cr
     return { ...docSnap.data(), id: docRef.id } as PersonalTask;
 };
 
-export const updateTask = async (taskId: string, data: Partial<Pick<Task, 'title' | 'description' | 'coins' | 'time'>>): Promise<void> => {
+export const updateTask = async (taskId: string, data: Partial<Pick<Task, 'title' | 'description' | 'coins' | 'estimatedTime' | 'satisfactionRating'>>): Promise<void> => {
     const taskDocRef = doc(db, 'tasks', taskId);
     await updateDoc(taskDocRef, data);
 };
@@ -550,41 +549,52 @@ export const getNotificationsData = async (user: User): Promise<{
     const overdueTasks: UserTask[] = [];
 
     allScheduledTasks.forEach(task => {
-        const schedule = (task as any).schedule;
-        if (!schedule) return;
-
         // Check for overdue tasks
         for (let i = 1; i < 7; i++) { // Check last 6 days
             const pastDate = startOfDay(addDays(today, -i));
-            const pastDayOfWeek = format(pastDate, 'EEEE') as DayOfWeek;
-            const pastDateStr = format(pastDate, 'yyyy-MM-dd');
-            
-            const isScheduled = schedule.includes(pastDayOfWeek);
-            const isCompleted = user.taskHistory.some(h => h.taskId === task.id && h.date === pastDateStr);
-
-            if (isScheduled && !isCompleted) {
-                // To avoid duplicates, add only if not already in the list
-                if (!overdueTasks.some(ot => ot.id === task.id)) {
-                    overdueTasks.push(task);
-                }
+            if (isTaskScheduledForDate(task, pastDate)) {
+                 const isCompleted = user.taskHistory.some(h => h.taskId === task.id && h.date === format(pastDate, 'yyyy-MM-dd'));
+                 if (!isCompleted) {
+                     if (!overdueTasks.some(ot => ot.id === task.id)) {
+                        overdueTasks.push(task);
+                    }
+                 }
             }
         }
         
         // Check for today's tasks
-        const todayDayOfWeek = format(today, 'EEEE') as DayOfWeek;
-        const todayDateStr = format(today, 'yyyy-MM-dd');
-
-        const isScheduledForToday = schedule.includes(todayDayOfWeek);
-        const isCompletedToday = user.taskHistory.some(h => h.taskId === task.id && h.date === todayDateStr);
-
-        if (isScheduledForToday && !isCompletedToday) {
-            todayIncompletedTasks.push(task);
+        if (isTaskScheduledForDate(task, today)) {
+            const isCompletedToday = user.taskHistory.some(h => h.taskId === task.id && h.date === format(today, 'yyyy-MM-dd'));
+            if (!isCompletedToday) {
+                todayIncompletedTasks.push(task);
+            }
         }
     });
 
 
     return { todayTasks: todayIncompletedTasks, overdueTasks, todayMeetings };
 };
+
+function isTaskScheduledForDate(task: UserTask, date: Date): boolean {
+    const taskCreationDate = task.createdAt instanceof Timestamp ? startOfDay(task.createdAt.toDate()) : startOfDay(new Date());
+    if (date < taskCreationDate) return false;
+
+    const schedule = task.schedule;
+    switch(schedule.type) {
+        case 'one-time':
+            return schedule.date === format(date, 'yyyy-MM-dd');
+        case 'date-range':
+            if (schedule.startDate && schedule.endDate) {
+                return isWithinInterval(date, { start: parseISO(schedule.startDate), end: parseISO(schedule.endDate) });
+            }
+            return false;
+        case 'recurring':
+            const dayOfWeek = format(date, 'EEEE') as DayOfWeek;
+            return schedule.days?.includes(dayOfWeek) ?? false;
+        default:
+            return false;
+    }
+}
 
 
 export const updateUserLastRead = async (userId: string, groupId: string) => {

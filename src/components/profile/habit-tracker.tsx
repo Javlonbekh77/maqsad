@@ -2,8 +2,8 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import type { User, DayOfWeek, PersonalTask, Task, UserTask } from "@/lib/types";
-import { format, add, startOfWeek, isSameDay, isToday, startOfDay } from 'date-fns';
+import type { User, DayOfWeek, PersonalTask, Task, UserTask, TaskSchedule } from "@/lib/types";
+import { format, add, startOfWeek, isSameDay, isToday, startOfDay, isWithinInterval, parseISO } from 'date-fns';
 import { Check, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useEffect, useState, useCallback } from "react";
 import { getTasksForUserGroups, getPersonalTasksForUser } from "@/lib/data";
@@ -32,6 +32,32 @@ const toDate = (timestamp: Timestamp | Date): Date => {
     return timestamp.toDate();
 }
 
+
+function isTaskScheduledForDate(task: UserTask, date: Date): boolean {
+    const taskCreationDate = task.createdAt instanceof Timestamp ? startOfDay(task.createdAt.toDate()) : startOfDay(new Date());
+    if (date < taskCreationDate) return false;
+
+    const schedule = task.schedule;
+    if (!schedule) return false;
+
+    switch(schedule.type) {
+        case 'one-time':
+            return schedule.date === format(date, 'yyyy-MM-dd');
+        case 'date-range':
+            if (schedule.startDate && schedule.endDate) {
+                 const start = parseISO(schedule.startDate);
+                 const end = parseISO(schedule.endDate);
+                 return isWithinInterval(date, { start, end }) || isSameDay(date, start) || isSameDay(date, end);
+            }
+            return false;
+        case 'recurring':
+            const dayOfWeek = format(date, 'EEEE') as DayOfWeek;
+            return schedule.days?.includes(dayOfWeek) ?? false;
+        default:
+            return false;
+    }
+}
+
 export default function HabitTracker({ user }: HabitTrackerProps) {
   const [weekStartDate, setWeekStartDate] = useState(startOfWeek(new Date()));
   const [allTasks, setAllTasks] = useState<UserTask[]>([]);
@@ -51,17 +77,22 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
       
       const [groupTasks, personalTasks] = await Promise.all([groupTasksPromise, personalTasksPromise]);
       
-      const scheduledGroupTaskIds = new Set(userSchedules.map(s => s.taskId));
-      const scheduledGroupTasks = groupTasks.filter(t => scheduledGroupTaskIds.has(t.id));
+      
+      const allGroupTasks = groupTasks.map(t => ({...t, taskType: 'group'}) as UserTask)
+      const allPersonalTasks = personalTasks.map(t => ({...t, taskType: 'personal'}) as UserTask)
 
-      const combinedTasks: UserTask[] = [
-          ...scheduledGroupTasks.map(t => ({...t, taskType: 'group'}) as UserTask),
-          ...personalTasks.map(t => ({...t, taskType: 'personal'}) as UserTask)
-      ];
+      const combinedTasks: UserTask[] = [...allGroupTasks, ...allPersonalTasks];
 
-      setAllTasks(combinedTasks);
+      setAllTasks(combinedTasks.map(task => {
+          if (task.taskType === 'group') {
+              const userSchedule = user.taskSchedules?.find(s => s.taskId === task.id);
+              return { ...task, schedule: userSchedule ? userSchedule.schedule : task.schedule };
+          }
+          return task;
+      }));
+
       setLoading(false);
-  }, [user.groups, userSchedules, user.id]);
+  }, [user.groups, user.taskSchedules, user.id]);
 
   useEffect(() => {
     fetchUserTasks();
@@ -76,11 +107,12 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
   };
   
   const tasksToDisplay = useMemo(() => {
+    // Only show tasks that have some schedule within the user's context
     return allTasks.filter(task => {
-        if ('groupId' in task) { // It's a group Task
+        if (task.taskType === 'group') {
             return userSchedules.some(s => s.taskId === task.id);
         }
-        return true; // It's a PersonalTask, always show
+        return true; // Personal tasks are always relevant
     });
   }, [allTasks, userSchedules]);
 
@@ -126,14 +158,6 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
               </TableHeader>
               <TableBody>
                  {tasksToDisplay.map(task => {
-                    let scheduleDays: DayOfWeek[] = [];
-                    if (task.taskType === 'group') { // Group Task
-                        const schedule = userSchedules.find(s => s.taskId === task.id);
-                        scheduleDays = schedule?.days || [];
-                    } else { // Personal Task
-                        scheduleDays = (task as PersonalTask).schedule;
-                    }
-
                     const taskCreationDate = startOfDay(toDate(task.createdAt as Timestamp));
 
                     return (
@@ -149,31 +173,24 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
                             </TableCell>
                             {dates.map(date => {
                                 const currentDate = startOfDay(date);
-                                // Don't show anything for dates before the task was created
                                 if (currentDate < taskCreationDate) {
-                                    return <TableCell key={date.toISOString()} className="text-center">
-                                        <span className="text-muted-foreground text-lg">-</span>
-                                    </TableCell>;
+                                    return <TableCell key={date.toISOString()} className="text-center p-2"></TableCell>;
                                 }
 
-                                const dayOfWeek = format(date, 'EEEE') as DayOfWeek;
-                                const isTaskScheduledForThisDay = scheduleDays.includes(dayOfWeek);
-
-                                if (!isTaskScheduledForThisDay) {
-                                return (
-                                    <TableCell key={date.toISOString()} className="text-center bg-muted/30">
-                                      <span className="text-muted-foreground text-lg">-</span>
-                                    </TableCell>
-                                );
+                                const isScheduled = isTaskScheduledForDate(task, currentDate);
+                                if (!isScheduled) {
+                                  return <TableCell key={date.toISOString()} className="text-center p-2 bg-muted/30">
+                                     <span className="text-muted-foreground text-lg">-</span>
+                                  </TableCell>
                                 }
 
                                 const completed = user.taskHistory.some(historyItem => 
                                 historyItem.taskId === task.id && isSameDay(new Date(historyItem.date), date)
                                 );
                                 return (
-                                <TableCell key={date.toISOString()} className="text-center">
+                                <TableCell key={date.toISOString()} className="text-center p-2">
                                     {completed ? (
-                                    <Check className="h-5 w-5 text-green-500 mx-auto" />
+                                      <Check className="h-5 w-5 text-green-500 mx-auto" />
                                     ) : (
                                      currentDate < startOfDay(new Date()) ? <X className="h-5 w-5 text-red-500 mx-auto" /> : null
                                     )}

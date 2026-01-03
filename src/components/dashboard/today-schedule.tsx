@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import type { UserTask } from '@/lib/types';
+import type { UserTask, DayOfWeek } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Check, Coins, Clock, ChevronLeft, ChevronRight, Flame } from 'lucide-react';
@@ -10,7 +10,7 @@ import { useTranslations } from 'next-intl';
 import { completeUserTask } from '@/lib/data';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
-import { addDays, format, isToday, isYesterday, isTomorrow, startOfDay } from 'date-fns';
+import { addDays, format, isToday, isYesterday, isTomorrow, startOfDay, isWithinInterval, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Timestamp } from 'firebase/firestore';
 
@@ -25,6 +25,31 @@ const toDate = (timestamp: Timestamp | Date): Date => {
         return timestamp;
     }
     return timestamp.toDate();
+}
+
+function isTaskScheduledForDate(task: UserTask, date: Date): boolean {
+    const taskCreationDate = task.createdAt instanceof Timestamp ? startOfDay(task.createdAt.toDate()) : startOfDay(new Date());
+    if (date < taskCreationDate) return false;
+
+    const schedule = task.schedule;
+    if (!schedule) return false;
+
+    switch(schedule.type) {
+        case 'one-time':
+            return schedule.date === format(date, 'yyyy-MM-dd');
+        case 'date-range':
+            if (schedule.startDate && schedule.endDate) {
+                 const start = parseISO(schedule.startDate);
+                 const end = parseISO(schedule.endDate);
+                 return isWithinInterval(date, { start, end }) || isSameDay(date, start) || isSameDay(date, end);
+            }
+            return false;
+        case 'recurring':
+            const dayOfWeek = format(date, 'EEEE') as DayOfWeek;
+            return schedule.days?.includes(dayOfWeek) ?? false;
+        default:
+            return false;
+    }
 }
 
 
@@ -52,21 +77,8 @@ export default function TodaySchedule({ tasks, userId, onTaskCompletion }: Today
 
   const { activeTasks, completedTasks } = useMemo(() => {
     const displayDateStr = format(displayDate, 'yyyy-MM-dd');
-    const dayOfWeek = format(displayDate, 'EEEE') as 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
 
-    const tasksForDay = tasks.filter(task => {
-        const schedule = 'groupId' in task 
-            ? task.schedule // This will be pre-filtered now
-            : (task as any).schedule;
-        
-        // Task must exist on this day to be considered
-        const taskCreationDate = toDate(task.createdAt as Timestamp);
-        if (displayDate < startOfDay(taskCreationDate)) {
-            return false;
-        }
-            
-        return schedule.includes(dayOfWeek);
-    });
+    const tasksForDay = tasks.filter(task => isTaskScheduledForDate(task, displayDate));
 
     const active = tasksForDay.filter(t => {
       const history = (t as any).history || [];

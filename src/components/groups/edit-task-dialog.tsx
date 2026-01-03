@@ -21,12 +21,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { updateTask } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import type { Task } from '@/lib/types';
+import { Slider } from '../ui/slider';
+
 
 const taskSchema = z.object({
   title: z.string().min(3, { message: "Title must be at least 3 characters." }),
   description: z.string().min(10, { message: "Description must be at least 10 characters." }),
   coins: z.coerce.number().min(1, { message: "Coins must be at least 1." }),
-  time: z.string().optional(),
+  estimatedTime: z.string().optional(),
+  satisfactionRating: z.number().min(1).max(10),
 });
 
 interface EditTaskDialogProps {
@@ -46,7 +49,8 @@ export default function EditTaskDialog({ isOpen, onClose, task, onTaskUpdated }:
       title: task.title,
       description: task.description,
       coins: task.coins,
-      time: task.time || "",
+      estimatedTime: task.estimatedTime || "",
+      satisfactionRating: task.satisfactionRating || 5,
     },
   });
 
@@ -56,7 +60,8 @@ export default function EditTaskDialog({ isOpen, onClose, task, onTaskUpdated }:
         title: task.title,
         description: task.description,
         coins: task.coins,
-        time: task.time || "",
+        estimatedTime: task.estimatedTime || "",
+        satisfactionRating: task.satisfactionRating || 5,
       });
     }
   }, [task, form]);
@@ -133,18 +138,37 @@ export default function EditTaskDialog({ isOpen, onClose, task, onTaskUpdated }:
               />
                <FormField
                 control={form.control}
-                name="time"
+                name="estimatedTime"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className='flex items-center gap-1'><Clock className="h-4 w-4" /> Time (Optional)</FormLabel>
+                    <FormLabel className='flex items-center gap-1'><Clock className="h-4 w-4" /> Taxminiy vaqt (ixtiyoriy)</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., 9:00 AM" {...field} />
+                      <Input placeholder="masalan, 30 daqiqa" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
+             <FormField
+                control={form.control}
+                name="satisfactionRating"
+                render={({ field: { onChange, value } }) => (
+                  <FormItem>
+                    <FormLabel>Qoniqish Reytingi: {value}</FormLabel>
+                     <FormControl>
+                        <Slider
+                            defaultValue={[value]}
+                            onValueChange={(values) => onChange(values[0])}
+                            max={10}
+                            min={1}
+                            step={1}
+                        />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             <DialogFooter>
                 <DialogClose asChild>
                     <Button variant="outline" type="button">Cancel</Button>
