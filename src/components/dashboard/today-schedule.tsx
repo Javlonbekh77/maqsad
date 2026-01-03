@@ -67,7 +67,7 @@ export default function TodaySchedule({ tasks, userId, onTaskCompletion }: Today
                         }
                     </TableCell>
                     <TableCell className="text-right">
-                         <div className={`flex items-center justify-end gap-1 font-semibold ${task.taskType === 'group' ? 'text-amber-500' : 'text-blue-500'}`}>
+                         <div className={`flex items-center justify-end gap-1 font-semibold ${task.taskType === 'group' ? 'text-amber-500' : 'text-slate-500'}`}>
                             {task.taskType === 'group' ? <Coins className="w-4 h-4" /> : <Flame className="w-4 h-4" />}
                             <span>{task.coins}</span>
                         </div>

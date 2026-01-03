@@ -43,10 +43,10 @@ export default function TaskCompletionDialog({ task, onConfirm, onCancel }: Task
             <p className="text-sm text-muted-foreground">
                 {t('integrityDescription')}
             </p>
-            <div className={`flex items-center justify-end gap-2 text-lg font-bold pt-2 ${isPersonal ? 'text-blue-500' : 'text-amber-500'}`}>
+            <div className={`flex items-center justify-end gap-2 text-lg font-bold pt-2 ${isPersonal ? 'text-slate-500' : 'text-amber-500'}`}>
                 {t('earn')}
                 {isPersonal ? <Flame className="h-5 w-5"/> : <Coins className="h-5 w-5"/>}
-                <span>{t('coins', { count: task.coins })}</span>
+                <span>{isPersonal ? `1 Kumush Tanga` : t('coins', { count: task.coins })}</span>
             </div>
         </div>
         <AlertDialogFooter>

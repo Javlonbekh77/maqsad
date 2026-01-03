@@ -6,6 +6,7 @@ import {
   Users,
   Trophy,
   UserCircle,
+  PlusSquare,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/context/auth-context';
@@ -18,27 +19,28 @@ export default function MobileBottomNav() {
   const navItems = [
     { href: '/dashboard', labelKey: 'dashboard', icon: LayoutDashboard },
     { href: '/groups', labelKey: 'groups', icon: Users },
+    { href: '/create-task', labelKey: "Qo'shish", icon: PlusSquare },
     { href: '/leaderboard', labelKey: 'leaderboard', icon: Trophy },
     { href: `/profile/${user?.id}`, labelKey: 'profile', icon: UserCircle },
   ];
 
   return (
     <div className="sm:hidden fixed bottom-0 left-0 z-50 w-full h-16 bg-background border-t">
-      <div className="grid h-full max-w-lg grid-cols-4 mx-auto font-medium">
+      <div className="grid h-full max-w-lg grid-cols-5 mx-auto font-medium">
         {navItems.map((item) => (
            // Don't render profile link if user is not loaded
           (item.labelKey === 'profile' && !user) ? null :
           <Link
             key={item.href}
             href={item.href}
-            className={`inline-flex flex-col items-center justify-center px-5 group ${
-              pathname.startsWith(item.href)
+            className={`inline-flex flex-col items-center justify-center px-2 group ${
+              pathname.startsWith(item.href) && item.href !== '/create-task'
                 ? 'text-primary'
                 : 'text-muted-foreground hover:bg-muted/50'
-            }`}
+            } ${pathname === item.href && item.href === '/create-task' ? 'text-primary' : ''}`}
           >
             <item.icon className="w-5 h-5 mb-1" />
-            <span className="text-xs">{t(item.labelKey)}</span>
+            <span className="text-xs">{item.labelKey.includes('.') ? t(item.labelKey as any) : item.labelKey}</span>
           </Link>
         ))}
       </div>

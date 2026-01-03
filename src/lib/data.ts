@@ -24,7 +24,7 @@ import { format, isSameDay, startOfDay, isPast } from 'date-fns';
 
 type DayOfWeek = 'Sunday' | 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday';
 
-const PERSONAL_TASK_COINS = 10;
+const PERSONAL_TASK_COINS = 1; // 1 Silver Coin
 
 // --- Read Functions ---
 
@@ -39,8 +39,8 @@ export const getUser = async (userId: string): Promise<User | null> => {
     const groups = Array.isArray(userData.groups) ? userData.groups : [];
     const taskSchedules = Array.isArray(userData.taskSchedules) ? userData.taskSchedules : [];
     const coins = typeof userData.coins === 'number' ? userData.coins : 0;
-    const habitCoins = typeof userData.habitCoins === 'number' ? userData.habitCoins : 0;
-    return { ...userData, id: userSnap.id, firebaseId: userSnap.id, taskHistory, groups, taskSchedules, coins, habitCoins } as User;
+    const silverCoins = typeof userData.silverCoins === 'number' ? userData.silverCoins : 0;
+    return { ...userData, id: userSnap.id, firebaseId: userSnap.id, taskHistory, groups, taskSchedules, coins, silverCoins } as User;
   }
   return null;
 }
@@ -186,22 +186,22 @@ export const getGroupAndDetails = async (groupId: string): Promise<{ group: Grou
 };
 
 
-export const getLeaderboardData = async (): Promise<{ topUsers: User[], topGroups: (Group & { coins: number })[], topHabitUsers: User[] }> => {
+export const getLeaderboardData = async (): Promise<{ topUsers: User[], topGroups: (Group & { coins: number })[], topSilverCoinUsers: User[] }> => {
     const usersQuery = query(collection(db, 'users'), orderBy('coins', 'desc'), limit(10));
-    const habitUsersQuery = query(collection(db, 'users'), orderBy('habitCoins', 'desc'), limit(10));
+    const silverUsersQuery = query(collection(db, 'users'), orderBy('silverCoins', 'desc'), limit(10));
     
     const groupsPromise = getDocs(collection(db, 'groups'));
     const allUsersPromise = getDocs(collection(db, 'users'));
 
-    const [usersSnapshot, habitUsersSnapshot, groupsSnapshot, allUsersSnapshot] = await Promise.all([
+    const [usersSnapshot, silverUsersSnapshot, groupsSnapshot, allUsersSnapshot] = await Promise.all([
         getDocs(usersQuery),
-        getDocs(habitUsersQuery),
+        getDocs(silverUsersQuery),
         groupsPromise, 
         allUsersPromise
     ]);
     
     const topUsers = usersSnapshot.docs.map(d => ({ ...d.data() as User, id: d.id, firebaseId: d.id }));
-    const topHabitUsers = habitUsersSnapshot.docs.map(d => ({ ...d.data() as User, id: d.id, firebaseId: d.id }));
+    const topSilverCoinUsers = silverUsersSnapshot.docs.map(d => ({ ...d.data() as User, id: d.id, firebaseId: d.id }));
 
     const groups = groupsSnapshot.docs.map(d => ({ ...d.data() as Group, id: d.id, firebaseId: d.id }));
     const allUsers = allUsersSnapshot.docs.map(d => ({ ...d.data() as User, id: d.id, firebaseId: d.id }));
@@ -215,7 +215,7 @@ export const getLeaderboardData = async (): Promise<{ topUsers: User[], topGroup
       return { ...group, coins: groupCoins };
     }).sort((a, b) => b.coins - a.coins).slice(0, 10);
     
-    return { topUsers, topGroups: calculatedTopGroups, topHabitUsers };
+    return { topUsers, topGroups: calculatedTopGroups, topSilverCoinUsers };
 };
 
 
@@ -387,7 +387,7 @@ export const completeUserTask = async (userId: string, task: UserTask): Promise<
     const updateData: { [key: string]: any } = {};
     
     if (task.taskType === 'personal') {
-        updateData.habitCoins = (user.habitCoins || 0) + PERSONAL_TASK_COINS;
+        updateData.silverCoins = (user.silverCoins || 0) + PERSONAL_TASK_COINS;
     } else {
         updateData.coins = (user.coins || 0) + task.coins;
     }

@@ -45,8 +45,8 @@ export type User = {
   fullName: string; // Combined for easier display
   email: string;
   avatarUrl: string;
-  coins: number; // For group tasks
-  habitCoins: number; // For personal tasks
+  coins: number; // For group tasks, Gold Coins
+  silverCoins: number; // For personal tasks, Silver Coins
   goals: string;
   habits: string;
   groups: string[]; // array of group IDs
@@ -88,7 +88,7 @@ export type UserTask = (Task | PersonalTask) & {
   groupName?: string; // Optional because personal tasks don't have a group
   isCompleted: boolean;
   taskType: 'group' | 'personal';
-  coins: number; // This will be static for personal, dynamic for group
+  coins: number; // This will be gold for group, silver for personal
 };
 
 

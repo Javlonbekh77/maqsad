@@ -44,70 +44,28 @@ const LoadingSkeleton = () => (
 interface LeaderboardTabsProps {
   topUsers: User[];
   topGroups: (Group & { coins: number })[];
-  topHabitUsers: User[];
+  topSilverCoinUsers: User[];
   isLoading: boolean;
 }
 
-export default function LeaderboardTabs({ topUsers, topGroups, topHabitUsers, isLoading }: LeaderboardTabsProps) {
+export default function LeaderboardTabs({ topUsers, topGroups, topSilverCoinUsers, isLoading }: LeaderboardTabsProps) {
   const t = useTranslations('leaderboard');
 
   return (
     <Tabs defaultValue="users">
       <TabsList className="grid w-full grid-cols-3 md:w-[480px]">
         <TabsTrigger value="users">
-          <Trophy className="mr-2 h-4 w-4" /> {t('topUsers')}
+          <Trophy className="mr-2 h-4 w-4" /> Oltin Tangalar
         </TabsTrigger>
         <TabsTrigger value="habits">
-          <Flame className="mr-2 h-4 w-4" /> Odatlar Peshqadamlari
+          <Flame className="mr-2 h-4 w-4" /> Kumush Tangalar
         </TabsTrigger>
         <TabsTrigger value="groups">
           <Crown className="mr-2 h-4 w-4" /> {t('topGroups')}
         </TabsTrigger>
       </TabsList>
-      <TabsContent value="users">
-        <Card>
-            {isLoading ? <CardContent className="p-6"><LoadingSkeleton /></CardContent> : (
-                <CardContent className="p-0">
-                    <Table>
-                    <TableHeader>
-                        <TableRow>
-                        <TableHead className="w-16 text-center">{t('rank')}</TableHead>
-                        <TableHead>{t('user')}</TableHead>
-                        <TableHead className="text-right">{t('coins')}</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {topUsers.map((user, index) => (
-                        <TableRow key={user.id}>
-                            <TableCell className="text-center">
-                            <div className="flex justify-center">
-                                <RankIcon rank={index + 1} />
-                            </div>
-                            </TableCell>
-                            <TableCell>
-                            <Link href={{pathname: '/profile/[id]', params: {id: user.id}}} className="flex items-center gap-3 hover:underline">
-                                <Avatar>
-                                <AvatarImage src={user.avatarUrl} alt={user.fullName} />
-                                <AvatarFallback>{user.firstName.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <span className="font-medium">{user.fullName}</span>
-                            </Link>
-                            </TableCell>
-                            <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1 font-semibold text-amber-500">
-                                <Coins className="w-4 h-4" />
-                                <span>{user.coins || 0}</span>
-                            </div>
-                            </TableCell>
-                        </TableRow>
-                        ))}
-                    </TableBody>
-                    </Table>
-                </CardContent>
-            )}
-        </Card>
-      </TabsContent>
-        <TabsContent value="habits">
+      <div className="overflow-x-auto">
+        <TabsContent value="users">
             <Card>
                 {isLoading ? <CardContent className="p-6"><LoadingSkeleton /></CardContent> : (
                     <CardContent className="p-0">
@@ -116,11 +74,11 @@ export default function LeaderboardTabs({ topUsers, topGroups, topHabitUsers, is
                             <TableRow>
                             <TableHead className="w-16 text-center">{t('rank')}</TableHead>
                             <TableHead>{t('user')}</TableHead>
-                            <TableHead className="text-right">Odat Ballari</TableHead>
+                            <TableHead className="text-right">Oltin</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {topHabitUsers.map((user, index) => (
+                            {topUsers.map((user, index) => (
                             <TableRow key={user.id}>
                                 <TableCell className="text-center">
                                 <div className="flex justify-center">
@@ -137,9 +95,9 @@ export default function LeaderboardTabs({ topUsers, topGroups, topHabitUsers, is
                                 </Link>
                                 </TableCell>
                                 <TableCell className="text-right">
-                                <div className="flex items-center justify-end gap-1 font-semibold text-blue-500">
-                                    <Flame className="w-4 h-4" />
-                                    <span>{user.habitCoins || 0}</span>
+                                <div className="flex items-center justify-end gap-1 font-semibold text-amber-500">
+                                    <Coins className="w-4 h-4" />
+                                    <span>{user.coins || 0}</span>
                                 </div>
                                 </TableCell>
                             </TableRow>
@@ -150,48 +108,92 @@ export default function LeaderboardTabs({ topUsers, topGroups, topHabitUsers, is
                 )}
             </Card>
         </TabsContent>
-      <TabsContent value="groups">
-        <Card>
-          {isLoading ? <CardContent className="p-6"><LoadingSkeleton /></CardContent> : (
-              <CardContent className="p-0">
-                <Table>
-                <TableHeader>
-                    <TableRow>
-                    <TableHead className="w-16 text-center">{t('rank')}</TableHead>
-                    <TableHead>{t('group')}</TableHead>
-                    <TableHead className="text-right">{t('totalCoins')}</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {topGroups.map((group, index) => (
-                    <TableRow key={group.id}>
-                        <TableCell className="text-center">
-                        <div className="flex justify-center">
-                            <RankIcon rank={index + 1} />
-                        </div>
-                        </TableCell>
-                        <TableCell>
-                        <Link href={{pathname: '/groups/[id]', params: {id: group.id}}} className="flex items-center gap-3 hover:underline">
-                            <div className="w-10 h-10 rounded-md overflow-hidden relative">
-                                <Image src={group.imageUrl} alt={group.name} fill className='object-cover' />
+            <TabsContent value="habits">
+                <Card>
+                    {isLoading ? <CardContent className="p-6"><LoadingSkeleton /></CardContent> : (
+                        <CardContent className="p-0">
+                            <Table>
+                            <TableHeader>
+                                <TableRow>
+                                <TableHead className="w-16 text-center">{t('rank')}</TableHead>
+                                <TableHead>{t('user')}</TableHead>
+                                <TableHead className="text-right">Kumush</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {topSilverCoinUsers.map((user, index) => (
+                                <TableRow key={user.id}>
+                                    <TableCell className="text-center">
+                                    <div className="flex justify-center">
+                                        <RankIcon rank={index + 1} />
+                                    </div>
+                                    </TableCell>
+                                    <TableCell>
+                                    <Link href={{pathname: '/profile/[id]', params: {id: user.id}}} className="flex items-center gap-3 hover:underline">
+                                        <Avatar>
+                                        <AvatarImage src={user.avatarUrl} alt={user.fullName} />
+                                        <AvatarFallback>{user.firstName.charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                        <span className="font-medium">{user.fullName}</span>
+                                    </Link>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                    <div className="flex items-center justify-end gap-1 font-semibold text-slate-500">
+                                        <Flame className="w-4 h-4" />
+                                        <span>{user.silverCoins || 0}</span>
+                                    </div>
+                                    </TableCell>
+                                </TableRow>
+                                ))}
+                            </TableBody>
+                            </Table>
+                        </CardContent>
+                    )}
+                </Card>
+            </TabsContent>
+        <TabsContent value="groups">
+            <Card>
+            {isLoading ? <CardContent className="p-6"><LoadingSkeleton /></CardContent> : (
+                <CardContent className="p-0">
+                    <Table>
+                    <TableHeader>
+                        <TableRow>
+                        <TableHead className="w-16 text-center">{t('rank')}</TableHead>
+                        <TableHead>{t('group')}</TableHead>
+                        <TableHead className="text-right">{t('totalCoins')}</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {topGroups.map((group, index) => (
+                        <TableRow key={group.id}>
+                            <TableCell className="text-center">
+                            <div className="flex justify-center">
+                                <RankIcon rank={index + 1} />
                             </div>
-                            <span className="font-medium">{group.name}</span>
-                        </Link>
-                        </TableCell>
-                        <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1 font-semibold text-amber-500">
-                            <Coins className="w-4 h-4" />
-                            <span>{group.coins}</span>
-                        </div>
-                        </TableCell>
-                    </TableRow>
-                    ))}
-                </TableBody>
-                </Table>
-              </CardContent>
-             )}
-        </Card>
-      </TabsContent>
+                            </TableCell>
+                            <TableCell>
+                            <Link href={{pathname: '/groups/[id]', params: {id: group.id}}} className="flex items-center gap-3 hover:underline">
+                                <div className="w-10 h-10 rounded-md overflow-hidden relative">
+                                    <Image src={group.imageUrl} alt={group.name} fill className='object-cover' />
+                                </div>
+                                <span className="font-medium">{group.name}</span>
+                            </Link>
+                            </TableCell>
+                            <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1 font-semibold text-amber-500">
+                                <Coins className="w-4 h-4" />
+                                <span>{group.coins}</span>
+                            </div>
+                            </TableCell>
+                        </TableRow>
+                        ))}
+                    </TableBody>
+                    </Table>
+                </CardContent>
+                )}
+            </Card>
+        </TabsContent>
+      </div>
     </Tabs>
   );
 }

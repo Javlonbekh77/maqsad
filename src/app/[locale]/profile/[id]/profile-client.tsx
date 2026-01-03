@@ -140,12 +140,12 @@ export default function ProfileClient() {
                         <div className="flex items-center gap-2">
                             <Coins className="h-6 w-6 text-amber-500" />
                             <span className="text-2xl font-semibold">{user.coins || 0}</span>
-                            <span className="text-muted-foreground text-sm">guruh ballari</span>
+                            <span className="text-muted-foreground text-sm">oltin</span>
                         </div>
                          <div className="flex items-center gap-2">
-                            <Flame className="h-6 w-6 text-blue-500" />
-                            <span className="text-2xl font-semibold">{user.habitCoins || 0}</span>
-                             <span className="text-muted-foreground text-sm">odat ballari</span>
+                            <Flame className="h-6 w-6 text-slate-500" />
+                            <span className="text-2xl font-semibold">{user.silverCoins || 0}</span>
+                             <span className="text-muted-foreground text-sm">kumush</span>
                         </div>
                     </div>
                 </div>

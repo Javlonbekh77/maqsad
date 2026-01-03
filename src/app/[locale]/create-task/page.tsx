@@ -104,7 +104,7 @@ export default function CreatePersonalTaskPage() {
         <CardHeader>
           <CardTitle>Yangi Shaxsiy Vazifa Yaratish</CardTitle>
           <CardDescription>
-            Bu vazifa faqat siz uchun. O'z odatlaringiz va maqsadlaringizni kuzatib boring. Har bir bajarilgan vazifa uchun 10 odat bali (Habit Coins) olasiz.
+            Bu vazifa faqat siz uchun. O'z odatlaringiz va maqsadlaringizni kuzatib boring. Har bir bajarilgan vazifa uchun 1 Kumush Tanga olasiz.
           </CardDescription>
         </CardHeader>
         <CardContent>
