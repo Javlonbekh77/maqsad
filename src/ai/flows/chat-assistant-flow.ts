@@ -1,4 +1,3 @@
-
 'use server';
 
 import { ai } from '@/ai/genkit';
@@ -41,7 +40,7 @@ const chatAssistantFlow = ai.defineFlow(
         system: systemPrompt,
         messages: [
           ...(input.history || []),
-          { role: 'user', content: [{ text: input.message }] },
+          { role: 'user', parts: [{ text: input.message }] },
         ],
       },
       output: {
