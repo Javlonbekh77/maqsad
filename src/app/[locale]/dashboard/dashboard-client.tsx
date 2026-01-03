@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { getUser, getScheduledTasksForUser } from '@/lib/data';
 import DashboardStats from '@/components/dashboard/dashboard-stats';
 import QuickAccess from '@/components/dashboard/quick-access';
+import HabitTracker from '@/components/profile/habit-tracker';
 
 export default function DashboardClient() {
   const t = useTranslations('dashboard');
@@ -24,49 +25,48 @@ export default function DashboardClient() {
   const fetchDashboardData = useCallback(async (userToFetch: User) => {
     setLoadingTasks(true);
     try {
-      const [fetchedUser, userTasks] = await Promise.all([
-        getUser(userToFetch.id),
-        getScheduledTasksForUser(userToFetch)
-      ]);
+      // First, get a fresh user object to ensure all data is up-to-date
+      const fetchedUser = await getUser(userToFetch.id);
+      if (!fetchedUser) {
+        throw new Error("Could not fetch user profile.");
+      }
+      const userTasks = await getScheduledTasksForUser(fetchedUser);
+
       setUser(fetchedUser);
       setTasks(userTasks);
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
+      // In case of error, set a non-loading state to avoid infinite spinners
+      setUser(userToFetch); // Fallback to the context user
+      setTasks([]);
     } finally {
       setLoadingTasks(false);
     }
   }, []);
 
   useEffect(() => {
-    if (!authLoading && !authUser) {
-      router.push('/login');
-      return;
-    }
-
-    if (authUser) {
+    if (!authLoading) {
+      if (!authUser) {
+        router.push('/login');
+        return;
+      }
+      // Initial data fetch or fetch on user change
       fetchDashboardData(authUser);
     }
   }, [authUser, authLoading, router, fetchDashboardData]);
 
-  const handleTaskCompletion = async () => {
-    // Refresh all auth context data, which will trigger a re-render and re-fetch of tasks.
+  const handleTaskCompletion = useCallback(async () => {
+    // A task was completed, we need to re-fetch all data.
     if (authUser) {
-      await refreshAuth();
-      // After auth is refreshed, authUser in context is updated.
-      // We need to wait for the next render cycle for the updated authUser to be passed down.
-      // The useEffect listening to `authUser` will then re-trigger the data fetch.
-    }
-  };
-
-  useEffect(() => {
-    if(authUser) {
-      fetchDashboardData(authUser);
+      // No need to call refreshAuth, just re-fetch the data for the dashboard
+      await fetchDashboardData(authUser);
     }
   }, [authUser, fetchDashboardData]);
 
+
   const isLoading = authLoading || loadingTasks || !user;
 
-  if (isLoading || !user) {
+  if (isLoading) {
     return (
       <AppLayout>
         <div className="grid gap-8">
@@ -80,7 +80,10 @@ export default function DashboardClient() {
               <Skeleton className="h-28 w-full" />
             </div>
           <div className="grid lg:grid-cols-3 gap-8 items-start">
-            <Skeleton className="h-96 w-full lg:col-span-2" />
+            <div className="lg:col-span-2 space-y-8">
+              <Skeleton className="h-96 w-full" />
+              <Skeleton className="h-96 w-full" />
+            </div>
             <div className="space-y-8">
                 <Skeleton className="h-48 w-full" />
                 <Skeleton className="h-48 w-full" />
@@ -89,6 +92,11 @@ export default function DashboardClient() {
         </div>
       </AppLayout>
     );
+  }
+  
+  if (!user) {
+    // This case should ideally be handled by the redirect in useEffect
+    return <AppLayout><p>Foydalanuvchi topilmadi. Tizimga qaytadan kiring.</p></AppLayout>;
   }
 
   return (
@@ -102,12 +110,13 @@ export default function DashboardClient() {
         <DashboardStats user={user} tasks={tasks} />
 
         <div className="grid lg:grid-cols-3 gap-8 items-start">
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 space-y-8">
                  <TodaySchedule
                     tasks={tasks}
                     userId={user.id}
                     onTaskCompletion={handleTaskCompletion}
                 />
+                 <HabitTracker user={user} />
             </div>
             <div className="space-y-8">
                 <QuickAccess />
