@@ -40,17 +40,7 @@ export default function DashboardStats({ user, tasks }: DashboardStatsProps) {
     }, [user.taskHistory]);
 
     return (
-       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Jami Tangalar</CardTitle>
-              <Coins className="h-4 w-4 text-muted-foreground text-amber-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{user.coins}</div>
-              <p className="text-xs text-muted-foreground">Umumiy ishlab topilgan tangalar</p>
-            </CardContent>
-          </Card>
+       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Bugun Bajarilgan Vazifalar</CardTitle>
@@ -61,7 +51,7 @@ export default function DashboardStats({ user, tasks }: DashboardStatsProps) {
               <p className="text-xs text-muted-foreground">Bugungi rejadagi vazifalardan</p>
             </CardContent>
           </Card>
-           <Card className="md:col-span-2 lg:col-span-1">
+           <Card>
              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Haftalik Yutuqlar</CardTitle>
                 <BarChartIcon className="h-4 w-4 text-muted-foreground" />
