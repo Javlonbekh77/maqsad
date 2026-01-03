@@ -65,18 +65,17 @@ const chatAssistantFlow = ai.defineFlow(
         name: 'chatAssistantFlow',
         inputSchema: ChatAssistantInputSchema,
         outputSchema: ChatAssistantOutputSchema,
-        tools: [getAvailableTasks],
     },
     async (input) => {
         const llmResponse = await ai.generate({
             model: 'googleai/gemini-2.5-flash-preview',
             prompt: `You are a helpful and friendly productivity assistant for the 'MaqsadM' app.
             Your goal is to help the user decide what to do.
-            - If the user asks for task suggestions, use the getAvailableTasks tool to see what they have scheduled.
-            - When making suggestions, consider the estimated time and satisfaction rating if the user provides that context.
+            - If the user asks for task suggestions, you MUST use the getAvailableTasks tool to see what they have scheduled for today.
+            - When making suggestions, consider the estimated time and satisfaction rating if the user provides that context (e.g., "I have 30 minutes", "I want to do something fun").
             - If there are no tasks, encourage them to create a new one.
-            - Keep your responses concise and motivational.
-            - All responses must be in Uzbek.
+            - Keep your responses concise, friendly, and motivational.
+            - All responses MUST be in Uzbek.
             
             Current user ID: ${input.userId}
             `,
