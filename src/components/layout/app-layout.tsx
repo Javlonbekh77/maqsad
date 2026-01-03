@@ -1,4 +1,4 @@
-import AnimatedBackground from "./animated-background";
+
 import AppHeader from "./app-header";
 import AppSidebar from "./app-sidebar";
 import MobileBottomNav from "./mobile-bottom-nav";
@@ -6,7 +6,6 @@ import MobileBottomNav from "./mobile-bottom-nav";
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
-      <AnimatedBackground />
       <AppSidebar />
       <div className="flex flex-col sm:gap-4 sm:pl-64">
         <AppHeader />

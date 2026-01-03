@@ -85,175 +85,63 @@
   body {
     @apply bg-background text-foreground;
   }
+}
 
-  /* Animated Background Styles */
-  @keyframes move-clouds {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
-  }
 
-  .cloud-animation {
-    animation: move-clouds 120s linear infinite;
+/* Snow Animation */
+@keyframes fall {
+  0% {
+    transform: translateY(-100%);
   }
-  .animation-delay-5s {
-    animation-delay: -50s;
+  100% {
+    transform: translateY(100vh);
   }
+}
 
-  .cloud {
-    position: absolute;
-    background: white;
-    border-radius: 50%;
-    opacity: 0.8;
-    filter: blur(2px);
-  }
+.snowflake {
+  position: absolute;
+  top: -10px;
+  background-color: white;
+  border-radius: 50%;
+  opacity: 0.7;
+  animation-name: fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
 
-  .cloud-1 {
-    width: 200px;
-    height: 60px;
-    top: 20%;
-    left: 15%;
-  }
-  .cloud-1::before, .cloud-1::after {
-    content: '';
-    position: absolute;
-    background: white;
-    border-radius: 50%;
-    width: 100px;
-    height: 80px;
-    top: -30px;
-    left: 40px;
-  }
-  .cloud-1::after {
-    width: 120px;
-    height: 60px;
-    top: -10px;
-    left: 80px;
-  }
-  
-  .cloud-2 {
-    width: 300px;
-    height: 80px;
-    top: 40%;
-    left: 70%;
-  }
-   .cloud-2::before, .cloud-2::after {
-    content: '';
-    position: absolute;
-    background: white;
-    border-radius: 50%;
-    width: 150px;
-    height: 100px;
-    top: -40px;
-    left: 50px;
-  }
-  .cloud-2::after {
-    width: 180px;
-    height: 80px;
-    top: -20px;
-    left: 120px;
-  }
-
-   .cloud-3 {
-    width: 250px;
-    height: 70px;
-    top: 60%;
-    left: -10%;
-  }
-   .cloud-3::before, .cloud-3::after {
-    content: '';
-    position: absolute;
-    background: white;
-    border-radius: 50%;
-    width: 130px;
-    height: 90px;
-    top: -35px;
-    left: 45px;
-  }
-  .cloud-3::after {
-    width: 150px;
-    height: 70px;
-    top: -15px;
-    left: 100px;
-  }
-
-  .cloud-4 {
-    width: 150px;
-    height: 50px;
-    top: 10%;
-    left: 90%;
-  }
-  .cloud-4::before {
-    content: '';
-    position: absolute;
-    background: white;
-    border-radius: 50%;
-    width: 80px;
-    height: 60px;
-    top: -25px;
-    left: 30px;
-  }
-
-  /* Starfield animation */
-  @keyframes move-twink-back {
-    from { background-position: 0 0; }
-    to { background-position: -10000px 5000px; }
-  }
-
-  @function random_range($min, $max) {
-    $rand: random();
-    $random_range: $min + floor($rand * (($max - $min) + 1));
-    @return $random_range;
-  }
-
-  #stars, #stars2, #stars3 {
-    position: absolute;
+#snow-container {
+    position: fixed;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
     width: 100%;
     height: 100%;
-    display: block;
-    background: transparent;
-  }
-
-  #stars {
-    background-image: 
-      radial-gradient(1px 1px at 20px 30px, #eee, rgba(0,0,0,0)),
-      radial-gradient(1px 1px at 40px 70px, #fff, rgba(0,0,0,0)),
-      radial-gradient(1px 1px at 50px 160px, #ddd, rgba(0,0,0,0)),
-      radial-gradient(1px 1px at 90px 40px, #fff, rgba(0,0,0,0)),
-      radial-gradient(2px 2px at 130px 80px, #fff, rgba(0,0,0,0)),
-      radial-gradient(1px 1px at 160px 120px, #ddd, rgba(0,0,0,0));
-    background-repeat: repeat;
-    background-size: 200px 200px;
-    animation: move-twink-back 200s linear infinite;
-  }
-  
-  #stars2 {
-    background-image:
-      radial-gradient(1px 1px at 10px 90px, #eee, rgba(0,0,0,0)),
-      radial-gradient(2px 2px at 30px 50px, #fff, rgba(0,0,0,0)),
-      radial-gradient(2px 2px at 80px 140px, #ddd, rgba(0,0,0,0)),
-      radial-gradient(1px 1px at 120px 10px, #fff, rgba(0,0,0,0)),
-      radial-gradient(1px 1px at 150px 60px, #fff, rgba(0,0,0,0)),
-      radial-gradient(2px 2px at 180px 180px, #ddd, rgba(0,0,0,0));
-    background-repeat: repeat;
-    background-size: 250px 250px;
-    animation: move-twink-back 150s linear infinite;
-  }
-
-  #stars3 {
-    background-image:
-      radial-gradient(2px 2px at 5px 150px, #eee, rgba(0,0,0,0)),
-      radial-gradient(1px 1px at 25px 20px, #fff, rgba(0,0,0,0)),
-      radial-gradient(1px 1px at 70px 100px, #ddd, rgba(0,0,0,0)),
-      radial-gradient(2px 2px at 110px 30px, #fff, rgba(0,0,0,0)),
-      radial-gradient(1px 1px at 140px 90px, #fff, rgba(0,0,0,0)),
-      radial-gradient(1px 1px at 170px 160px, #ddd, rgba(0,0,0,0));
-    background-repeat: repeat;
-    background-size: 300px 300px;
-    animation: move-twink-back 100s linear infinite;
-  }
-
+    pointer-events: none;
+    z-index: 100;
 }
+
+#snow-container .snowflake:nth-child(5n) { width: 5px; height: 5px; animation-duration: 10s; animation-delay: 0s; }
+#snow-container .snowflake:nth-child(5n + 1) { width: 2px; height: 2px; animation-duration: 12s; animation-delay: -3s; }
+#snow-container .snowflake:nth-child(5n + 2) { width: 3px; height: 3px; animation-duration: 8s; animation-delay: -5s; }
+#snow-container .snowflake:nth-child(5n + 3) { width: 4px; height: 4px; animation-duration: 9s; animation-delay: -2s; }
+#snow-container .snowflake:nth-child(5n + 4) { width: 2.5px; height: 2.5px; animation-duration: 15s; animation-delay: -4s; }
+
+#snow-container .snowflake:nth-child(1) { left: 10%; }
+#snow-container .snowflake:nth-child(2) { left: 25%; }
+#snow-container .snowflake:nth-child(3) { left: 40%; }
+#snow-container .snowflake:nth-child(4) { left: 55%; }
+#snow-container .snowflake:nth-child(5) { left: 70%; }
+#snow-container .snowflake:nth-child(6) { left: 85%; }
+#snow-container .snowflake:nth-child(7) { left: 5%; animation-delay: -1s; }
+#snow-container .snowflake:nth-child(8) { left: 20%; animation-delay: -2.5s; }
+#snow-container .snowflake:nth-child(9) { left: 35%; animation-delay: -4s; }
+#snow-container .snowflake:nth-child(10) { left: 50%; animation-delay: -1.5s; }
+#snow-container .snowflake:nth-child(11) { left: 65%; animation-delay: -3.5s; }
+#snow-container .snowflake:nth-child(12) { left: 80%; animation-delay: -0.5s; }
+#snow-container .snowflake:nth-child(13) { left: 95%; animation-delay: -2s; }
+#snow-container .snowflake:nth-child(14) { left: 15%; animation-delay: -5s; }
+#snow-container .snowflake:nth-child(15) { left: 30%; animation-delay: -3s; }
+#snow-container .snowflake:nth-child(16) { left: 45%; animation-delay: -4.5s; }
+#snow-container .snowflake:nth-child(17) { left: 60%; animation-delay: -1s; }
+#snow-container .snowflake:nth-child(18) { left: 75%; animation-delay: -2.2s; }
+#snow-container .snowflake:nth-child(19) { left: 90%; animation-delay: -3.8s; }
+#snow-container .snowflake:nth-child(20) { left: 2%; animation-delay: -4.8s; }
