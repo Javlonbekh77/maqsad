@@ -85,7 +85,7 @@ export default function AiChatAssistant() {
   return (
     <>
       <Button
-        className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-lg z-50"
+        className="fixed bottom-20 sm:bottom-6 right-6 h-16 w-16 rounded-full shadow-lg z-50"
         onClick={() => setIsOpen(true)}
       >
         <Bot className="h-8 w-8" />

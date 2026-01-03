@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -192,7 +193,7 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
                                     {completed ? (
                                       <Check className="h-5 w-5 text-green-500 mx-auto" />
                                     ) : (
-                                     currentDate < startOfDay(new Date()) ? <X className="h-5 w-5 text-red-500 mx-auto" /> : null
+                                     currentDate < startOfDay(new Date()) ? <X className="h-5 w-5 text-red-500 mx-auto" /> : <div className="h-5 w-5 mx-auto" />
                                     )}
                                 </TableCell>
                                 );
