@@ -11,6 +11,7 @@ import { getLeaderboardData } from '@/lib/data';
 import useSWR from 'swr';
 import { Skeleton } from '../ui/skeleton';
 import { Link } from '@/navigation';
+import { Button } from '../ui/button';
 
 interface DashboardStatsProps {
     user: User;
