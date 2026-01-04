@@ -8,8 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Coins, Crown, UserPlus, Settings, MessageSquare, Edit } from 'lucide-react';
-import CreateTaskDialog from '@/components/groups/create-task-dialog';
+import { Coins, Crown, UserPlus, Settings, MessageSquare, Edit, PlusCircle } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -30,7 +29,6 @@ import { useAuth } from '@/context/auth-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import GroupSettingsDialog from '@/components/groups/group-settings-dialog';
 import GroupChat from '@/components/groups/group-chat';
-import EditTaskDialog from '@/components/groups/edit-task-dialog';
 import TaskDetailDialog from '@/components/tasks/task-detail-dialog';
 
 
@@ -51,7 +49,6 @@ export default function GroupDetailClient() {
   const [meetings, setMeetings] = useState<WeeklyMeeting[]>([]);
   const [isJoinDialogOpen, setJoinDialogOpen] = useState(false);
   const [isSettingsOpen, setSettingsOpen] = useState(false);
-  const [isEditingTask, setIsEditingTask] = useState<Task | null>(null);
   const [viewingTask, setViewingTask] = useState<UserTask | null>(null);
   const [loadingData, setLoadingData] = useState(true);
 
@@ -206,7 +203,14 @@ export default function GroupDetailClient() {
                   <CardTitle>{t('tasksTitle')}</CardTitle>
                   <CardDescription>{t('tasksDescription')}</CardDescription>
                 </div>
-                {isAdmin && <CreateTaskDialog groupId={group.id} onTaskCreated={() => fetchGroupData(group.id)} />}
+                {isAdmin && (
+                  <Button asChild>
+                    <Link href={`/groups/${group.id}/add-task`}>
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Vazifa Qo'shish
+                    </Link>
+                  </Button>
+                )}
               </CardHeader>
               <CardContent>
                  {tasks.length > 0 ? (
@@ -238,8 +242,10 @@ export default function GroupDetailClient() {
                             </TableCell>
                              {isAdmin && (
                               <TableCell className="text-right">
-                                <Button variant="ghost" size="icon" onClick={() => setIsEditingTask(task)}>
-                                  <Edit className="h-4 w-4" />
+                                <Button variant="ghost" size="icon" asChild>
+                                  <Link href={`/groups/${group.id}/edit-task/${task.id}`}>
+                                    <Edit className="h-4 w-4" />
+                                  </Link>
                                 </Button>
                               </TableCell>
                             )}
@@ -323,17 +329,6 @@ export default function GroupDetailClient() {
             onClose={() => setSettingsOpen(false)}
             group={group}
             onGroupUpdated={() => fetchGroupData(group.id)}
-        />
-      )}
-      {isAdmin && isEditingTask && (
-        <EditTaskDialog
-            isOpen={!!isEditingTask}
-            onClose={() => setIsEditingTask(null)}
-            task={isEditingTask}
-            onTaskUpdated={() => {
-                fetchGroupData(group.id);
-                setIsEditingTask(null);
-            }}
         />
       )}
       {viewingTask && (

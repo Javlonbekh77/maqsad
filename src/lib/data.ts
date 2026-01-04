@@ -28,6 +28,27 @@ const PERSONAL_TASK_COINS = 1; // 1 Silver Coin
 
 // --- Read Functions ---
 
+export const getTask = async (taskId: string): Promise<Task | null> => {
+  if (!taskId) return null;
+  const taskDocRef = doc(db, 'tasks', taskId);
+  const taskSnap = await getDoc(taskDocRef);
+  if (taskSnap.exists()) {
+    return { ...taskSnap.data(), id: taskSnap.id } as Task;
+  }
+  return null;
+};
+
+export const getPersonalTask = async (taskId: string): Promise<PersonalTask | null> => {
+    if (!taskId) return null;
+    const taskDocRef = doc(db, 'personal_tasks', taskId);
+    const taskSnap = await getDoc(taskDocRef);
+    if (taskSnap.exists()) {
+        return { ...taskSnap.data(), id: taskSnap.id } as PersonalTask;
+    }
+    return null;
+}
+
+
 export const getUser = async (userId: string): Promise<User | null> => {
   if (!userId) return null;
   const userDocRef = doc(db, 'users', userId);
@@ -383,9 +404,7 @@ export const updateTask = async (taskId: string, data: Partial<Task>): Promise<v
     await updateDoc(taskDocRef, data);
 };
 
-type PersonalTaskUpdatePayload = Partial<Pick<PersonalTask, 'title' | 'description' | 'estimatedTime' | 'satisfactionRating' | 'visibility' | 'schedule'>>;
-
-export const updatePersonalTask = async (taskId: string, data: PersonalTaskUpdatePayload): Promise<void> => {
+export const updatePersonalTask = async (taskId: string, data: Partial<PersonalTask>): Promise<void> => {
     const taskDocRef = doc(db, 'personal_tasks', taskId);
     await updateDoc(taskDocRef, data);
 };

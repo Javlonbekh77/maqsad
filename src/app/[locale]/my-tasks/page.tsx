@@ -1,16 +1,15 @@
 'use client';
 import AppLayout from '@/components/layout/app-layout';
 import { useAuth } from '@/context/auth-context';
-import { useRouter } from '@/navigation';
+import { useRouter, Link } from '@/navigation';
 import { useEffect, useState, useCallback, useTransition } from 'react';
 import type { PersonalTask, UserTask } from '@/lib/types';
 import { getPersonalTasksForUser, deletePersonalTask } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Edit, Trash2, PlusCircle, Calendar, Users, Eye, EyeOff } from 'lucide-react';
+import { Edit, Trash2, PlusCircle, Eye, EyeOff } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { format } from 'date-fns';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,8 +22,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
-import EditPersonalTaskDialog from './edit-personal-task-dialog';
-import CreatePersonalTaskDialog from './create-personal-task-dialog';
 import TaskDetailDialog from '@/components/tasks/task-detail-dialog';
 
 
@@ -57,8 +54,6 @@ export default function MyTasksPage() {
     const [tasks, setTasks] = useState<PersonalTask[]>([]);
     const [loadingTasks, setLoadingTasks] = useState(true);
     const [isPending, startTransition] = useTransition();
-    const [editingTask, setEditingTask] = useState<PersonalTask | null>(null);
-    const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
     const [viewingTask, setViewingTask] = useState<UserTask | null>(null);
 
     const fetchTasks = useCallback(async (userId: string) => {
@@ -103,15 +98,6 @@ export default function MyTasksPage() {
         });
     };
     
-    const handleTaskCreated = (newTask: PersonalTask) => {
-        setTasks(prevTasks => [newTask, ...prevTasks].sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis()));
-    };
-
-    const handleTaskUpdated = (updatedTask: PersonalTask) => {
-        setTasks(prevTasks => prevTasks.map(task => task.id === updatedTask.id ? updatedTask : task));
-        setEditingTask(null);
-    }
-    
     const handleViewTask = (task: PersonalTask) => {
         setViewingTask({
             ...task,
@@ -135,9 +121,11 @@ export default function MyTasksPage() {
                            Shaxsiy vazifalaringizni boshqaring, tahrirlang yoki o'chiring.
                         </p>
                     </div>
-                     <Button onClick={() => setCreateDialogOpen(true)}>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Yangi Vazifa Yaratish
+                     <Button asChild>
+                        <Link href="/my-tasks/add">
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Yangi Vazifa Yaratish
+                        </Link>
                     </Button>
                 </div>
 
@@ -179,8 +167,10 @@ export default function MyTasksPage() {
                                                     )}
                                                 </TableCell>
                                                 <TableCell className="text-right">
-                                                     <Button variant="ghost" size="icon" onClick={() => setEditingTask(task)}>
-                                                        <Edit className="h-4 w-4" />
+                                                     <Button variant="ghost" size="icon" asChild>
+                                                        <Link href={`/my-tasks/edit/${task.id}`}>
+                                                            <Edit className="h-4 w-4" />
+                                                        </Link>
                                                     </Button>
                                                     <AlertDialog>
                                                         <AlertDialogTrigger asChild>
@@ -221,19 +211,6 @@ export default function MyTasksPage() {
                     </CardContent>
                 </Card>
             </div>
-             {editingTask && (
-                <EditPersonalTaskDialog
-                    isOpen={!!editingTask}
-                    onClose={() => setEditingTask(null)}
-                    task={editingTask}
-                    onTaskUpdated={handleTaskUpdated}
-                />
-            )}
-            <CreatePersonalTaskDialog
-                isOpen={isCreateDialogOpen}
-                onClose={() => setCreateDialogOpen(false)}
-                onTaskCreated={handleTaskCreated}
-            />
              {viewingTask && (
                 <TaskDetailDialog 
                     task={viewingTask}
