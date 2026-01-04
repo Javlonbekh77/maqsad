@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "../ui/skeleton";
 import { Badge } from "../ui/badge";
 import { Timestamp } from "firebase/firestore";
+import TaskDetailDialog from "../tasks/task-detail-dialog";
 
 interface HabitTrackerProps {
   user: User;
@@ -63,6 +64,7 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
   const [weekStartDate, setWeekStartDate] = useState(startOfWeek(new Date()));
   const [allTasks, setAllTasks] = useState<UserTask[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewingTask, setViewingTask] = useState<UserTask | null>(null);
   
   const dates = useMemo(() => getWeekDates(weekStartDate), [weekStartDate]);
   const userSchedules = useMemo(() => user.taskSchedules || [], [user.taskSchedules]);
@@ -118,6 +120,7 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
   }, [allTasks, userSchedules]);
 
   return (
+    <>
     <Card>
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -163,7 +166,10 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
 
                     return (
                         <TableRow key={task.id}>
-                            <TableCell className="font-medium">
+                            <TableCell 
+                                className="font-medium cursor-pointer hover:underline"
+                                onClick={() => setViewingTask(task)}
+                            >
                                 <div className="flex flex-col">
                                     <span>{task.title}</span>
                                     {task.taskType === 'group' ? 
@@ -213,5 +219,13 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
         )}
       </CardContent>
     </Card>
+    {viewingTask && (
+        <TaskDetailDialog
+            task={viewingTask}
+            isOpen={!!viewingTask}
+            onClose={() => setViewingTask(null)}
+        />
+    )}
+    </>
   );
 }

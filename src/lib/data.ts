@@ -1,4 +1,5 @@
 
+
 import { db, storage } from './firebase';
 import {
   collection,
@@ -377,7 +378,7 @@ export const createPersonalTask = async (taskData: Omit<PersonalTask, 'id' | 'cr
     return { ...docSnap.data(), id: docRef.id } as PersonalTask;
 };
 
-export const updateTask = async (taskId: string, data: Partial<Pick<Task, 'title' | 'description' | 'coins' | 'estimatedTime' | 'satisfactionRating'>>): Promise<void> => {
+export const updateTask = async (taskId: string, data: Partial<Task>): Promise<void> => {
     const taskDocRef = doc(db, 'tasks', taskId);
     await updateDoc(taskDocRef, data);
 };
@@ -516,14 +517,8 @@ export const performSearch = async (searchTerm: string): Promise<{ users: User[]
     }
     const term = searchTerm.toLowerCase();
 
-    // This is not efficient for large datasets, but fine for a demo.
-    // A real-world app would use a dedicated search service like Algolia or Elasticsearch.
-    
-    const usersQuery = getAllUsers();
-    const groupsQuery = getAllGroups();
-
-    const [allUsers, allGroups] = await Promise.all([usersQuery, groupsQuery]);
-
+    const allUsers = await getAllUsers();
+    const allGroups = await getAllGroups();
 
     const filteredUsers = allUsers.filter(u => 
         u.fullName.toLowerCase().includes(term) || 
