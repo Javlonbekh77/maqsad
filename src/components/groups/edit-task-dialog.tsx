@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Coins, Clock, CalendarIcon } from 'lucide-react';
-import { useTransition, useEffect } from 'react';
+import { useTransition, useEffect, useRef } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -68,6 +68,8 @@ const daysOfWeek: DayOfWeek[] = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Th
 export default function EditTaskDialog({ isOpen, onClose, task, onTaskUpdated }: EditTaskDialogProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+  const dialogContentRef = useRef<HTMLDivElement>(null);
+
 
   const form = useForm<z.infer<typeof taskSchema>>({
     resolver: zodResolver(taskSchema),
@@ -119,15 +121,15 @@ export default function EditTaskDialog({ isOpen, onClose, task, onTaskUpdated }:
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-2xl" ref={dialogContentRef}>
         <DialogHeader>
           <DialogTitle>Edit Task</DialogTitle>
           <DialogDescription>Update the details for this task.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <ScrollArea className="max-h-[60vh] pr-4">
-              <div className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <ScrollArea className="max-h-[70vh] p-1">
+              <div className="space-y-6 px-4">
                 <FormField
                   control={form.control}
                   name="title"
@@ -216,7 +218,7 @@ export default function EditTaskDialog({ isOpen, onClose, task, onTaskUpdated }:
                                           <SelectValue placeholder="Jadval turini tanlang" />
                                       </SelectTrigger>
                                   </FormControl>
-                                  <SelectContent>
+                                  <SelectContent container={dialogContentRef.current}>
                                       <SelectItem value="recurring">Haftalik Takrorlanuvchi</SelectItem>
                                       <SelectItem value="one-time">Bir Martalik</SelectItem>
                                       <SelectItem value="date-range">Sana Oralig'i</SelectItem>
@@ -268,7 +270,7 @@ export default function EditTaskDialog({ isOpen, onClose, task, onTaskUpdated }:
                                           </Button>
                                           </FormControl>
                                       </PopoverTrigger>
-                                      <PopoverContent className="w-auto p-0" align="start">
+                                      <PopoverContent className="w-auto p-0" align="start" container={dialogContentRef.current}>
                                           <Calendar
                                               mode="single"
                                               selected={field.value ? new Date(field.value) : undefined}
@@ -310,7 +312,7 @@ export default function EditTaskDialog({ isOpen, onClose, task, onTaskUpdated }:
                                           )}
                                           </Button>
                                       </PopoverTrigger>
-                                      <PopoverContent className="w-auto p-0" align="start">
+                                      <PopoverContent className="w-auto p-0" align="start" container={dialogContentRef.current}>
                                           <Calendar
                                           initialFocus
                                           mode="range"

@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { PlusCircle, Coins, Clock, CalendarIcon } from 'lucide-react';
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -71,6 +71,8 @@ export default function CreateTaskDialog({ groupId, onTaskCreated }: CreateTaskD
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+  const dialogContentRef = useRef<HTMLDivElement>(null);
+
 
   const form = useForm<z.infer<typeof taskSchema>>({
     resolver: zodResolver(taskSchema),
@@ -119,15 +121,15 @@ export default function CreateTaskDialog({ groupId, onTaskCreated }: CreateTaskD
           {t('addTaskButton')}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-2xl" ref={dialogContentRef}>
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
           <DialogDescription>{t('description')}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <ScrollArea className="max-h-[60vh] pr-4">
-               <div className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <ScrollArea className="max-h-[70vh] p-1">
+               <div className="space-y-6 px-4">
                 <FormField
                   control={form.control}
                   name="title"
@@ -213,7 +215,7 @@ export default function CreateTaskDialog({ groupId, onTaskCreated }: CreateTaskD
                                     <SelectValue placeholder="Jadval turini tanlang" />
                                 </SelectTrigger>
                             </FormControl>
-                            <SelectContent>
+                            <SelectContent container={dialogContentRef.current}>
                                 <SelectItem value="recurring">Haftalik Takrorlanuvchi</SelectItem>
                                 <SelectItem value="one-time">Bir Martalik</SelectItem>
                                 <SelectItem value="date-range">Sana Oralig'i</SelectItem>
@@ -272,7 +274,7 @@ export default function CreateTaskDialog({ groupId, onTaskCreated }: CreateTaskD
                                     </Button>
                                     </FormControl>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
+                                <PopoverContent className="w-auto p-0" align="start" container={dialogContentRef.current}>
                                     <Calendar
                                     mode="single"
                                     selected={field.value ? new Date(field.value) : undefined}
@@ -314,7 +316,7 @@ export default function CreateTaskDialog({ groupId, onTaskCreated }: CreateTaskD
                                         )}
                                         </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
+                                    <PopoverContent className="w-auto p-0" align="start" container={dialogContentRef.current}>
                                         <Calendar
                                         initialFocus
                                         mode="range"
@@ -341,7 +343,7 @@ export default function CreateTaskDialog({ groupId, onTaskCreated }: CreateTaskD
             </ScrollArea>
             <DialogFooter className="pt-4">
                 <DialogClose asChild>
-                    <Button variant="outline">{tActions('cancel')}</Button>
+                    <Button variant="outline" type="button">{tActions('cancel')}</Button>
                 </DialogClose>
                 <Button type="submit" disabled={isPending}>
                     {isPending ? "Creating..." : t('createTaskButton')}

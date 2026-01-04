@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, Users, Shield, User } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { Input } from '../ui/input';
 import { performSearch } from '@/lib/data';
 import type { User as UserType, Group } from '@/lib/types';
@@ -9,10 +9,8 @@ import {
   Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator,
 } from "@/components/ui/command"
 import { useDebounce } from '@/hooks/use-debounce';
 import { Link } from '@/navigation';
