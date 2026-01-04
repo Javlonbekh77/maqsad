@@ -138,9 +138,9 @@ export default function EditPersonalTaskDialog({ isOpen, onClose, task, onTaskUp
           <DialogDescription>Ushbu vazifa tafsilotlarini va jadvalini o'zgartiring.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-             <ScrollArea className="max-h-[60vh] pr-4">
-                <div className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-0">
+             <ScrollArea className="max-h-[60vh] p-1">
+                <div className="space-y-6 px-4">
                     <FormField
                     control={form.control}
                     name="title"
@@ -350,7 +350,7 @@ export default function EditPersonalTaskDialog({ isOpen, onClose, task, onTaskUp
                     />
                 </div>
             </ScrollArea>
-            <DialogFooter className='pt-4'>
+            <DialogFooter className='pt-6'>
                 <DialogClose asChild>
                     <Button variant="outline" type="button">Bekor qilish</Button>
                 </DialogClose>
