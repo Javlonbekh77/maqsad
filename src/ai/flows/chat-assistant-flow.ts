@@ -1,70 +1,75 @@
 'use server';
+
 /**
- * @fileOverview A helpful and friendly productivity assistant for the 'MaqsadM' app.
- *
- * - chatAssistant - The primary function to interact with the chat assistant.
- * - ChatInput - The input type for the chatAssistant function.
- * - ChatOutput - The return type for the chatAssistant function.
- * - ChatMessage - A type representing a single message in the chat history.
+ * @fileOverview AI productivity assistant for MaqsadM
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { ChatInputSchema, ChatOutputSchema } from '../schemas';
 
-export type ChatHistory = z.infer<typeof ChatInputSchema>['history'];
-
-export interface ChatMessage {
-  role: 'user' | 'model';
-  content: string;
-}
-
 export type ChatInput = z.infer<typeof ChatInputSchema>;
 export type ChatOutput = z.infer<typeof ChatOutputSchema>;
 
-export async function chatAssistant(input: ChatInput): Promise<ChatOutput> {
-  return chatAssistantFlow(input);
-}
+const systemPrompt = `
+You are a helpful and friendly productivity assistant for the "MaqsadM" app.
 
-const systemPrompt = `You are a helpful and friendly productivity assistant for the 'MaqsadM' app.
-Your goal is to help the user decide what to do.
-You can suggest tasks, ask clarifying questions about their goals, and help them break down larger goals into smaller, manageable tasks.
-Keep your responses concise, actionable, and encouraging.
-The current date is ${new Date().toLocaleDateString()}.
-If the user's message is not in English, please respond in the language of the user's message.
-Always format your response using Markdown.
+Your responsibilities:
+- Help users clarify their goals
+- Suggest actionable tasks
+- Break big goals into smaller steps
+- Ask short clarifying questions when needed
+- Be motivating and practical
+
+Rules:
+- Keep responses concise and actionable
+- Always respond in the user's language
+- Always use Markdown formatting
+- Do NOT include unnecessary explanations
+
+Today's date: ${new Date().toLocaleDateString()}
 `;
 
-const chatAssistantFlow = ai.defineFlow(
-  {
-    name: 'chatAssistantFlow',
-    inputSchema: ChatInputSchema,
-    outputSchema: ChatOutputSchema,
-  },
-  async (input) => {
-    const llmResponse = await ai.generate({
-      model: 'googleai/gemini-1.5-flash-latest',
-      messages: [
-        { role: 'system', content: [{ text: systemPrompt }] },
-        ...(input.history || []).map(msg => ({
-          role: msg.role,
-          content: msg.parts,
-        })),
-        { role: 'user', content: [{ text: input.message }] },
-      ],
-      output: {
-        schema: ChatOutputSchema,
-      },
-      config: {
-        temperature: 0.7,
-      },
-    });
+// Define a type for the messages array that matches Gemini's expectations
+type GeminiMessage = {
+  role: 'user' | 'model';
+  content: { text: string }[];
+};
 
-    const output = llmResponse.output;
-    if (!output) {
-      throw new Error('Failed to get a response from the AI model.');
+export async function chatAssistant(input: ChatInput): Promise<ChatOutput> {
+  const messages: GeminiMessage[] = [];
+
+  // Safely add chat history
+  if (input.history?.length) {
+    for (const msg of input.history) {
+      messages.push({
+        role: msg.role,
+        content: msg.parts.map(p => ({ text: p.text })),
+      });
     }
-
-    return output;
   }
-);
+
+  // Add current user message
+  messages.push({
+    role: 'user',
+    content: [{ text: input.message }],
+  });
+
+  const response = await ai.generate({
+    model: 'googleai/gemini-1.5-flash-latest',
+    system: systemPrompt, // Use the dedicated 'system' field for the system prompt
+    messages: messages,  // Pass the user/model message history
+    output: {
+      schema: ChatOutputSchema,
+    },
+    config: {
+      temperature: 0.7,
+    },
+  });
+
+  if (!response.output) {
+    throw new Error('AI did not return a valid response');
+  }
+
+  return response.output;
+}
