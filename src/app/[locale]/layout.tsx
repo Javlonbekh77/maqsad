@@ -30,18 +30,10 @@ export default async function RootLayout({
   params: {locale}
 }: Readonly<RootLayoutProps>) {
   const messages = await getMessages();
-  
-  // Create an array for the snowflakes
-  const snowflakes = Array.from({ length: 20 });
 
   return (
     <html lang={locale} suppressHydrationWarning>
        <body className={cn('min-h-screen bg-background font-sans antialiased', fontSans.variable)}>
-        <div id="snow-container">
-            {snowflakes.map((_, i) => (
-              <div key={i} className="snowflake"></div>
-            ))}
-        </div>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <AuthProvider>
