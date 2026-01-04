@@ -1,15 +1,21 @@
 
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Bot, User, CornerDownLeft, Loader2, ArrowUp } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { type ChatMessage, chatAssistant, type ChatHistory } from '@/ai/flows/chat-assistant-flow';
+import { chatAssistant } from '@/ai/flows/chat-assistant-flow';
+import type { ChatInput, ChatOutput } from '@/ai/flows/chat-assistant-flow';
 import { useAuth } from '@/context/auth-context';
 import { marked } from 'marked';
+
+type ChatMessage = {
+  role: 'user' | 'model';
+  content: string;
+};
 
 export default function AiChatAssistant() {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,10 +31,10 @@ export default function AiChatAssistant() {
   };
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && messages.length === 0) {
       setMessages([initialMessage]);
     }
-  }, [isOpen]);
+  }, [isOpen, messages.length]);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -41,18 +47,19 @@ export default function AiChatAssistant() {
 
     const userMessage: ChatMessage = { role: 'user', content: input };
     setMessages(prev => [...prev, userMessage]);
+    const currentInput = input;
     setInput('');
     setIsLoading(true);
 
     try {
-      const chatHistory: ChatHistory = messages.map(msg => ({
+      const chatHistory = messages.map(msg => ({
         role: msg.role,
         parts: [{ text: msg.content }],
       }));
 
       const response = await chatAssistant({
         history: chatHistory,
-        message: input,
+        message: currentInput,
       });
 
       const modelMessage: ChatMessage = { role: 'model', content: response.reply };
