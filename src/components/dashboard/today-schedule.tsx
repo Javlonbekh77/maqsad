@@ -7,10 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Check, Coins, Clock, ChevronLeft, ChevronRight, Flame } from 'lucide-react';
 import TaskCompletionDialog from './task-completion-dialog';
 import { useTranslations } from 'next-intl';
-import { completeUserTask } from '@/lib/data';
+import { completeUserTask, isTaskScheduledForDate } from '@/lib/data';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
-import { addDays, format, isToday, isYesterday, isTomorrow, startOfDay, isWithinInterval, parseISO, isSameDay } from 'date-fns';
+import { addDays, format, isToday, isYesterday, isTomorrow, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Timestamp } from 'firebase/firestore';
 
@@ -26,32 +26,6 @@ const toDate = (timestamp: Timestamp | Date): Date => {
     }
     return timestamp.toDate();
 }
-
-function isTaskScheduledForDate(task: UserTask, date: Date): boolean {
-    const taskCreationDate = task.createdAt instanceof Timestamp ? startOfDay(task.createdAt.toDate()) : startOfDay(new Date());
-    if (date < taskCreationDate) return false;
-
-    const schedule = task.schedule;
-    if (!schedule) return false;
-
-    switch(schedule.type) {
-        case 'one-time':
-            return schedule.date === format(date, 'yyyy-MM-dd');
-        case 'date-range':
-            if (schedule.startDate && schedule.endDate) {
-                 const start = parseISO(schedule.startDate);
-                 const end = parseISO(schedule.endDate);
-                 return isWithinInterval(date, { start, end }) || isSameDay(date, start) || isSameDay(date, end);
-            }
-            return false;
-        case 'recurring':
-            const dayOfWeek = format(date, 'EEEE') as DayOfWeek;
-            return schedule.days?.includes(dayOfWeek) ?? false;
-        default:
-            return false;
-    }
-}
-
 
 export default function TodaySchedule({ tasks, userId, onTaskCompletion }: TodayScheduleProps) {
   const t = useTranslations('todoList');
@@ -121,7 +95,7 @@ export default function TodaySchedule({ tasks, userId, onTaskCompletion }: Today
           </div>
         </CardHeader>
         <CardContent>
-          {activeTasks.length > 0 ? (
+          {activeTasks.length > 0 && (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -157,7 +131,9 @@ export default function TodaySchedule({ tasks, userId, onTaskCompletion }: Today
                 ))}
               </TableBody>
             </Table>
-          ) : (
+          )}
+
+          {activeTasks.length === 0 && completedTasks.length === 0 && (
             <div className="text-center py-8">
               <Check className="mx-auto h-12 w-12 text-green-500" />
               <h3 className="mt-2 text-lg font-medium">Ushbu kunga vazifalar yo'q</h3>
