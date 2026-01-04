@@ -33,41 +33,47 @@ const fetcher = ([, user]: [string, User | null]) => {
 
 function showBrowserNotification(title: string, options: NotificationOptions) {
   if ('Notification' in window && Notification.permission === 'granted') {
-    new Notification(title, options);
+    // A tag is used to prevent the same notification from appearing multiple times.
+    new Notification(title, { ...options, tag: options.tag || 'maqsadm-notification' });
   }
 }
 
 export default function NotificationsDropdown() {
   const { user } = useAuth();
-  const [hasShownOverdue, setHasShownOverdue] = useState(false);
   const { mutate } = useSWRConfig()
+  
+  // Use SWR to fetch data and manage state
   const { data, isLoading } = useSWR(
     user ? ['notifications', user] : null, 
     fetcher,
     {
       refreshInterval: 60000, // Check every minute
       dedupingInterval: 60000,
-      onSuccess: (data) => {
-        if (data && data.overdueTasks.length > 0 && !hasShownOverdue) {
-          showBrowserNotification("Vaqti o'tgan vazifalar mavjud!", {
-            body: `${data.overdueTasks.length} ta vazifangizning vaqti o'tib ketgan.`,
-            icon: '/logo.svg',
-            tag: 'overdue-tasks' // Use a tag to prevent multiple notifications
-          });
-          setHasShownOverdue(true); 
-        } else if (data && data.overdueTasks.length === 0) {
-           setHasShownOverdue(false); // Reset when there are no overdue tasks
+      onSuccess: (data, key, config) => {
+        // Only show notifications if there is new data compared to the previous state.
+        const previousData = config.cache.get(key)?.data as NotificationData | undefined;
+        
+        if (data && data.overdueTasks.length > 0) {
+            const newOverdueTasks = data.overdueTasks.filter(
+                t => !previousData?.overdueTasks.some(pt => pt.id === t.id)
+            );
+            if(newOverdueTasks.length > 0) {
+                 showBrowserNotification("Vaqti o'tgan vazifalar mavjud!", {
+                    body: `${data.overdueTasks.length} ta vazifangizning vaqti o'tib ketgan.`,
+                    icon: '/logo.svg',
+                    tag: 'overdue-tasks' 
+                });
+            }
         }
       }
     }
   );
   
-  
   const handleMarkAllRead = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     // In a real app, you'd call a function here to mark all as read on the backend.
-    // For now, we'll just clear them on the client side for an immediate visual effect.
+    // For now, we'll just clear them on the client side for an immediate visual effect by revalidating with empty data.
     if (user) {
         mutate(['notifications', user], { todayTasks: [], overdueTasks: [], todayMeetings: [] }, false);
     }

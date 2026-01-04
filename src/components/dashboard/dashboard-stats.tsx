@@ -13,6 +13,7 @@ import { Skeleton } from '../ui/skeleton';
 import { Link } from '@/navigation';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 interface DashboardStatsProps {
@@ -75,7 +76,7 @@ function WeeklyActivityChart({ user }: { user: User }) {
 function LeaderboardMotivation({ user }: { user: User }) {
     const { data: leaderboardData, isLoading } = useSWR('leaderboardData', getLeaderboardData);
 
-    const userRankData = useMemo(() => {
+    const goldCoinRankData = useMemo(() => {
         if (!leaderboardData || !user) return null;
         
         const rank = leaderboardData.topUsers.findIndex(u => u.id === user.id) + 1;
@@ -85,14 +86,14 @@ function LeaderboardMotivation({ user }: { user: User }) {
                 return { rank, message: "Siz peshqadamlar ro'yxatida 1-o'rindasiz! Ajoyib natija, shu ruhda davom eting!" };
             }
             const userAbove = leaderboardData.topUsers[rank - 2];
-            const coinsNeeded = (userAbove.coins + 1) - user.coins;
+            const coinsNeeded = (userAbove.coins || 0) + 1 - (user.coins || 0);
             return { rank, message: `Siz ${rank}-o'rindasiz! Yuqoriroqqa ko'tarilish uchun yana atigi ${coinsNeeded} tanga kerak!` };
         }
         
-        const totalUsersInLeaderboard = leaderboardData.topUsers.length;
-        if (totalUsersInLeaderboard > 0) {
-            const lastUserInLeaderboard = leaderboardData.topUsers[totalUsersInLeaderboard - 1];
-            const coinsNeeded = (lastUserInLeaderboard.coins + 1) - user.coins;
+        const totalUsers = leaderboardData.topUsers.length;
+        if (totalUsers > 0) {
+            const lastUser = leaderboardData.topUsers[totalUsers - 1];
+            const coinsNeeded = (lastUser.coins || 0) + 1 - (user.coins || 0);
             return { rank: 0, message: `Peshqadamlar ro'yxatiga kirish uchun yana ${coinsNeeded} tanga to'plang. Siz buni uddalaysiz!` };
         }
 
@@ -100,12 +101,36 @@ function LeaderboardMotivation({ user }: { user: User }) {
 
     }, [leaderboardData, user]);
 
+    const silverCoinRankData = useMemo(() => {
+        if (!leaderboardData || !user) return null;
+        
+        const rank = leaderboardData.topSilverCoinUsers.findIndex(u => u.id === user.id) + 1;
+
+        if (rank > 0) {
+            if (rank === 1) {
+                return { rank, message: "Shaxsiy vazifalarni bajarishda 1-o'rindasiz! O'z-o'zingizni rivojlantirishda davom eting!" };
+            }
+            const userAbove = leaderboardData.topSilverCoinUsers[rank - 2];
+            const coinsNeeded = (userAbove.silverCoins || 0) + 1 - (user.silverCoins || 0);
+            return { rank, message: `Siz ${rank}-o'rindasiz! Keyingi pog'onaga chiqish uchun atigi ${coinsNeeded} kumush tanga yetmayapti!` };
+        }
+        
+        const totalUsers = leaderboardData.topSilverCoinUsers.length;
+        if (totalUsers > 0) {
+            const lastUser = leaderboardData.topSilverCoinUsers[totalUsers - 1];
+            const coinsNeeded = (lastUser.silverCoins || 0) + 1 - (user.silverCoins || 0);
+            return { rank: 0, message: `Kumush tangalar reytingiga kirish uchun ${coinsNeeded} tanga to'plang. Olg'a!` };
+        }
+
+        return { rank: 0, message: "Shaxsiy vazifalarni bajarib, kumush tangalar reytingida birinchi bo'ling." };
+
+    }, [leaderboardData, user]);
+
     if (isLoading) {
         return (
             <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Reytingdagi O'rningiz</CardTitle>
-                    <Trophy className="h-4 w-4 text-muted-foreground" />
+                <CardHeader>
+                    <Skeleton className="h-6 w-3/4" />
                 </CardHeader>
                 <CardContent>
                     <Skeleton className="h-8 w-1/2" />
@@ -115,22 +140,41 @@ function LeaderboardMotivation({ user }: { user: User }) {
         )
     }
 
-    if (!userRankData) return null;
-
     return (
         <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Reytingdagi O'rningiz</CardTitle>
-                <Trophy className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className='pb-2'>
+                <CardTitle className="text-base font-medium">Reytingdagi O'rningiz</CardTitle>
             </CardHeader>
             <CardContent>
-                {userRankData.rank > 0 && <div className="text-2xl font-bold">{userRankData.rank}-o'rin</div>}
-                <p className="text-xs text-muted-foreground">
-                    {userRankData.message}
-                </p>
-                <Link href="/leaderboard">
+                <Tabs defaultValue="gold">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="gold"><Coins className="mr-2 h-4 w-4 text-amber-500" /> Oltin</TabsTrigger>
+                        <TabsTrigger value="silver"><Flame className="mr-2 h-4 w-4 text-slate-500" /> Kumush</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="gold" className="mt-4">
+                        {goldCoinRankData && (
+                            <>
+                                {goldCoinRankData.rank > 0 && <div className="text-2xl font-bold">{goldCoinRankData.rank}-o'rin</div>}
+                                <p className="text-xs text-muted-foreground h-10">
+                                    {goldCoinRankData.message}
+                                </p>
+                            </>
+                        )}
+                    </TabsContent>
+                    <TabsContent value="silver" className="mt-4">
+                        {silverCoinRankData && (
+                             <>
+                                {silverCoinRankData.rank > 0 && <div className="text-2xl font-bold">{silverCoinRankData.rank}-o'rin</div>}
+                                <p className="text-xs text-muted-foreground h-10">
+                                    {silverCoinRankData.message}
+                                </p>
+                            </>
+                        )}
+                    </TabsContent>
+                </Tabs>
+                 <Link href="/leaderboard">
                     <Button variant="link" className="px-0 h-auto mt-2 text-xs">
-                        Ro'yxatni ko'rish <ArrowRight className="h-3 w-3 ml-1" />
+                        To'liq ro'yxatni ko'rish <ArrowRight className="h-3 w-3 ml-1" />
                     </Button>
                 </Link>
             </CardContent>

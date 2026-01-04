@@ -628,7 +628,7 @@ export const getNotificationsData = async (user: User): Promise<{
     const overdueTasks: UserTask[] = [];
 
     allScheduledTasks.forEach(task => {
-        // Check only for yesterday's overdue tasks
+        // Check only for yesterday's overdue tasks, respecting the creation date
         if (isTaskScheduledForDate(task, yesterday)) {
              const isCompletedYesterday = user.taskHistory.some(h => h.taskId === task.id && h.date === format(yesterday, 'yyyy-MM-dd'));
              if (!isCompletedYesterday) {
@@ -651,7 +651,9 @@ export const getNotificationsData = async (user: User): Promise<{
 
 export function isTaskScheduledForDate(task: UserTask, date: Date): boolean {
     const taskCreationDate = task.createdAt instanceof Timestamp ? startOfDay(task.createdAt.toDate()) : startOfDay(new Date());
-    if (date < taskCreationDate) return false;
+    if (startOfDay(date) < taskCreationDate) {
+        return false; // Don't schedule tasks for dates before they were created.
+    }
 
     const schedule = task.schedule;
     if (!schedule) return false;
