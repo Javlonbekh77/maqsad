@@ -53,12 +53,18 @@ export default function GlobalSearch() {
     const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
             e.preventDefault();
-            setIsOpen(prev => !prev);
+            // This is a simplified focus management. A more robust solution might use refs.
+            const input = document.querySelector('input[type="search"]') as HTMLInputElement | null;
+            input?.focus();
+            if(searchTerm) setIsOpen(true);
+        }
+        if (e.key === "Escape") {
+            setIsOpen(false);
         }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [searchTerm]);
 
   const hasResults = results.users.length > 0 || results.groups.length > 0;
 
@@ -81,41 +87,43 @@ export default function GlobalSearch() {
       {isOpen && (
         <>
             <div className="fixed inset-0 z-40 bg-black/20" onClick={() => setIsOpen(false)}></div>
-            <CommandList className="absolute top-12 z-50 w-full md:w-[320px] rounded-md border bg-popover text-popover-foreground shadow-md">
-                {loading && <CommandEmpty>Loading...</CommandEmpty>}
-                {!loading && !hasResults && debouncedSearchTerm.length > 1 && <CommandEmpty>No results found.</CommandEmpty>}
-                
-                {results.users.length > 0 && (
-                    <CommandGroup heading="Users">
-                        {results.users.map(user => (
-                            <Link key={user.id} href={{pathname: '/profile/[id]', params: {id: user.id}}} onClick={() => setIsOpen(false)}>
-                                <CommandItem>
-                                    <Avatar className="mr-2 h-6 w-6">
-                                        <AvatarImage src={user.avatarUrl} alt={user.fullName} />
-                                        <AvatarFallback>{user.firstName?.charAt(0) ?? ''}</AvatarFallback>
-                                    </Avatar>
-                                    <span>{user.fullName}</span>
-                                </CommandItem>
-                            </Link>
-                        ))}
-                    </CommandGroup>
-                )}
+            <Command className="absolute top-12 z-50 w-full md:w-[320px] rounded-md border bg-popover text-popover-foreground shadow-md">
+                <CommandList>
+                    {loading && <CommandEmpty>Loading...</CommandEmpty>}
+                    {!loading && !hasResults && debouncedSearchTerm.length > 1 && <CommandEmpty>No results found.</CommandEmpty>}
+                    
+                    {results.users.length > 0 && (
+                        <CommandGroup heading="Users">
+                            {results.users.map(user => (
+                                <Link key={user.id} href={{pathname: '/profile/[id]', params: {id: user.id}}} onClick={() => setIsOpen(false)}>
+                                    <CommandItem>
+                                        <Avatar className="mr-2 h-6 w-6">
+                                            <AvatarImage src={user.avatarUrl} alt={user.fullName} />
+                                            <AvatarFallback>{user.firstName?.charAt(0) ?? ''}</AvatarFallback>
+                                        </Avatar>
+                                        <span>{user.fullName}</span>
+                                    </CommandItem>
+                                </Link>
+                            ))}
+                        </CommandGroup>
+                    )}
 
-                {results.groups.length > 0 && (
-                     <CommandGroup heading="Groups">
-                        {results.groups.map(group => (
-                             <Link key={group.id} href={{pathname: '/groups/[id]', params: {id: group.id}}} onClick={() => setIsOpen(false)}>
-                                <CommandItem>
-                                     <div className="mr-2 h-6 w-6 rounded-sm overflow-hidden relative">
-                                        <Image src={group.imageUrl} alt={group.name} fill className='object-cover' />
-                                    </div>
-                                    <span>{group.name}</span>
-                                </CommandItem>
-                            </Link>
-                        ))}
-                    </CommandGroup>
-                )}
-            </CommandList>
+                    {results.groups.length > 0 && (
+                        <CommandGroup heading="Groups">
+                            {results.groups.map(group => (
+                                <Link key={group.id} href={{pathname: '/groups/[id]', params: {id: group.id}}} onClick={() => setIsOpen(false)}>
+                                    <CommandItem>
+                                        <div className="mr-2 h-6 w-6 rounded-sm overflow-hidden relative">
+                                            <Image src={group.imageUrl} alt={group.name} fill className='object-cover' />
+                                        </div>
+                                        <span>{group.name}</span>
+                                    </CommandItem>
+                                </Link>
+                            ))}
+                        </CommandGroup>
+                    )}
+                </CommandList>
+            </Command>
         </>
       )}
     </div>
