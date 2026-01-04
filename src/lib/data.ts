@@ -157,9 +157,19 @@ export const getTasksForUserGroups = async (groupIds: string[]): Promise<Task[]>
 
 export const getPersonalTasksForUser = async (userId: string): Promise<PersonalTask[]> => {
     if (!userId) return [];
-    const tasksQuery = query(collection(db, 'personal_tasks'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
+    const tasksQuery = query(collection(db, 'personal_tasks'), where('userId', '==', userId));
     const tasksSnapshot = await getDocs(tasksQuery);
-    return tasksSnapshot.docs.map(doc => ({ ...doc.data() as PersonalTask, id: doc.id, createdAt: doc.data().createdAt || serverTimestamp() }));
+    const tasks = tasksSnapshot.docs.map(doc => ({ ...doc.data() as PersonalTask, id: doc.id, createdAt: doc.data().createdAt || serverTimestamp() }));
+    
+    // Sort tasks by createdAt timestamp in descending order on the client side
+    return tasks.sort((a, b) => {
+        const aTimestamp = a.createdAt as Timestamp;
+        const bTimestamp = b.createdAt as Timestamp;
+        if (aTimestamp && bTimestamp) {
+            return bTimestamp.toMillis() - aTimestamp.toMillis();
+        }
+        return 0;
+    });
 };
 
 export const getGroupAndDetails = async (groupId: string): Promise<{ group: Group, members: User[], tasks: Task[], meetings: WeeklyMeeting[] } | null> => {
