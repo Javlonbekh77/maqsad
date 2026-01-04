@@ -37,7 +37,7 @@ import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
-import { useTransition } from 'react';
+import { useTransition, useRef } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const scheduleSchema = z.object({
@@ -78,6 +78,7 @@ export default function CreatePersonalTaskDialog({ isOpen, onClose, onTaskCreate
   const { user } = useAuth();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
+  const dialogContentRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<z.infer<typeof personalTaskSchema>>({
     resolver: zodResolver(personalTaskSchema),
@@ -126,7 +127,7 @@ export default function CreatePersonalTaskDialog({ isOpen, onClose, onTaskCreate
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-2xl" ref={dialogContentRef}>
             <DialogHeader>
                 <DialogTitle>Shaxsiy Vazifa / Odat Yaratish</DialogTitle>
                 <DialogDescription>
@@ -214,7 +215,7 @@ export default function CreatePersonalTaskDialog({ isOpen, onClose, onTaskCreate
                                                 <SelectValue placeholder="Jadval turini tanlang" />
                                             </SelectTrigger>
                                         </FormControl>
-                                        <SelectContent>
+                                        <SelectContent container={dialogContentRef.current}>
                                             <SelectItem value="recurring">Haftalik Takrorlanuvchi</SelectItem>
                                             <SelectItem value="one-time">Bir Martalik</SelectItem>
                                             <SelectItem value="date-range">Sana Oralig'i</SelectItem>
@@ -266,7 +267,7 @@ export default function CreatePersonalTaskDialog({ isOpen, onClose, onTaskCreate
                                                     </Button>
                                                     </FormControl>
                                                 </PopoverTrigger>
-                                                <PopoverContent className="w-auto p-0" align="start">
+                                                <PopoverContent className="w-auto p-0" align="start" container={dialogContentRef.current}>
                                                     <Calendar
                                                         mode="single"
                                                         selected={field.value ? new Date(field.value) : undefined}
@@ -308,7 +309,7 @@ export default function CreatePersonalTaskDialog({ isOpen, onClose, onTaskCreate
                                                     )}
                                                     </Button>
                                                 </PopoverTrigger>
-                                                <PopoverContent className="w-auto p-0" align="start">
+                                                <PopoverContent className="w-auto p-0" align="start" container={dialogContentRef.current}>
                                                     <Calendar
                                                     initialFocus
                                                     mode="range"

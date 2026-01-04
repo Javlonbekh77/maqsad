@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useTransition, useEffect } from 'react';
+import { useTransition, useEffect, useRef } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -70,6 +70,7 @@ const daysOfWeek: DayOfWeek[] = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Th
 export default function EditPersonalTaskDialog({ isOpen, onClose, task, onTaskUpdated }: EditTaskDialogProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+  const dialogContentRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<EditTaskFormValues>({
     resolver: zodResolver(taskSchema),
@@ -132,7 +133,7 @@ export default function EditPersonalTaskDialog({ isOpen, onClose, task, onTaskUp
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-2xl" ref={dialogContentRef}>
         <DialogHeader>
           <DialogTitle>Shaxsiy Vazifani Tahrirlash</DialogTitle>
           <DialogDescription>Ushbu vazifa tafsilotlarini va jadvalini o'zgartiring.</DialogDescription>
@@ -213,7 +214,7 @@ export default function EditPersonalTaskDialog({ isOpen, onClose, task, onTaskUp
                                             <SelectValue placeholder="Jadval turini tanlang" />
                                         </SelectTrigger>
                                     </FormControl>
-                                    <SelectContent>
+                                    <SelectContent container={dialogContentRef.current}>
                                         <SelectItem value="recurring">Haftalik Takrorlanuvchi</SelectItem>
                                         <SelectItem value="one-time">Bir Martalik</SelectItem>
                                         <SelectItem value="date-range">Sana Oralig'i</SelectItem>
@@ -265,7 +266,7 @@ export default function EditPersonalTaskDialog({ isOpen, onClose, task, onTaskUp
                                             </Button>
                                             </FormControl>
                                         </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
+                                        <PopoverContent className="w-auto p-0" align="start" container={dialogContentRef.current}>
                                             <Calendar
                                                 mode="single"
                                                 selected={field.value ? new Date(field.value) : undefined}
@@ -307,7 +308,7 @@ export default function EditPersonalTaskDialog({ isOpen, onClose, task, onTaskUp
                                             )}
                                             </Button>
                                         </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
+                                        <PopoverContent className="w-auto p-0" align="start" container={dialogContentRef.current}>
                                             <Calendar
                                             initialFocus
                                             mode="range"
