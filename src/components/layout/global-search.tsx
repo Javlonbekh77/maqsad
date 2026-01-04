@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Search, Users, Shield, User } from 'lucide-react';
 import { Input } from '../ui/input';
 import { performSearch } from '@/lib/data';
@@ -18,23 +18,25 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { Link } from '@/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import Image from 'next/image';
+import { Skeleton } from '../ui/skeleton';
 
 export default function GlobalSearch() {
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState<{ users: UserType[], groups: Group[] }>({ users: [], groups: [] });
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   const handleSearch = useCallback(async (term: string) => {
     if (term.length < 2) {
       setResults({ users: [], groups: [] });
-      setIsOpen(false);
+      if (isOpen) setIsOpen(false);
       return;
     }
     setLoading(true);
-    setIsOpen(true);
+    if (!isOpen) setIsOpen(true);
     try {
       const searchResults = await performSearch(term);
       setResults(searchResults);
@@ -43,7 +45,7 @@ export default function GlobalSearch() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isOpen]);
 
   useEffect(() => {
     handleSearch(debouncedSearchTerm);
@@ -53,23 +55,26 @@ export default function GlobalSearch() {
     const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
             e.preventDefault();
-            // This is a simplified focus management. A more robust solution might use refs.
-            const input = document.querySelector('input[type="search"]') as HTMLInputElement | null;
-            input?.focus();
-            if(searchTerm) setIsOpen(true);
+            (searchRef.current?.querySelector('input') as HTMLInputElement)?.focus();
         }
-        if (e.key === "Escape") {
+    };
+    const handleClickOutside = (event: MouseEvent) => {
+        if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
             setIsOpen(false);
         }
     };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [searchTerm]);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+        window.removeEventListener("keydown", handleKeyDown);
+        document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const hasResults = results.users.length > 0 || results.groups.length > 0;
 
   return (
-    <div className="relative flex-1 md:grow-0">
+    <div className="relative flex-1 md:grow-0" ref={searchRef}>
         <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -85,11 +90,15 @@ export default function GlobalSearch() {
             </kbd>
         </div>
       {isOpen && (
-        <>
-            <div className="fixed inset-0 z-40 bg-black/20" onClick={() => setIsOpen(false)}></div>
-            <Command className="absolute top-12 z-50 w-full md:w-[320px] rounded-md border bg-popover text-popover-foreground shadow-md">
+        <div className="absolute top-full mt-2 w-full md:w-[320px] z-50">
+            <Command className="rounded-lg border bg-popover text-popover-foreground shadow-md">
                 <CommandList>
-                    {loading && <CommandEmpty>Loading...</CommandEmpty>}
+                    {loading && (
+                         <div className='p-2 space-y-2'>
+                            <Skeleton className='h-8 w-full' />
+                            <Skeleton className='h-8 w-full' />
+                         </div>
+                    )}
                     {!loading && !hasResults && debouncedSearchTerm.length > 1 && <CommandEmpty>No results found.</CommandEmpty>}
                     
                     {results.users.length > 0 && (
@@ -124,7 +133,7 @@ export default function GlobalSearch() {
                     )}
                 </CommandList>
             </Command>
-        </>
+        </div>
       )}
     </div>
   );
