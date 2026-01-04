@@ -1,4 +1,12 @@
 'use server';
+/**
+ * @fileOverview A helpful and friendly productivity assistant for the 'MaqsadM' app.
+ *
+ * - chatAssistant - The primary function to interact with the chat assistant.
+ * - ChatInput - The input type for the chatAssistant function.
+ * - ChatOutput - The return type for the chatAssistant function.
+ * - ChatMessage - A type representing a single message in the chat history.
+ */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit/zod';
@@ -37,9 +45,12 @@ const chatAssistantFlow = ai.defineFlow(
     const llmResponse = await ai.generate({
       model: 'googleai/gemini-1.5-flash-latest',
       messages: [
-        { role: 'system', parts: [{ text: systemPrompt }] },
-        ...(input.history || []),
-        { role: 'user', parts: [{ text: input.message }] },
+        { role: 'system', content: [{ text: systemPrompt }] },
+        ...(input.history || []).map(msg => ({
+          role: msg.role,
+          content: msg.parts,
+        })),
+        { role: 'user', content: [{ text: input.message }] },
       ],
       output: {
         schema: ChatOutputSchema,
@@ -48,12 +59,12 @@ const chatAssistantFlow = ai.defineFlow(
         temperature: 0.7,
       },
     });
-    
-    const output = llmResponse.output();
+
+    const output = llmResponse.output;
     if (!output) {
-      throw new Error("Failed to get a response from the AI model.");
+      throw new Error('Failed to get a response from the AI model.');
     }
-    
+
     return output;
   }
 );
