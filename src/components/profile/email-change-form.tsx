@@ -1,5 +1,6 @@
 'use client';
 
+import React, { useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,7 +16,6 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { useTransition } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { AlertCircle } from 'lucide-react';
 
@@ -49,8 +49,6 @@ export default function EmailChangeForm() {
           title: "Email Muvaffaqiyatli O'zgartirildi!",
           description: `Yangi email manzilingiz: ${data.newEmail}. Iltimos, qayta tizimga kiring.`,
         });
-        // Optionally log the user out to force re-login with new email
-        // logout();
         form.reset();
       } catch (err: any) {
         if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
