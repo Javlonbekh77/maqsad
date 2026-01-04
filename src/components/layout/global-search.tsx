@@ -13,7 +13,7 @@ import {
   CommandList,
 } from "@/components/ui/command"
 import { useDebounce } from '@/hooks/use-debounce';
-import { Link } from '@/navigation';
+import { Link, useRouter } from '@/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import Image from 'next/image';
 import { Skeleton } from '../ui/skeleton';
@@ -24,6 +24,7 @@ export default function GlobalSearch() {
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
@@ -70,6 +71,12 @@ export default function GlobalSearch() {
   }, []);
 
   const hasResults = results.users.length > 0 || results.groups.length > 0;
+  
+  const handleSelect = (url: string) => {
+    router.push(url);
+    setIsOpen(false);
+    setSearchTerm('');
+  }
 
   return (
     <div className="relative flex-1 md:grow-0" ref={searchRef}>
@@ -102,15 +109,13 @@ export default function GlobalSearch() {
                     {results.users.length > 0 && (
                         <CommandGroup heading="Users">
                             {results.users.map(user => (
-                                <Link key={user.id} href={{pathname: '/profile/[id]', params: {id: user.id}}} onClick={() => setIsOpen(false)}>
-                                    <CommandItem>
-                                        <Avatar className="mr-2 h-6 w-6">
-                                            <AvatarImage src={user.avatarUrl} alt={user.fullName} />
-                                            <AvatarFallback>{user.firstName?.charAt(0) ?? ''}</AvatarFallback>
-                                        </Avatar>
-                                        <span>{user.fullName}</span>
-                                    </CommandItem>
-                                </Link>
+                                <CommandItem key={user.id} onSelect={() => handleSelect(`/profile/${user.id}`)} className="cursor-pointer">
+                                    <Avatar className="mr-2 h-6 w-6">
+                                        <AvatarImage src={user.avatarUrl} alt={user.fullName} />
+                                        <AvatarFallback>{user.firstName?.charAt(0) ?? ''}</AvatarFallback>
+                                    </Avatar>
+                                    <span>{user.fullName}</span>
+                                </CommandItem>
                             ))}
                         </CommandGroup>
                     )}
@@ -118,14 +123,12 @@ export default function GlobalSearch() {
                     {results.groups.length > 0 && (
                         <CommandGroup heading="Groups">
                             {results.groups.map(group => (
-                                <Link key={group.id} href={{pathname: '/groups/[id]', params: {id: group.id}}} onClick={() => setIsOpen(false)}>
-                                    <CommandItem>
-                                        <div className="mr-2 h-6 w-6 rounded-sm overflow-hidden relative">
-                                            <Image src={group.imageUrl} alt={group.name} fill className='object-cover' />
-                                        </div>
-                                        <span>{group.name}</span>
-                                    </CommandItem>
-                                </Link>
+                                <CommandItem key={group.id} onSelect={() => handleSelect(`/groups/${group.id}`)} className="cursor-pointer">
+                                    <div className="mr-2 h-6 w-6 rounded-sm overflow-hidden relative">
+                                        <Image src={group.imageUrl} alt={group.name} fill className='object-cover' />
+                                    </div>
+                                    <span>{group.name}</span>
+                                </CommandItem>
                             ))}
                         </CommandGroup>
                     )}
