@@ -25,12 +25,13 @@ import JoinGroupDialog from '@/components/groups/join-group-dialog';
 import { useTranslations } from 'next-intl';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import WeeklyMeetings from '@/components/groups/weekly-meetings';
-import type { Group, Task, User, WeeklyMeeting, UserTaskSchedule } from '@/lib/types';
+import type { Group, Task, User, WeeklyMeeting, UserTaskSchedule, UserTask } from '@/lib/types';
 import { useAuth } from '@/context/auth-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import GroupSettingsDialog from '@/components/groups/group-settings-dialog';
 import GroupChat from '@/components/groups/group-chat';
 import EditTaskDialog from '@/components/groups/edit-task-dialog';
+import TaskDetailDialog from '@/components/tasks/task-detail-dialog';
 
 
 export default function GroupDetailClient() {
@@ -51,6 +52,7 @@ export default function GroupDetailClient() {
   const [isJoinDialogOpen, setJoinDialogOpen] = useState(false);
   const [isSettingsOpen, setSettingsOpen] = useState(false);
   const [isEditingTask, setIsEditingTask] = useState<Task | null>(null);
+  const [viewingTask, setViewingTask] = useState<UserTask | null>(null);
   const [loadingData, setLoadingData] = useState(true);
 
   const fetchGroupData = useCallback(async (groupId: string) => {
@@ -95,6 +97,15 @@ export default function GroupDetailClient() {
     }
   }, [currentUser, group, id, fetchGroupData]);
   
+  const handleViewTask = (task: Task) => {
+    setViewingTask({
+        ...task,
+        taskType: 'group',
+        groupName: group?.name,
+        isCompleted: false, // Not relevant for this view
+    });
+  };
+
   const isLoading = authLoading || loadingData;
   const isMember = !!currentUser?.id && !!group?.members.includes(currentUser.id);
   const isAdmin = group?.adminId === currentUser?.id;
@@ -211,7 +222,12 @@ export default function GroupDetailClient() {
                         {tasks.map(task => (
                           <TableRow key={task.id}>
                             <TableCell>
-                              <div className="font-medium">{task.title}</div>
+                              <div 
+                                className="font-medium cursor-pointer hover:underline"
+                                onClick={() => handleViewTask(task)}
+                              >
+                                {task.title}
+                              </div>
                               <div className="text-sm text-muted-foreground hidden md:block">{task.description}</div>
                             </TableCell>
                             <TableCell className="text-right">
@@ -318,6 +334,13 @@ export default function GroupDetailClient() {
                 fetchGroupData(group.id);
                 setIsEditingTask(null);
             }}
+        />
+      )}
+      {viewingTask && (
+        <TaskDetailDialog
+            task={viewingTask}
+            isOpen={!!viewingTask}
+            onClose={() => setViewingTask(null)}
         />
       )}
     </AppLayout>

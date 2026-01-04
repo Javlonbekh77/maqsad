@@ -364,12 +364,15 @@ export const createPersonalTask = async (taskData: Omit<PersonalTask, 'id' | 'cr
         cleanedSchedule.days = schedule.days;
     }
 
-    const docRef = await addDoc(collection(db, 'personal_tasks'), {
+    const dataToSave = {
         ...restOfTaskData,
         schedule: cleanedSchedule,
         createdAt: serverTimestamp()
-    });
+    };
+    
+    const docRef = await addDoc(collection(db, 'personal_tasks'), dataToSave);
     await updateDoc(docRef, { id: docRef.id });
+    
     const docSnap = await getDoc(docRef);
     return { ...docSnap.data(), id: docRef.id } as PersonalTask;
 };
@@ -379,7 +382,9 @@ export const updateTask = async (taskId: string, data: Partial<Pick<Task, 'title
     await updateDoc(taskDocRef, data);
 };
 
-export const updatePersonalTask = async (taskId: string, data: Partial<Pick<PersonalTask, 'title' | 'description' | 'estimatedTime' | 'satisfactionRating' | 'visibility'>>): Promise<void> => {
+type PersonalTaskUpdatePayload = Partial<Pick<PersonalTask, 'title' | 'description' | 'estimatedTime' | 'satisfactionRating' | 'visibility' | 'schedule'>>;
+
+export const updatePersonalTask = async (taskId: string, data: PersonalTaskUpdatePayload): Promise<void> => {
     const taskDocRef = doc(db, 'personal_tasks', taskId);
     await updateDoc(taskDocRef, data);
 };

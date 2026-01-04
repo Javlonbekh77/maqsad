@@ -3,7 +3,7 @@ import AppLayout from '@/components/layout/app-layout';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from '@/navigation';
 import { useEffect, useState, useCallback, useTransition } from 'react';
-import type { PersonalTask } from '@/lib/types';
+import type { PersonalTask, UserTask } from '@/lib/types';
 import { getPersonalTasksForUser, deletePersonalTask } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import EditPersonalTaskDialog from './edit-personal-task-dialog';
 import CreatePersonalTaskDialog from './create-personal-task-dialog';
+import TaskDetailDialog from '@/components/tasks/task-detail-dialog';
 
 
 function MyTasksLoadingSkeleton() {
@@ -58,6 +59,7 @@ export default function MyTasksPage() {
     const [isPending, startTransition] = useTransition();
     const [editingTask, setEditingTask] = useState<PersonalTask | null>(null);
     const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
+    const [viewingTask, setViewingTask] = useState<UserTask | null>(null);
 
     const fetchTasks = useCallback(async (userId: string) => {
         setLoadingTasks(true);
@@ -102,13 +104,22 @@ export default function MyTasksPage() {
     };
     
     const handleTaskCreated = (newTask: PersonalTask) => {
-        setTasks(prevTasks => [newTask, ...prevTasks]);
+        setTasks(prevTasks => [newTask, ...prevTasks].sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis()));
     };
 
     const handleTaskUpdated = (updatedTask: PersonalTask) => {
         setTasks(prevTasks => prevTasks.map(task => task.id === updatedTask.id ? updatedTask : task));
         setEditingTask(null);
     }
+    
+    const handleViewTask = (task: PersonalTask) => {
+        setViewingTask({
+            ...task,
+            taskType: 'personal',
+            isCompleted: false, // Not relevant for detail view from this page
+            coins: 1 // Silver coin
+        });
+    };
 
     if (authLoading || loadingTasks) {
         return <MyTasksLoadingSkeleton />;
@@ -152,9 +163,12 @@ export default function MyTasksPage() {
                                         {tasks.map(task => (
                                             <TableRow key={task.id}>
                                                 <TableCell className="font-medium">
-                                                    <div className="flex flex-col">
+                                                    <div 
+                                                        className="flex flex-col cursor-pointer hover:underline"
+                                                        onClick={() => handleViewTask(task)}
+                                                    >
                                                         <span>{task.title}</span>
-                                                        <span className="text-xs text-muted-foreground">{task.description}</span>
+                                                        <span className="text-xs text-muted-foreground line-clamp-1">{task.description}</span>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
@@ -220,6 +234,13 @@ export default function MyTasksPage() {
                 onClose={() => setCreateDialogOpen(false)}
                 onTaskCreated={handleTaskCreated}
             />
+             {viewingTask && (
+                <TaskDetailDialog 
+                    task={viewingTask}
+                    isOpen={!!viewingTask}
+                    onClose={() => setViewingTask(null)}
+                />
+            )}
         </AppLayout>
     );
 }

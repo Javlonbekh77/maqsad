@@ -13,6 +13,8 @@ import { Badge } from '../ui/badge';
 import { addDays, format, isToday, isYesterday, isTomorrow, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Timestamp } from 'firebase/firestore';
+import TaskDetailDialog from '../tasks/task-detail-dialog';
+
 
 interface TodayScheduleProps {
   tasks: UserTask[];
@@ -30,6 +32,7 @@ const toDate = (timestamp: Timestamp | Date): Date => {
 export default function TodaySchedule({ tasks, userId, onTaskCompletion }: TodayScheduleProps) {
   const t = useTranslations('todoList');
   const [selectedTask, setSelectedTask] = useState<UserTask | null>(null);
+  const [viewingTask, setViewingTask] = useState<UserTask | null>(null);
   const [displayDate, setDisplayDate] = useState(() => startOfDay(new Date()));
 
   const handleCompleteClick = useCallback((task: UserTask) => {
@@ -108,7 +111,12 @@ export default function TodaySchedule({ tasks, userId, onTaskCompletion }: Today
               <TableBody>
                 {activeTasks.map((task) => (
                   <TableRow key={task.id}>
-                    <TableCell className="font-medium">{task.title}</TableCell>
+                    <TableCell 
+                      className="font-medium cursor-pointer hover:underline"
+                      onClick={() => setViewingTask(task)}
+                    >
+                      {task.title}
+                    </TableCell>
                     <TableCell>
                         {task.taskType === 'group' ? 
                             <Badge variant="outline">{task.groupName}</Badge> : 
@@ -148,7 +156,12 @@ export default function TodaySchedule({ tasks, userId, onTaskCompletion }: Today
                 {completedTasks.map((task) => (
                    <li key={task.id} className="flex items-center p-3 rounded-lg bg-secondary/30 text-muted-foreground">
                     <Check className="w-5 h-5 mr-3 text-green-500" />
-                    <span className="line-through">{task.title}</span>
+                    <span 
+                        className="line-through cursor-pointer hover:underline"
+                        onClick={() => setViewingTask(task)}
+                    >
+                        {task.title}
+                    </span>
                      {task.taskType === 'group' ? 
                         <Badge variant="secondary" className="ml-auto">{task.groupName}</Badge> :
                         <Badge variant="default" className="ml-auto bg-blue-500/10 text-blue-700 border-blue-500/20 hover:bg-blue-500/20">Shaxsiy</Badge>
@@ -165,6 +178,13 @@ export default function TodaySchedule({ tasks, userId, onTaskCompletion }: Today
           task={selectedTask}
           onConfirm={handleConfirmCompletion}
           onCancel={() => setSelectedTask(null)}
+        />
+      )}
+      {viewingTask && (
+        <TaskDetailDialog
+          task={viewingTask}
+          isOpen={!!viewingTask}
+          onClose={() => setViewingTask(null)}
         />
       )}
     </>

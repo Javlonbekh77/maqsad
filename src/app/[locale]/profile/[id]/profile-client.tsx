@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Coins, Briefcase, Settings, Flame, Eye } from "lucide-react";
 import HabitTracker from '@/components/profile/habit-tracker';
-import type { User, Group, PersonalTask } from "@/lib/types";
+import type { User, Group, PersonalTask, UserTask } from "@/lib/types";
 import { Separator } from '@/components/ui/separator';
 import GoBackButton from '@/components/go-back-button';
 import GoalMates from '@/components/profile/goal-mates';
@@ -18,6 +18,7 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from '@/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getUserProfileData } from '@/lib/data';
+import TaskDetailDialog from '@/components/tasks/task-detail-dialog';
 
 export default function ProfileClient() {
   const t = useTranslations('profile');
@@ -32,6 +33,7 @@ export default function ProfileClient() {
   const [publicTasks, setPublicTasks] = useState<PersonalTask[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [loadingData, setLoadingData] = useState(true);
+  const [viewingTask, setViewingTask] = useState<UserTask | null>(null);
 
   const fetchData = useCallback(async (uid: string) => {
     if (!uid) return;
@@ -64,6 +66,15 @@ export default function ProfileClient() {
     }
   }, [userId, authLoading, currentUser, router, fetchData]);
   
+  const handleViewTask = (task: PersonalTask) => {
+    setViewingTask({
+        ...task,
+        taskType: 'personal',
+        isCompleted: false, // Not relevant for this view
+        coins: 1, // Silver coin
+    });
+  };
+
   const userMap = useMemo(() => new Map(allUsers.map(u => [u.id, u])), [allUsers]);
 
   const isLoading = authLoading || loadingData;
@@ -178,7 +189,11 @@ export default function ProfileClient() {
             </CardHeader>
             <CardContent className="space-y-3">
               {publicTasks.map(task => (
-                <div key={task.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div 
+                    key={task.id} 
+                    className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-muted/50"
+                    onClick={() => handleViewTask(task)}
+                >
                     <p className="font-medium">{task.title}</p>
                     <Eye className="h-5 w-5 text-muted-foreground" />
                 </div>
@@ -208,6 +223,13 @@ export default function ProfileClient() {
         <GoalMates userId={user.id} />
 
       </div>
+      {viewingTask && (
+        <TaskDetailDialog
+            task={viewingTask}
+            isOpen={!!viewingTask}
+            onClose={() => setViewingTask(null)}
+        />
+      )}
     </AppLayout>
   );
 }
