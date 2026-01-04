@@ -22,7 +22,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 import type { User, Group, Task, UserTask, WeeklyMeeting, UserTaskSchedule, ChatMessage, PersonalTask, TaskSchedule, DayOfWeek } from './types';
-import { format, isSameDay, startOfDay, isPast, addDays, isWithinInterval, parseISO } from 'date-fns';
+import { format, isSameDay, startOfDay, isPast, addDays, isWithinInterval, parseISO, isYesterday } from 'date-fns';
 
 const PERSONAL_TASK_COINS = 1; // 1 Silver Coin
 
@@ -597,6 +597,7 @@ export const getNotificationsData = async (user: User): Promise<{
     }
 
     const today = startOfDay(new Date());
+    const yesterday = startOfDay(addDays(today, -1));
     const todayDayOfWeek = format(today, 'EEEE') as DayOfWeek;
 
     // 1. Get Today's Meetings
@@ -627,17 +628,12 @@ export const getNotificationsData = async (user: User): Promise<{
     const overdueTasks: UserTask[] = [];
 
     allScheduledTasks.forEach(task => {
-        // Check for overdue tasks
-        for (let i = 1; i < 7; i++) { // Check last 6 days
-            const pastDate = startOfDay(addDays(today, -i));
-            if (isTaskScheduledForDate(task, pastDate)) {
-                 const isCompleted = user.taskHistory.some(h => h.taskId === task.id && h.date === format(pastDate, 'yyyy-MM-dd'));
-                 if (!isCompleted) {
-                     if (!overdueTasks.some(ot => ot.id === task.id)) {
-                        overdueTasks.push(task);
-                    }
-                 }
-            }
+        // Check only for yesterday's overdue tasks
+        if (isTaskScheduledForDate(task, yesterday)) {
+             const isCompletedYesterday = user.taskHistory.some(h => h.taskId === task.id && h.date === format(yesterday, 'yyyy-MM-dd'));
+             if (!isCompletedYesterday) {
+                overdueTasks.push(task);
+             }
         }
         
         // Check for today's tasks

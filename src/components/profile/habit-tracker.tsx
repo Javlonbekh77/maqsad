@@ -162,8 +162,6 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
               </TableHeader>
               <TableBody>
                  {tasksToDisplay.map(task => {
-                    const taskCreationDate = startOfDay(toDate(task.createdAt as Timestamp));
-
                     return (
                         <TableRow key={task.id}>
                             <TableCell 
@@ -180,11 +178,8 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
                             </TableCell>
                             {dates.map(date => {
                                 const currentDate = startOfDay(date);
-                                if (currentDate < taskCreationDate) {
-                                    return <TableCell key={date.toISOString()} className="text-center p-2"></TableCell>;
-                                }
-
                                 const isScheduled = isTaskScheduledForDate(task, currentDate);
+                                
                                 if (!isScheduled) {
                                   return <TableCell key={date.toISOString()} className="text-center p-2 bg-muted/30">
                                      <span className="text-muted-foreground text-lg">-</span>

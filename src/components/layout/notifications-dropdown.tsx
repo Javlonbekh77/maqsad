@@ -45,22 +45,23 @@ export default function NotificationsDropdown() {
     user ? ['notifications', user] : null, 
     fetcher,
     {
-      refreshInterval: 30000,
-      dedupingInterval: 30000,
+      refreshInterval: 60000, // Check every minute
+      dedupingInterval: 60000,
+      onSuccess: (data) => {
+        if (data && data.overdueTasks.length > 0 && !hasShownOverdue) {
+          showBrowserNotification("Vaqti o'tgan vazifalar mavjud!", {
+            body: `${data.overdueTasks.length} ta vazifangizning vaqti o'tib ketgan.`,
+            icon: '/logo.svg',
+            tag: 'overdue-tasks' // Use a tag to prevent multiple notifications
+          });
+          setHasShownOverdue(true); 
+        } else if (data && data.overdueTasks.length === 0) {
+           setHasShownOverdue(false); // Reset when there are no overdue tasks
+        }
+      }
     }
   );
   
-  useEffect(() => {
-    if (data && data.overdueTasks.length > 0 && !hasShownOverdue) {
-      showBrowserNotification("Vaqti o'tgan vazifalar mavjud!", {
-        body: `${data.overdueTasks.length} ta vazifangizning vaqti o'tib ketgan.`,
-        icon: '/logo.svg',
-      });
-      setHasShownOverdue(true); 
-    } else if (data && data.overdueTasks.length === 0) {
-      setHasShownOverdue(false);
-    }
-  }, [data, hasShownOverdue]);
   
   const handleMarkAllRead = (e: React.MouseEvent) => {
     e.preventDefault();
