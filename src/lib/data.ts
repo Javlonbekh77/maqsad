@@ -21,7 +21,7 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
-import type { User, Group, Task, UserTask, WeeklyMeeting, UserTaskSchedule, ChatMessage, PersonalTask, TaskSchedule, DayOfWeek } from './types';
+import type { User, Group, Task, UserTask, WeeklyMeeting, UserTaskSchedule, ChatMessage, PersonalTask, TaskSchedule, DayOfWeek, UnreadMessageInfo } from './types';
 import { format, isSameDay, startOfDay, isPast, addDays, isWithinInterval, parseISO, isYesterday } from 'date-fns';
 
 const PERSONAL_TASK_COINS = 1; // 1 Silver Coin
@@ -482,7 +482,7 @@ export const completeUserTask = async (userId: string, task: UserTask): Promise<
 };
 
 
-export const updateUserProfile = async (userId: string, data: Partial<Pick<User, 'firstName' | 'lastName' | 'goals' | 'habits' | 'avatarUrl'>>): Promise<void> => {
+export const updateUserProfile = async (userId: string, data: Partial<User>): Promise<void> => {
     const userDocRef = doc(db, 'users', userId);
     const updateData: { [key: string]: any } = {};
 
@@ -491,14 +491,17 @@ export const updateUserProfile = async (userId: string, data: Partial<Pick<User,
         updateData.lastName = data.lastName;
         updateData.fullName = `${data.firstName} ${data.lastName}`.trim();
     }
-    if (data.goals !== undefined && data.goals !== null) {
+    if (data.goals !== undefined) {
         updateData.goals = data.goals;
     }
-    if (data.habits !== undefined && data.habits !== null) {
+    if (data.habits !== undefined) {
         updateData.habits = data.habits;
     }
     if (data.avatarUrl) {
         updateData.avatarUrl = data.avatarUrl;
+    }
+    if (data.notificationsLastCheckedAt) {
+        updateData.notificationsLastCheckedAt = data.notificationsLastCheckedAt;
     }
     
     if (Object.keys(updateData).length > 0) {
@@ -591,10 +594,13 @@ export const getNotificationsData = async (user: User): Promise<{
     todayTasks: UserTask[];
     overdueTasks: UserTask[];
     todayMeetings: (WeeklyMeeting & { groupName: string })[];
+    unreadMessages: UnreadMessageInfo[];
 }> => {
     if (!user) {
-        return { todayTasks: [], overdueTasks: [], todayMeetings: [] };
+        return { todayTasks: [], overdueTasks: [], todayMeetings: [], unreadMessages: [] };
     }
+
+    const lastChecked = user.notificationsLastCheckedAt || new Timestamp(0, 0);
 
     const today = startOfDay(new Date());
     const yesterday = startOfDay(addDays(today, -1));
@@ -604,10 +610,14 @@ export const getNotificationsData = async (user: User): Promise<{
     let todayMeetings: (WeeklyMeeting & { groupName: string })[] = [];
     if (user.groups && user.groups.length > 0) {
         const groupIds = user.groups.slice(0, 30);
-        const meetingsQuery = query(collection(db, 'meetings'), where('groupId', 'in', groupIds), where('day', '==', todayDayOfWeek));
+        const meetingsQuery = query(collection(db, 'meetings'), 
+            where('groupId', 'in', groupIds), 
+            where('day', '==', todayDayOfWeek),
+            where('createdAt', '>', lastChecked)
+        );
         const groupsQuery = query(collection(db, 'groups'), where('__name__', 'in', groupIds));
 
-        const [meetingsSnapshot, groupsSnapshot] = await Promise.all([getDocs(meetingsQuery), getDocs(groupsQuery)]);
+        const [meetingsSnapshot, groupsSnapshot] = await Promise.all([getDocs(meetingsQuery), getDocs(groupsSnapshot)]);
         
         const groupMap = new Map(groupsSnapshot.docs.map(doc => [doc.id, doc.data().name]));
 
@@ -620,18 +630,39 @@ export const getNotificationsData = async (user: User): Promise<{
             };
         });
     }
+    
+    // 2. Get unread messages
+    let unreadMessages: UnreadMessageInfo[] = [];
+     if (user.groups && user.groups.length > 0) {
+        const groupDetails = await getUserGroups(user.id);
+        const unreadCounts = await Promise.all(
+            groupDetails.map(async (group) => {
+                const lastRead = user.lastRead?.[group.id] || new Timestamp(0, 0);
+                if (lastRead > lastChecked) { // Only count if unread since last notification check
+                     const count = await getUnreadMessageCount(group.id, lastRead);
+                     if (count > 0) {
+                        return { groupId: group.id, groupName: group.name, count };
+                     }
+                }
+                return null;
+            })
+        );
+        unreadMessages = unreadCounts.filter(Boolean) as UnreadMessageInfo[];
+    }
 
-    // 2. Get All Scheduled Tasks (to find today's and overdue)
+
+    // 3. Get All Scheduled Tasks (to find today's and overdue)
     const allScheduledTasks = await getScheduledTasksForUser(user);
     
     const todayIncompletedTasks: UserTask[] = [];
     const overdueTasks: UserTask[] = [];
 
     allScheduledTasks.forEach(task => {
-        // Check only for yesterday's overdue tasks, respecting the creation date
-        if (isTaskScheduledForDate(task, yesterday)) {
+        const taskCreatedAt = (task.createdAt as Timestamp).toDate();
+        // Check only for yesterday's overdue tasks, respecting the creation date and last checked time
+        if (isTaskScheduledForDate(task, yesterday) && taskCreatedAt < yesterday) {
              const isCompletedYesterday = user.taskHistory.some(h => h.taskId === task.id && h.date === format(yesterday, 'yyyy-MM-dd'));
-             if (!isCompletedYesterday) {
+             if (!isCompletedYesterday && taskCreatedAt > lastChecked.toDate()) { // Check if task is new since last check
                 overdueTasks.push(task);
              }
         }
@@ -639,14 +670,14 @@ export const getNotificationsData = async (user: User): Promise<{
         // Check for today's tasks
         if (isTaskScheduledForDate(task, today)) {
             const isCompletedToday = user.taskHistory.some(h => h.taskId === task.id && h.date === format(today, 'yyyy-MM-dd'));
-            if (!isCompletedToday) {
+            if (!isCompletedToday && taskCreatedAt > lastChecked.toDate()) { // Check if task is new since last check
                 todayIncompletedTasks.push(task);
             }
         }
     });
 
 
-    return { todayTasks: todayIncompletedTasks, overdueTasks, todayMeetings };
+    return { todayTasks: todayIncompletedTasks, overdueTasks, todayMeetings, unreadMessages };
 };
 
 export function isTaskScheduledForDate(task: UserTask, date: Date): boolean {

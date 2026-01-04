@@ -79,6 +79,7 @@ export type User = {
   telegram?: string;
   createdAt: FieldValue;
   lastRead?: LastRead;
+  notificationsLastCheckedAt?: Timestamp;
 };
 
 export type WeeklyMeeting = {
@@ -126,3 +127,9 @@ export interface ChatMessage {
   }
   isEdited?: boolean;
 }
+
+export type UnreadMessageInfo = {
+    groupId: string;
+    groupName: string;
+    count: number;
+};

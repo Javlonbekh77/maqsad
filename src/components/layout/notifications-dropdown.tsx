@@ -12,77 +12,71 @@ import {
   DropdownMenuFooter,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Bell, AlertCircle, CalendarClock, ListTodo, History, CheckCheck } from 'lucide-react';
+import { Bell, AlertCircle, CalendarClock, ListTodo, History, CheckCheck, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
-import type { UserTask, User, WeeklyMeeting } from '@/lib/types';
-import { getNotificationsData } from '@/lib/data';
+import type { UserTask, User, WeeklyMeeting, UnreadMessageInfo } from '@/lib/types';
+import { getNotificationsData, updateUserProfile } from '@/lib/data';
 import { Link } from '@/navigation';
 import { Badge } from '../ui/badge';
 import { Skeleton } from '../ui/skeleton';
+import { Timestamp } from 'firebase/firestore';
 
 type NotificationData = {
     todayTasks: UserTask[];
     overdueTasks: UserTask[];
     todayMeetings: (WeeklyMeeting & { groupName: string })[];
+    unreadMessages: UnreadMessageInfo[];
 };
 
-const fetcher = ([, user]: [string, User | null]) => {
-    if (!user) return Promise.resolve({ todayTasks: [], overdueTasks: [], todayMeetings: [] });
+
+const fetcher = ([, user]: [string, User | null]): Promise<NotificationData> => {
+    if (!user) return Promise.resolve({ todayTasks: [], overdueTasks: [], todayMeetings: [], unreadMessages: [] });
     return getNotificationsData(user);
 };
 
-function showBrowserNotification(title: string, options: NotificationOptions) {
-  if ('Notification' in window && Notification.permission === 'granted') {
-    // A tag is used to prevent the same notification from appearing multiple times.
-    new Notification(title, { ...options, tag: options.tag || 'maqsadm-notification' });
-  }
-}
 
 export default function NotificationsDropdown() {
-  const { user } = useAuth();
-  const { mutate } = useSWRConfig()
+  const { user, refreshAuth } = useAuth();
+  const { mutate } = useSWRConfig();
+  const [isOpen, setIsOpen] = useState(false);
   
-  // Use SWR to fetch data and manage state
   const { data, isLoading } = useSWR(
     user ? ['notifications', user] : null, 
     fetcher,
     {
-      refreshInterval: 60000, // Check every minute
+      refreshInterval: 60000, 
       dedupingInterval: 60000,
-      onSuccess: (data, key, config) => {
-        // Only show notifications if there is new data compared to the previous state.
-        const previousData = config.cache.get(key)?.data as NotificationData | undefined;
-        
-        if (data && data.overdueTasks.length > 0) {
-            const newOverdueTasks = data.overdueTasks.filter(
-                t => !previousData?.overdueTasks.some(pt => pt.id === t.id)
-            );
-            if(newOverdueTasks.length > 0) {
-                 showBrowserNotification("Vaqti o'tgan vazifalar mavjud!", {
-                    body: `${data.overdueTasks.length} ta vazifangizning vaqti o'tib ketgan.`,
-                    icon: '/logo.svg',
-                    tag: 'overdue-tasks' 
-                });
-            }
-        }
-      }
     }
   );
+
+  useEffect(() => {
+    if (isOpen && user) {
+      // When dropdown is opened, update the last checked time
+      const now = Timestamp.now();
+      updateUserProfile(user.id, { notificationsLastCheckedAt: now }).then(() => {
+         // Optimistically update the user object in auth context
+         refreshAuth();
+      });
+    }
+  }, [isOpen, user, refreshAuth]);
   
-  const handleMarkAllRead = (e: React.MouseEvent) => {
+
+  const handleMarkAllRead = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // In a real app, you'd call a function here to mark all as read on the backend.
-    // For now, we'll just clear them on the client side for an immediate visual effect by revalidating with empty data.
     if (user) {
-        mutate(['notifications', user], { todayTasks: [], overdueTasks: [], todayMeetings: [] }, false);
+        // Optimistically clear notifications on the client
+        mutate(['notifications', user], { todayTasks: [], overdueTasks: [], todayMeetings: [], unreadMessages: [] }, false);
+        // And update the timestamp on the backend
+        await updateUserProfile(user.id, { notificationsLastCheckedAt: Timestamp.now() });
+        await refreshAuth();
     }
   };
 
-  const totalNotifications = data ? (data.todayTasks.length + data.overdueTasks.length + data.todayMeetings.length) : 0;
+  const totalNotifications = data ? (data.todayTasks.length + data.overdueTasks.length + data.todayMeetings.length + data.unreadMessages.length) : 0;
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="rounded-full relative">
           <Bell className="h-5 w-5" />
@@ -104,6 +98,20 @@ export default function NotificationsDropdown() {
           </div>
         ) : totalNotifications > 0 && data ? (
             <>
+                {data.unreadMessages.length > 0 && (
+                    <>
+                         <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground flex items-center gap-2"><MessageSquare className='h-4 w-4' /> Yangi Xabarlar</DropdownMenuLabel>
+                        {data.unreadMessages.map(msgInfo => (
+                             <Link key={msgInfo.groupId} href={`/groups/${msgInfo.groupId}?tab=chat`}>
+                                <DropdownMenuItem className="flex justify-between items-center">
+                                     <p className="font-medium">{msgInfo.groupName}</p>
+                                     <Badge variant="destructive">{msgInfo.count}</Badge>
+                                </DropdownMenuItem>
+                            </Link>
+                        ))}
+                         <DropdownMenuSeparator />
+                    </>
+                )}
                 {data.todayMeetings.length > 0 && (
                     <>
                         <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground flex items-center gap-2"><CalendarClock className='h-4 w-4' /> Bugungi uchrashuvlar</DropdownMenuLabel>
