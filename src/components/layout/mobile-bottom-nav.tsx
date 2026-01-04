@@ -7,6 +7,7 @@ import {
   Trophy,
   UserCircle,
   PlusSquare,
+  ClipboardList
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useTranslations } from 'next-intl';
@@ -18,11 +19,11 @@ export default function MobileBottomNav() {
   const t = useTranslations('nav');
 
   const navItems = [
-    { href: '/dashboard', label: t('dashboard'), icon: LayoutDashboard },
-    { href: '/groups', label: t('groups'), icon: Users },
-    { href: '/create-task', label: 'Add Task', icon: PlusSquare },
-    { href: '/leaderboard', label: t('leaderboard'), icon: Trophy },
-    { href: `/profile/${user?.id}`, label: t('profile'), icon: UserCircle },
+    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/groups', label: 'Guruhlar', icon: Users },
+    { href: '/my-tasks', label: 'Vazifalar', icon: ClipboardList },
+    { href: '/leaderboard', label: 'Liderlar', icon: Trophy },
+    { href: `/profile/${user?.id}`, label: 'Profil', icon: UserCircle },
   ];
 
   return (
@@ -30,7 +31,7 @@ export default function MobileBottomNav() {
       <div className="grid h-full max-w-lg grid-cols-5 mx-auto font-medium">
         {navItems.map((item) => {
           // Don't render profile link if user is not loaded
-          if (item.label === t('profile') && !user) return null;
+          if (item.label === 'Profil' && !user) return null;
           
           const isActive = item.href === '/dashboard' 
               ? pathname === item.href 

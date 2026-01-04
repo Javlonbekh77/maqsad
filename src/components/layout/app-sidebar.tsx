@@ -8,7 +8,8 @@ import {
   Trophy,
   UserCircle,
   MessageSquare,
-  PlusSquare
+  PlusSquare,
+  ClipboardList
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
@@ -93,11 +94,11 @@ export default function AppSidebar() {
 
 
   const navItems = [
-    { href: '/dashboard', labelKey: 'Dashboard', icon: LayoutDashboard },
-    { href: '/groups', labelKey: 'Groups', icon: Users },
-    { href: '/create-task', labelKey: 'Add Task', icon: PlusSquare },
-    { href: '/leaderboard', labelKey: 'Leaderboard', icon: Trophy },
-    { href: `/profile/${user?.id}`, labelKey: 'Profile', icon: UserCircle },
+    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/my-tasks', label: 'Mening Vazifalarim', icon: ClipboardList },
+    { href: '/groups', label: 'Guruhlar', icon: Users },
+    { href: '/leaderboard', label: 'Peshqadamlar', icon: Trophy },
+    { href: `/profile/${user?.id}`, label: 'Profil', icon: UserCircle },
   ];
 
   return (
@@ -112,7 +113,7 @@ export default function AppSidebar() {
                 <ul className="grid items-start px-4 text-sm font-medium">
                     {navItems.map((item) => (
                         // Don't render profile link if user is not loaded
-                        (item.labelKey === 'Profile' && !user) ? null :
+                        (item.label === 'Profil' && !user) ? null :
                         <li key={item.href}>
                             <Link
                             href={item.href}
@@ -122,7 +123,7 @@ export default function AppSidebar() {
                             )}
                             >
                             <item.icon className="h-4 w-4" />
-                            {item.labelKey}
+                            {item.label}
                             </Link>
                         </li>
                     ))}

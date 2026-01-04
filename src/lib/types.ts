@@ -39,6 +39,7 @@ export type PersonalTask = {
   estimatedTime?: string;
   satisfactionRating?: number;
   schedule: TaskSchedule;
+  visibility: 'public' | 'private';
 }
 
 export type TaskHistory = {

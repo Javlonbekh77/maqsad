@@ -157,7 +157,7 @@ export const getTasksForUserGroups = async (groupIds: string[]): Promise<Task[]>
 
 export const getPersonalTasksForUser = async (userId: string): Promise<PersonalTask[]> => {
     if (!userId) return [];
-    const tasksQuery = query(collection(db, 'personal_tasks'), where('userId', '==', userId));
+    const tasksQuery = query(collection(db, 'personal_tasks'), where('userId', '==', userId), orderBy('createdAt', 'desc'));
     const tasksSnapshot = await getDocs(tasksQuery);
     return tasksSnapshot.docs.map(doc => ({ ...doc.data() as PersonalTask, id: doc.id, createdAt: doc.data().createdAt || serverTimestamp() }));
 };
@@ -233,7 +233,7 @@ export const getLeaderboardData = async (): Promise<{ topUsers: User[], topGroup
 };
 
 
-export const getUserProfileData = async (userId: string): Promise<{user: User, userGroups: Group[], allUsers: User[]} | null> => {
+export const getUserProfileData = async (userId: string): Promise<{user: User, userGroups: Group[], allUsers: User[], publicPersonalTasks: PersonalTask[]} | null> => {
      const user = await getUser(userId);
      if (!user) return null;
 
@@ -245,13 +245,19 @@ export const getUserProfileData = async (userId: string): Promise<{user: User, u
         const groupsQuery = query(collection(db, 'groups'), where('__name__', 'in', groupIds));
         groupsPromise = getDocs(groupsQuery).then(snap => snap.docs.map(d => ({...d.data() as Group, id: d.id, firebaseId: d.id})));
       }
+    
+    const publicTasksQuery = query(collection(db, 'personal_tasks'), where('userId', '==', userId), where('visibility', '==', 'public'));
+    const publicTasksPromise = getDocs(publicTasksQuery);
       
-      const [userGroups, allUsers] = await Promise.all([
+    const [userGroups, allUsers, publicTasksSnapshot] = await Promise.all([
         groupsPromise,
         allUsersPromise,
-      ]);
+        publicTasksPromise
+    ]);
+    
+    const publicPersonalTasks = publicTasksSnapshot.docs.map(doc => ({ ...doc.data() as PersonalTask, id: doc.id }));
 
-      return { user, userGroups, allUsers };
+    return { user, userGroups, allUsers, publicPersonalTasks };
 }
 
 export const getGoalMates = async (userId: string): Promise<User[]> => {
@@ -336,7 +342,6 @@ export const createTask = async (taskData: Omit<Task, 'id' | 'createdAt'>): Prom
 export const createPersonalTask = async (taskData: Omit<PersonalTask, 'id' | 'createdAt'>): Promise<PersonalTask> => {
     const { schedule, ...restOfTaskData } = taskData;
 
-    // Clean up schedule object to remove undefined or null fields before sending to Firestore
     const cleanedSchedule: Partial<TaskSchedule> = { type: schedule.type };
     if (schedule.type === 'one-time' && schedule.date) {
         cleanedSchedule.date = schedule.date;
@@ -362,6 +367,18 @@ export const createPersonalTask = async (taskData: Omit<PersonalTask, 'id' | 'cr
 export const updateTask = async (taskId: string, data: Partial<Pick<Task, 'title' | 'description' | 'coins' | 'estimatedTime' | 'satisfactionRating'>>): Promise<void> => {
     const taskDocRef = doc(db, 'tasks', taskId);
     await updateDoc(taskDocRef, data);
+};
+
+export const updatePersonalTask = async (taskId: string, data: Partial<Pick<PersonalTask, 'title' | 'description' | 'estimatedTime' | 'satisfactionRating' | 'visibility'>>): Promise<void> => {
+    const taskDocRef = doc(db, 'personal_tasks', taskId);
+    await updateDoc(taskDocRef, data);
+};
+
+export const deletePersonalTask = async (taskId: string): Promise<void> => {
+    const taskDocRef = doc(db, 'personal_tasks', taskId);
+    await deleteDoc(taskDocRef);
+    // Note: This does not delete the task from users' taskHistory.
+    // A more complex implementation would involve a Cloud Function to clean this up.
 };
 
 export const addUserToGroup = async (userId: string, groupId: string, taskSchedules: UserTaskSchedule[]): Promise<void> => {

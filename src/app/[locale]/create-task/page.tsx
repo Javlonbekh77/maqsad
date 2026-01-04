@@ -25,12 +25,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format, addDays } from 'date-fns';
+import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { Slider } from '@/components/ui/slider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTransition } from 'react';
+import { Switch } from '@/components/ui/switch';
 
 const scheduleSchema = z.object({
   type: z.enum(['one-time', 'date-range', 'recurring']),
@@ -55,6 +56,7 @@ const personalTaskSchema = z.object({
   estimatedTime: z.string().optional(),
   satisfactionRating: z.number().min(1).max(10),
   schedule: scheduleSchema,
+  visibility: z.enum(['public', 'private']),
 });
 
 const daysOfWeek: DayOfWeek[] = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -75,7 +77,8 @@ export default function CreatePersonalTaskPage() {
       schedule: {
         type: 'recurring',
         days: [],
-      }
+      },
+      visibility: 'private',
     },
   });
 
@@ -335,6 +338,30 @@ export default function CreatePersonalTaskPage() {
                                 )}
                             </CardContent>
                          </Card>
+                         
+                         <FormField
+                            control={form.control}
+                            name="visibility"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                <div className="space-y-0.5">
+                                    <FormLabel className="text-base">
+                                        Ommaviy Vazifa
+                                    </FormLabel>
+                                    <FormDescription>
+                                        Yoqilgan bo'lsa, bu vazifa profilingizda boshqalarga ko'rinadi.
+                                    </FormDescription>
+                                </div>
+                                <FormControl>
+                                    <Switch
+                                    checked={field.value === 'public'}
+                                    onCheckedChange={(checked) => field.onChange(checked ? 'public' : 'private')}
+                                    />
+                                </FormControl>
+                                </FormItem>
+                            )}
+                        />
+
 
                         <div className="flex justify-end">
                              <Button type="submit" disabled={isPending}>

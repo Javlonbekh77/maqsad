@@ -4,10 +4,10 @@ import { useParams } from 'next/navigation';
 import AppLayout from "@/components/layout/app-layout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Coins, Briefcase, Settings, Flame } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Coins, Briefcase, Settings, Flame, Eye } from "lucide-react";
 import HabitTracker from '@/components/profile/habit-tracker';
-import type { User, Group } from "@/lib/types";
+import type { User, Group, PersonalTask } from "@/lib/types";
 import { Separator } from '@/components/ui/separator';
 import GoBackButton from '@/components/go-back-button';
 import GoalMates from '@/components/profile/goal-mates';
@@ -29,6 +29,7 @@ export default function ProfileClient() {
   
   const [user, setUser] = useState<User | null>(null);
   const [userGroups, setUserGroups] = useState<Group[]>([]);
+  const [publicTasks, setPublicTasks] = useState<PersonalTask[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
@@ -41,6 +42,7 @@ export default function ProfileClient() {
         setUser(profileData.user);
         setUserGroups(profileData.userGroups);
         setAllUsers(profileData.allUsers);
+        setPublicTasks(profileData.publicPersonalTasks);
       } else {
         setUser(null);
       }
@@ -167,6 +169,23 @@ export default function ProfileClient() {
               </div>
           </CardContent>
         </Card>
+        
+        {publicTasks.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Ommaviy Vazifalar</CardTitle>
+              <CardDescription>{user.firstName}ning boshqalar bilan bo'lishgan vazifalari.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {publicTasks.map(task => (
+                <div key={task.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <p className="font-medium">{task.title}</p>
+                    <Eye className="h-5 w-5 text-muted-foreground" />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         {userGroups.length > 0 && (
           <Card>
