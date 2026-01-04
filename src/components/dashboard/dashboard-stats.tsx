@@ -6,7 +6,7 @@ import { Coins, CheckCircle, BarChart as BarChartIcon, TrendingUp, TrendingDown,
 import { Bar, XAxis, YAxis, CartesianGrid, BarChart } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
 import { useMemo } from 'react';
-import { format, subDays, startOfDay, isToday } from 'date-fns';
+import { format, subDays, startOfDay, isToday, getDay, formatISO, endOfDay } from 'date-fns';
 import { getLeaderboardData, isTaskScheduledForDate } from '@/lib/data';
 import useSWR from 'swr';
 import { Skeleton } from '../ui/skeleton';
@@ -22,11 +22,55 @@ interface DashboardStatsProps {
 
 const chartConfig = {
   tasks: {
-    label: "Tasks",
+    label: "Vazifalar",
     color: "hsl(var(--chart-1))",
   },
 } satisfies ChartConfig
 
+
+function WeeklyActivityChart({ user }: { user: User }) {
+    const chartData = useMemo(() => {
+        const today = endOfDay(new Date());
+        const last7Days = Array.from({ length: 7 }, (_, i) => subDays(today, i)).reverse();
+
+        return last7Days.map(date => {
+            const dateStr = format(date, 'yyyy-MM-dd');
+            const completedCount = user.taskHistory.filter(h => h.date === dateStr).length;
+            
+            return {
+                date: format(date, 'EEE'), // e.g., "Mon"
+                tasks: completedCount,
+            }
+        });
+    }, [user.taskHistory]);
+
+    return (
+         <Card>
+            <CardHeader>
+                <CardTitle>Haftalik Faollik</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <ChartContainer config={chartConfig} className="h-40 w-full">
+                <BarChart accessibilityLayer data={chartData}>
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                        dataKey="date"
+                        tickLine={false}
+                        tickMargin={10}
+                        axisLine={false}
+                        tickFormatter={(value) => value.slice(0, 3)}
+                    />
+                    <ChartTooltip
+                        cursor={false}
+                        content={<ChartTooltipContent indicator="line" />}
+                    />
+                    <Bar dataKey="tasks" fill="var(--color-tasks)" radius={4} />
+                </BarChart>
+                </ChartContainer>
+            </CardContent>
+        </Card>
+    )
+}
 
 function LeaderboardMotivation({ user }: { user: User }) {
     const { data: leaderboardData, isLoading } = useSWR('leaderboardData', getLeaderboardData);
@@ -94,102 +138,10 @@ function LeaderboardMotivation({ user }: { user: User }) {
     )
 }
 
-function WeeklyMotivation({ user, tasks }: { user: User, tasks: UserTask[] }) {
-    const { message, percentageChange, Icon, periodTotal } = useMemo(() => {
-        const today = new Date();
-        const last7DaysStart = startOfDay(subDays(today, 6));
-        const previous7DaysStart = startOfDay(subDays(today, 13));
-        const previous7DaysEnd = startOfDay(subDays(today, 7));
-
-        const completedLast7Days = user.taskHistory.filter(h => {
-            const historyDate = new Date(h.date);
-            return historyDate >= last7DaysStart && historyDate <= today;
-        }).length;
-
-        const completedPrevious7Days = user.taskHistory.filter(h => {
-            const historyDate = new Date(h.date);
-            return historyDate >= previous7DaysStart && historyDate <= previous7DaysEnd;
-        }).length;
-
-        let percentageChange = 0;
-        if (completedPrevious7Days > 0) {
-            percentageChange = Math.round(((completedLast7Days - completedPrevious7Days) / completedPrevious7Days) * 100);
-        } else if (completedLast7Days > 0) {
-            percentageChange = 100; // From 0 to something is 100% growth for simplicity
-        }
-        
-        const percentageText = percentageChange !== 0 
-            ? <span className={cn("font-bold", percentageChange > 0 ? "text-green-500" : "text-red-500")}>{Math.abs(percentageChange)}%</span>
-            : null;
-
-        let message;
-        if (percentageChange > 0) {
-            message = <>avvalgi 7 kundan {percentageText} ko'proq. Ajoyib natija!</>;
-        } else if (percentageChange < 0) {
-            message = <>avvalgi 7 kundan {percentageText} kam. Keyingi hafta yanada harakat qilamiz!</>;
-        } else {
-            message = "Natijangiz o'tgan haftadagi kabi. Barqarorlik - bu ham yutuq!";
-        }
-
-        return {
-            message,
-            percentageChange,
-            Icon: percentageChange > 0 ? TrendingUp : (percentageChange < 0 ? TrendingDown : BarChartIcon),
-            periodTotal: completedLast7Days,
-        }
-    }, [user.taskHistory]);
-
-
-    return (
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Oxirgi 7 kunlik Faollik</CardTitle>
-               <Icon className={cn("h-4 w-4", percentageChange > 0 ? "text-green-500" : percentageChange < 0 ? "text-red-500" : "text-muted-foreground")} />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{periodTotal} vazifa</div>
-              <p className="text-xs text-muted-foreground">
-                {message}
-              </p>
-            </CardContent>
-        </Card>
-    );
-}
-
 export default function DashboardStats({ user, tasks }: DashboardStatsProps) {
-    const tasksToday = useMemo(() => {
-        const today = new Date();
-        return tasks.filter(task => {
-            const isScheduledToday = isTaskScheduledForDate(task, today);
-            if (!isScheduledToday) return false;
-            
-            const isCompletedToday = user.taskHistory.some(h => 
-                h.taskId === task.id && h.date === format(today, 'yyyy-MM-dd')
-            );
-            return !isCompletedToday;
-        });
-    }, [tasks, user]);
-
-
     return (
-       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                    Bugun Bajarilmagan Vazifalar
-                </CardTitle>
-                <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                <div className="text-2xl font-bold">
-                    {tasksToday.length}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                    {tasksToday.length > 0 ? "Qolgan vazifalarni bajaring" : "Bugungi barcha vazifalar bajarildi!"}
-                </p>
-                </CardContent>
-            </Card>
-            <WeeklyMotivation user={user} tasks={tasks} />
+       <div className="space-y-8">
+            <WeeklyActivityChart user={user} />
             <LeaderboardMotivation user={user} />
        </div>
     )

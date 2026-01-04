@@ -8,7 +8,7 @@ import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/navigation';
-import LanguageSwitcher from '@/components/language-switcher';
+import ThemeSwitcher from '@/components/theme-switcher';
 
 export default function LandingPage() {
   const t = useTranslations('landing');
@@ -38,7 +38,7 @@ export default function LandingPage() {
           <Logo />
         </Link>
         <nav className="ml-auto flex gap-2 sm:gap-4 items-center">
-          <LanguageSwitcher />
+          <ThemeSwitcher />
           <Button variant="ghost" asChild>
             <Link href="/login" prefetch={false}>
               {t('login')}
