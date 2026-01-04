@@ -1,8 +1,18 @@
 'use client';
+
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -14,13 +24,11 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import AppLayout from '@/components/layout/app-layout';
 import { useAuth } from '@/context/auth-context';
 import { createPersonalTask } from '@/lib/data';
-import { useRouter } from '@/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Clock, CalendarIcon, Smile, CalendarDays } from 'lucide-react';
-import type { DayOfWeek, TaskSchedule } from '@/lib/types';
+import type { DayOfWeek, TaskSchedule, PersonalTask } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -28,10 +36,9 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { Slider } from '@/components/ui/slider';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useTransition } from 'react';
 import { Switch } from '@/components/ui/switch';
+import { useTransition } from 'react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const scheduleSchema = z.object({
   type: z.enum(['one-time', 'date-range', 'recurring']),
@@ -61,9 +68,14 @@ const personalTaskSchema = z.object({
 
 const daysOfWeek: DayOfWeek[] = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-export default function CreatePersonalTaskPage() {
-  const { user, loading: authLoading } = useAuth();
-  const router = useRouter();
+interface CreateTaskDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onTaskCreated: (newTask: PersonalTask) => void;
+}
+
+export default function CreatePersonalTaskDialog({ isOpen, onClose, onTaskCreated }: CreateTaskDialogProps) {
+  const { user } = useAuth();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
@@ -87,7 +99,7 @@ export default function CreatePersonalTaskPage() {
 
     startTransition(async () => {
         try {
-        await createPersonalTask({
+        const newTask = await createPersonalTask({
             ...values,
             userId: user.id,
             schedule: values.schedule as TaskSchedule,
@@ -96,7 +108,9 @@ export default function CreatePersonalTaskPage() {
             title: "Shaxsiy Vazifa Yaratildi!",
             description: "Yangi odatingiz muvaffaqiyatli qo'shildi.",
         });
-        router.push('/dashboard');
+        onTaskCreated(newTask);
+        form.reset();
+        onClose();
         } catch (error) {
         console.error("Failed to create personal task", error);
         toast({
@@ -108,36 +122,21 @@ export default function CreatePersonalTaskPage() {
     });
   };
 
-  if (authLoading) {
-    return (
-        <AppLayout>
-            <div className="space-y-8">
-                <Skeleton className="h-12 w-1/3" />
-                <Skeleton className="h-96 w-full" />
-            </div>
-        </AppLayout>
-    );
-  }
-
   const scheduleType = form.watch('schedule.type');
 
   return (
-    <AppLayout>
-       <div className="space-y-8 max-w-3xl mx-auto">
-        <div className="rounded-lg bg-background/50 backdrop-blur-sm p-6 border">
-            <h1 className="text-3xl font-bold font-display">Shaxsiy Vazifa / Odat Yaratish</h1>
-            <p className="text-muted-foreground mt-1">
-                Yangi odatlarni shakllantirish orqali o'z maqsadingiz sari intiling.
-            </p>
-        </div>
-        <Card>
-            <CardHeader>
-                <CardTitle>Yangi Vazifa</CardTitle>
-                <CardDescription>O'zingiz uchun yangi majburiyat qo'shing.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+                <DialogTitle>Shaxsiy Vazifa / Odat Yaratish</DialogTitle>
+                <DialogDescription>
+                    Yangi odatlarni shakllantirish orqali o'z maqsadingiz sari intiling.
+                </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <ScrollArea className="max-h-[60vh] pr-4">
+                    <div className="space-y-6">
                         <FormField
                             control={form.control}
                             name="title"
@@ -165,7 +164,7 @@ export default function CreatePersonalTaskPage() {
                             )}
                         />
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <FormField
                                 control={form.control}
                                 name="estimatedTime"
@@ -201,36 +200,31 @@ export default function CreatePersonalTaskPage() {
                             />
                         </div>
 
-                         <Card className="bg-muted/50">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2"><CalendarDays className="h-5 w-5" /> Vazifa Jadvali</CardTitle>
-                                <CardDescription>Ushbu vazifani qachon bajarmoqchisiz?</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
-                                <FormField
-                                    control={form.control}
-                                    name="schedule.type"
-                                    render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Jadval Turi</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Jadval turini tanlang" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="recurring">Haftalik Takrorlanuvchi</SelectItem>
-                                                <SelectItem value="one-time">Bir Martalik</SelectItem>
-                                                <SelectItem value="date-range">Sana Oralig'i</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                    )}
-                                />
-
-                                {scheduleType === 'recurring' && (
+                        <div className="space-y-4 rounded-lg border p-4">
+                            <h3 className="flex items-center gap-2 font-semibold"><CalendarDays className="h-5 w-5" /> Vazifa Jadvali</h3>
+                             <FormField
+                                control={form.control}
+                                name="schedule.type"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Jadval Turi</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Jadval turini tanlang" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="recurring">Haftalik Takrorlanuvchi</SelectItem>
+                                            <SelectItem value="one-time">Bir Martalik</SelectItem>
+                                            <SelectItem value="date-range">Sana Oralig'i</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                            {scheduleType === 'recurring' && (
                                     <FormField
                                         control={form.control}
                                         name="schedule.days"
@@ -336,8 +330,7 @@ export default function CreatePersonalTaskPage() {
                                         )}}
                                     />
                                 )}
-                            </CardContent>
-                         </Card>
+                        </div>
                          
                          <FormField
                             control={form.control}
@@ -361,18 +354,19 @@ export default function CreatePersonalTaskPage() {
                                 </FormItem>
                             )}
                         />
-
-
-                        <div className="flex justify-end">
-                             <Button type="submit" disabled={isPending}>
-                                {isPending ? "Yaratilmoqda..." : "Vazifani Yaratish"}
-                            </Button>
-                        </div>
-                    </form>
-                </Form>
-            </CardContent>
-        </Card>
-      </div>
-    </AppLayout>
+                      </div>
+                    </ScrollArea>
+                    <DialogFooter className='pt-4'>
+                         <DialogClose asChild>
+                            <Button variant="outline" type="button">Bekor qilish</Button>
+                        </DialogClose>
+                         <Button type="submit" disabled={isPending}>
+                            {isPending ? "Yaratilmoqda..." : "Vazifani Yaratish"}
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </Form>
+        </DialogContent>
+    </Dialog>
   );
 }

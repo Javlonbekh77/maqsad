@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
 import EditPersonalTaskDialog from './edit-personal-task-dialog';
+import CreatePersonalTaskDialog from './create-personal-task-dialog';
 
 
 function MyTasksLoadingSkeleton() {
@@ -56,6 +57,7 @@ export default function MyTasksPage() {
     const [loadingTasks, setLoadingTasks] = useState(true);
     const [isPending, startTransition] = useTransition();
     const [editingTask, setEditingTask] = useState<PersonalTask | null>(null);
+    const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
 
     const fetchTasks = useCallback(async (userId: string) => {
         setLoadingTasks(true);
@@ -98,6 +100,10 @@ export default function MyTasksPage() {
             }
         });
     };
+    
+    const handleTaskCreated = (newTask: PersonalTask) => {
+        setTasks(prevTasks => [newTask, ...prevTasks]);
+    };
 
     const handleTaskUpdated = (updatedTask: PersonalTask) => {
         setTasks(prevTasks => prevTasks.map(task => task.id === updatedTask.id ? updatedTask : task));
@@ -118,7 +124,7 @@ export default function MyTasksPage() {
                            Shaxsiy vazifalaringizni boshqaring, tahrirlang yoki o'chiring.
                         </p>
                     </div>
-                     <Button onClick={() => router.push('/create-task')}>
+                     <Button onClick={() => setCreateDialogOpen(true)}>
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Yangi Vazifa Yaratish
                     </Button>
@@ -209,6 +215,11 @@ export default function MyTasksPage() {
                     onTaskUpdated={handleTaskUpdated}
                 />
             )}
+            <CreatePersonalTaskDialog
+                isOpen={isCreateDialogOpen}
+                onClose={() => setCreateDialogOpen(false)}
+                onTaskCreated={handleTaskCreated}
+            />
         </AppLayout>
     );
 }
