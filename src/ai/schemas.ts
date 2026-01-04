@@ -1,4 +1,4 @@
-import { z } from 'genkit/zod';
+import { z } from 'zod';
 
 // Note: No 'use server' here. This file just defines data structures.
 

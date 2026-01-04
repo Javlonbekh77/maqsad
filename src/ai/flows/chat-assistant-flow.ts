@@ -9,7 +9,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit/zod';
+import { z } from 'zod';
 import { ChatInputSchema, ChatOutputSchema } from '../schemas';
 
 export type ChatHistory = z.infer<typeof ChatInputSchema>['history'];
