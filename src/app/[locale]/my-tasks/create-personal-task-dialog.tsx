@@ -136,7 +136,7 @@ export default function CreatePersonalTaskDialog({ isOpen, onClose, onTaskCreate
             </DialogHeader>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)}>
-                  <ScrollArea className="max-h-[70vh] p-1">
+                  <ScrollArea className="max-h-[60vh] p-1">
                     <div className="space-y-6 px-4">
                         <FormField
                             control={form.control}
