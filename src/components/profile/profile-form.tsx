@@ -23,15 +23,15 @@ import { useRouter } from '@/navigation';
 import { useTransition, useEffect } from 'react';
 
 const profileFormSchema = z.object({
-  firstName: z.string().min(2, "First name must be at least 2 characters."),
-  lastName: z.string().min(2, "Last name must be at least 2 characters."),
+  firstName: z.string().min(2, "Ism kamida 2 belgidan iborat bo'lishi kerak."),
+  lastName: z.string().min(2, "Familiya kamida 2 belgidan iborat bo'lishi kerak."),
   goals: z
     .string()
-    .max(300, { message: 'Goals must not be longer than 300 characters.' })
+    .max(300, { message: 'Maqsadlar 300 belgidan oshmasligi kerak.' })
     .optional().or(z.literal('')),
   habits: z
     .string()
-    .max(300, { message: 'Habits must not be longer than 300 characters.' })
+    .max(300, { message: 'Odatlar 300 belgidan oshmasligi kerak.' })
     .optional().or(z.literal('')),
 });
 
@@ -93,7 +93,7 @@ export default function ProfileForm({ user }: { user: User }) {
               name="firstName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>First Name</FormLabel>
+                  <FormLabel>Ism</FormLabel>
                   <FormControl>
                     <Input placeholder="John" {...field} />
                   </FormControl>
@@ -106,7 +106,7 @@ export default function ProfileForm({ user }: { user: User }) {
               name="lastName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Last Name</FormLabel>
+                  <FormLabel>Familiya</FormLabel>
                   <FormControl>
                     <Input placeholder="Doe" {...field} />
                   </FormControl>

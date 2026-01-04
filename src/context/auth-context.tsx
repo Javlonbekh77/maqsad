@@ -1,8 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, type User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, type User as FirebaseUser, updateEmail, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
+import { doc, getDoc, setDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 import { auth, db } from '@/lib/firebase';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -17,6 +17,8 @@ interface AuthContextType {
   signup: (data: SignupData) => Promise<any>;
   logout: () => Promise<void>;
   refreshAuth: () => Promise<void>;
+  updateUserEmail: (currentPassword: string, newEmail: string) => Promise<void>;
+  updateUserPassword: (currentPassword: string, newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -131,7 +133,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [firebaseUser, fetchAppUser]);
 
-  const value = { user, firebaseUser, loading, login, signup, logout, refreshAuth };
+  const reauthenticate = async (currentPassword: string): Promise<void> => {
+    if (!auth.currentUser || !auth.currentUser.email) {
+      throw new Error("Foydalanuvchi tizimga kirmagan yoki email manzili mavjud emas.");
+    }
+    const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword);
+    await reauthenticateWithCredential(auth.currentUser, credential);
+  };
+
+  const updateUserEmail = async (currentPassword: string, newEmail: string) => {
+    if (!auth.currentUser) throw new Error("Foydalanuvchi topilmadi.");
+
+    await reauthenticate(currentPassword);
+    await updateEmail(auth.currentUser, newEmail);
+    // Update email in Firestore as well
+    const userDocRef = doc(db, 'users', auth.currentUser.uid);
+    await updateDoc(userDocRef, { email: newEmail });
+    // Refresh local user data
+    await refreshAuth();
+  };
+
+  const updateUserPassword = async (currentPassword: string, newPassword: string) => {
+    if (!auth.currentUser) throw new Error("Foydalanuvchi topilmadi.");
+
+    await reauthenticate(currentPassword);
+    await updatePassword(auth.currentUser, newPassword);
+  };
+
+  const value = { user, firebaseUser, loading, login, signup, logout, refreshAuth, updateUserEmail, updateUserPassword };
 
   return (
     <AuthContext.Provider value={value}>

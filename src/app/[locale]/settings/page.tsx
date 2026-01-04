@@ -2,6 +2,8 @@
 
 import AppLayout from "@/components/layout/app-layout";
 import ProfileForm from "@/components/profile/profile-form";
+import EmailChangeForm from "@/components/profile/email-change-form";
+import PasswordChangeForm from "@/components/profile/password-change-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/context/auth-context";
 import { useTranslations } from "next-intl";
@@ -86,11 +88,31 @@ export default function SettingsPage() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>{tProfile('settings.title')}</CardTitle>
-                        <CardDescription>{tSettings('subtitle')}</CardDescription>
+                        <CardTitle>Shaxsiy Ma'lumotlar</CardTitle>
+                        <CardDescription>Ism, familiya, maqsad va odatlaringizni o'zgartiring.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <ProfileForm user={user} />
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Email Manzilini O'zgartirish</CardTitle>
+                        <CardDescription>Hisobingizga biriktirilgan email manzilini yangilang.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <EmailChangeForm />
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Parolni Yangilash</CardTitle>
+                        <CardDescription>Xavfsizlik uchun parolingizni muntazam o'zgartirib turing.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <PasswordChangeForm />
                     </CardContent>
                 </Card>
 
