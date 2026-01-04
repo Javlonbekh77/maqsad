@@ -601,6 +601,7 @@ export const getNotificationsData = async (user: User): Promise<{
     }
 
     const lastChecked = user.notificationsLastCheckedAt || new Timestamp(0, 0);
+    const lastCheckedDate = lastChecked.toDate();
 
     const today = startOfDay(new Date());
     const yesterday = startOfDay(addDays(today, -1));
@@ -610,10 +611,10 @@ export const getNotificationsData = async (user: User): Promise<{
     let todayMeetings: (WeeklyMeeting & { groupName: string })[] = [];
     if (user.groups && user.groups.length > 0) {
         const groupIds = user.groups.slice(0, 30);
-        const meetingsQuery = query(collection(db, 'meetings'), 
+        const meetingsQuery = query(
+            collection(db, 'meetings'), 
             where('groupId', 'in', groupIds), 
-            where('day', '==', todayDayOfWeek),
-            where('createdAt', '>', lastChecked)
+            where('day', '==', todayDayOfWeek)
         );
         const groupsQuery = query(collection(db, 'groups'), where('__name__', 'in', groupIds));
 
@@ -621,14 +622,19 @@ export const getNotificationsData = async (user: User): Promise<{
         
         const groupMap = new Map(groupsSnapshot.docs.map(doc => [doc.id, doc.data().name]));
 
-        todayMeetings = meetingsSnapshot.docs.map(doc => {
-            const meeting = doc.data() as WeeklyMeeting;
-            return {
-                ...meeting,
-                id: doc.id,
-                groupName: groupMap.get(meeting.groupId) || 'Noma\'lum guruh'
-            };
-        });
+        todayMeetings = meetingsSnapshot.docs
+            .map(doc => {
+                const meeting = doc.data() as WeeklyMeeting;
+                return {
+                    ...meeting,
+                    id: doc.id,
+                    groupName: groupMap.get(meeting.groupId) || 'Noma\'lum guruh'
+                };
+            })
+            .filter(meeting => {
+                const createdAt = (meeting.createdAt as Timestamp)?.toDate();
+                return createdAt ? createdAt > lastCheckedDate : true;
+            });
     }
     
     // 2. Get unread messages
@@ -638,7 +644,8 @@ export const getNotificationsData = async (user: User): Promise<{
         const unreadCounts = await Promise.all(
             groupDetails.map(async (group) => {
                 const lastRead = user.lastRead?.[group.id] || new Timestamp(0, 0);
-                if (lastRead > lastChecked) { // Only count if unread since last notification check
+                // Only consider messages that are newer than the last time notifications were checked
+                if (lastRead.toDate() > lastCheckedDate) { 
                      const count = await getUnreadMessageCount(group.id, lastRead);
                      if (count > 0) {
                         return { groupId: group.id, groupName: group.name, count };
@@ -658,19 +665,21 @@ export const getNotificationsData = async (user: User): Promise<{
     const overdueTasks: UserTask[] = [];
 
     allScheduledTasks.forEach(task => {
-        const taskCreatedAt = (task.createdAt as Timestamp).toDate();
-        // Check only for yesterday's overdue tasks, respecting the creation date and last checked time
-        if (isTaskScheduledForDate(task, yesterday) && taskCreatedAt < yesterday) {
+        const taskCreatedAt = (task.createdAt as Timestamp)?.toDate();
+        if (!taskCreatedAt) return;
+
+        // Check only for yesterday's overdue tasks, and only if the task is "new" since last check
+        if (isTaskScheduledForDate(task, yesterday) && taskCreatedAt < yesterday && taskCreatedAt > lastCheckedDate) {
              const isCompletedYesterday = user.taskHistory.some(h => h.taskId === task.id && h.date === format(yesterday, 'yyyy-MM-dd'));
-             if (!isCompletedYesterday && taskCreatedAt > lastChecked.toDate()) { // Check if task is new since last check
+             if (!isCompletedYesterday) {
                 overdueTasks.push(task);
              }
         }
         
-        // Check for today's tasks
-        if (isTaskScheduledForDate(task, today)) {
+        // Check for today's tasks, and only if the task is "new" since last check
+        if (isTaskScheduledForDate(task, today) && taskCreatedAt > lastCheckedDate) {
             const isCompletedToday = user.taskHistory.some(h => h.taskId === task.id && h.date === format(today, 'yyyy-MM-dd'));
-            if (!isCompletedToday && taskCreatedAt > lastChecked.toDate()) { // Check if task is new since last check
+            if (!isCompletedToday) {
                 todayIncompletedTasks.push(task);
             }
         }
