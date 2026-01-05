@@ -91,76 +91,73 @@ export const getUserGroups = async(userId: string): Promise<Group[]> => {
 
 export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> => {
     const userSchedules: UserTaskSchedule[] = Array.isArray(user.taskSchedules) ? user.taskSchedules : [];
-    const scheduledGroupTaskIds = userSchedules.map(schedule => schedule.taskId);
     
-    // Fetch personal tasks
+    // 1. Fetch personal tasks
     const personalTasksQuery = query(collection(db, 'personal_tasks'), where('userId', '==', user.id));
-    const personalTasksPromise = getDocs(personalTasksQuery);
+    const personalTasksSnapshot = await getDocs(personalTasksQuery);
+    const personalTasks: UserTask[] = personalTasksSnapshot.docs.map(doc => {
+        const taskData = doc.data() as PersonalTask;
+        return {
+            ...taskData,
+            id: doc.id,
+            isCompleted: false, // will be checked on the client
+            taskType: 'personal',
+            coins: PERSONAL_TASK_COINS,
+            history: user.taskHistory?.filter(h => h.taskId === doc.id) || [],
+        };
+    });
 
-    // Fetch group tasks that the user has specifically scheduled
-    let groupTasksPromise: Promise<Task[]> = Promise.resolve([]);
+    // 2. Fetch group tasks that the user has specifically scheduled
+    const scheduledGroupTaskIds = userSchedules.map(schedule => schedule.taskId);
+    let groupTasks: UserTask[] = [];
+
     if (scheduledGroupTaskIds.length > 0) {
         const taskIdsInChunks: string[][] = [];
         for (let i = 0; i < scheduledGroupTaskIds.length; i += 30) {
             taskIdsInChunks.push(scheduledGroupTaskIds.slice(i, i + 30));
         }
-        
+
         const taskPromises = taskIdsInChunks.map(chunk => 
             getDocs(query(collection(db, 'tasks'), where('__name__', 'in', chunk)))
         );
 
-        groupTasksPromise = Promise.all(taskPromises).then(snapshots => 
-            snapshots.flatMap(snapshot => 
-                snapshot.docs.map(doc => ({ ...doc.data() as Task, id: doc.id, createdAt: doc.data().createdAt || serverTimestamp() }))
-            )
+        const groupTasksSnapshots = await Promise.all(taskPromises);
+        const fetchedTasks = groupTasksSnapshots.flatMap(snapshot => 
+            snapshot.docs.map(doc => ({ ...doc.data() as Task, id: doc.id }))
         );
-    }
 
-    const [personalTasksSnapshot, groupTasks] = await Promise.all([personalTasksPromise, groupTasksPromise]);
+        if (fetchedTasks.length > 0) {
+            // Get all group names in one go
+            const groupIds = [...new Set(fetchedTasks.map(t => t.groupId))];
+            let groupMap = new Map();
+            if (groupIds.length > 0) {
+                const groupChunks: string[][] = [];
+                 for (let i = 0; i < groupIds.length; i += 30) {
+                    groupChunks.push(groupIds.slice(i, i + 30));
+                }
+                const groupPromises = groupChunks.map(chunk => getDocs(query(collection(db, 'groups'), where('__name__', 'in', chunk))));
+                const allGroupsSnapshots = await Promise.all(groupPromises);
+                allGroupsSnapshots.flat().forEach(snap => snap.docs.forEach(doc => groupMap.set(doc.id, doc.data().name)));
+            }
 
-    const personalTasks = personalTasksSnapshot.docs.map(doc => ({ ...doc.data() as PersonalTask, id: doc.id, createdAt: doc.data().createdAt || serverTimestamp() }));
-
-    // Get all group names in one go for the fetched tasks
-    let groupMap = new Map();
-    if (groupTasks.length > 0) {
-        const groupIds = [...new Set(groupTasks.map(t => t.groupId))].slice(0, 30);
-        if (groupIds.length > 0) {
-            const allGroupsSnapshot = await getDocs(query(collection(db, 'groups'), where('__name__', 'in', groupIds)));
-            groupMap = new Map(allGroupsSnapshot.docs.map(doc => [doc.id, doc.data().name]));
-        }
-    }
-    
-    const allTasks: UserTask[] = [];
-
-    // Process personal tasks
-    personalTasks.forEach(task => {
-        allTasks.push({
-            ...task,
-            isCompleted: false, // will be checked on the client
-            taskType: 'personal',
-            coins: PERSONAL_TASK_COINS,
-            history: user.taskHistory?.filter(h => h.taskId === task.id) || [],
-            createdAt: task.createdAt,
-        });
-    });
-
-    // Process group tasks
-    groupTasks.forEach(task => {
-        const userScheduleForTask = userSchedules.find(s => s.taskId === task.id);
-        if (userScheduleForTask) {
-             allTasks.push({
-                ...task,
-                groupName: groupMap.get(task.groupId) || 'Unknown Group',
-                isCompleted: false, // will be checked on the client
-                taskType: 'group',
-                schedule: userScheduleForTask.schedule,
-                history: user.taskHistory?.filter(h => h.taskId === task.id) || [],
-                createdAt: task.createdAt,
+            // Map the fetched tasks to UserTask[] with correct, user-specific schedule
+            groupTasks = fetchedTasks.map(task => {
+                const userScheduleForTask = userSchedules.find(s => s.taskId === task.id);
+                return {
+                    ...task,
+                    groupName: groupMap.get(task.groupId) || 'Unknown Group',
+                    isCompleted: false, // will be checked on the client
+                    taskType: 'group',
+                    // CRITICAL: Override with the user's specific schedule for this task
+                    schedule: userScheduleForTask!.schedule, 
+                    history: user.taskHistory?.filter(h => h.taskId === task.id) || [],
+                };
             });
         }
-    });
+    }
 
-    return allTasks;
+    // 3. Combine personal and group tasks
+    return [...personalTasks, ...groupTasks];
 };
 
 
@@ -719,4 +716,5 @@ export const updateUserLastRead = async (userId: string, groupId: string) => {
 };
 
     
+
 
