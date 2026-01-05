@@ -7,6 +7,7 @@ import { useTimer } from '@/context/timer-context';
 import { format as formatTime } from 'date-fns';
 import { Play, Pause, RotateCcw, Volume2, VolumeX } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
+import { Input } from '@/components/ui/input';
 
 const POMO_DURATIONS = [
   { label: '15 min', value: 15 },
@@ -25,24 +26,29 @@ function formatDisplayTime(seconds: number): string {
 export default function PomoTimerPage() {
   const { startTimer, pauseTimer, resumeTimer, stopTimer, activeTimer, timeRemaining, isRunning } = useTimer();
   
-  // Local state for duration selection before a timer starts
-  const [selectedDuration, setSelectedDuration] = useState(25);
+  const [selectedDuration, setSelectedDuration] = useState<number | null>(25);
+  const [customDuration, setCustomDuration] = useState(30);
   const [isMuted, setIsMuted] = useState(false);
 
-  // When a timer becomes active, sync the local duration state
   useEffect(() => {
     if (activeTimer) {
         setSelectedDuration(activeTimer.duration / 60);
+    } else {
+        // If timer is stopped, reset to a default non-custom value
+        setSelectedDuration(25);
     }
   }, [activeTimer]);
 
 
   const handleStartPomo = () => {
+    const durationToStart = selectedDuration === null ? customDuration : selectedDuration;
+    if (durationToStart <= 0) return;
+
     const task = {
       id: 'pomo-' + Date.now(),
-      title: `Fokus sessiyasi (${selectedDuration} daqiqa)`,
+      title: `Fokus sessiyasi (${durationToStart} daqiqa)`,
       description: 'Pomodoro texnikasi bilan diqqatni jamlash',
-      coins: 0, // No coins for pomo by default
+      coins: 0,
       taskType: 'personal',
       schedule: { type: 'one-time', date: formatTime(new Date(), 'yyyy-MM-dd') },
       isCompleted: false,
@@ -52,12 +58,11 @@ export default function PomoTimerPage() {
       visibility: 'private',
     } as any;
     
-    startTimer(task, selectedDuration);
+    startTimer(task, durationToStart);
   };
   
   const handleReset = () => {
     stopTimer();
-    // Optionally reset to a default duration
     setSelectedDuration(25);
   };
 
@@ -69,7 +74,11 @@ export default function PomoTimerPage() {
     }
   };
 
-  const displayTime = activeTimer ? formatDisplayTime(timeRemaining) : formatDisplayTime(selectedDuration * 60);
+  const durationInSeconds = activeTimer 
+    ? activeTimer.duration 
+    : (selectedDuration === null ? customDuration : selectedDuration) * 60;
+
+  const displayTime = activeTimer ? formatDisplayTime(timeRemaining) : formatDisplayTime(durationInSeconds);
   const timerStatus = activeTimer ? (isRunning ? 'Ishlayapti' : 'Pauza') : 'Tayyor';
 
   return (
@@ -88,7 +97,7 @@ export default function PomoTimerPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-4 gap-2 mb-8">
+          <div className="grid grid-cols-5 gap-2 mb-4">
             {POMO_DURATIONS.map((item) => (
               <Button
                 key={item.value}
@@ -99,7 +108,26 @@ export default function PomoTimerPage() {
                 {item.label}
               </Button>
             ))}
+             <Button
+                variant={selectedDuration === null && !activeTimer ? 'default' : 'outline'}
+                disabled={!!activeTimer}
+                onClick={() => setSelectedDuration(null)}
+              >
+                Maxsus
+              </Button>
           </div>
+            
+            {selectedDuration === null && !activeTimer && (
+                <div className='mb-8'>
+                    <Input 
+                        type="number"
+                        placeholder="Vaqtni daqiqada kiriting"
+                        value={customDuration}
+                        onChange={(e) => setCustomDuration(parseInt(e.target.value) || 0)}
+                        className="text-center"
+                    />
+                </div>
+            )}
 
           <div className="flex gap-4 justify-center mb-8">
             {!activeTimer ? (
