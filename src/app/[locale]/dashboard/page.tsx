@@ -44,7 +44,11 @@ export default function DashboardPage() {
   const [tasks, setTasks] = useState<UserTask[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
 
-  const fetchDashboardData = useCallback(async (userToFetch: User) => {
+  const fetchDashboardData = useCallback(async (userToFetch: User | null) => {
+    if (!userToFetch) {
+        setDataLoading(false);
+        return;
+    }
     setDataLoading(true);
     try {
       const fetchedUser = await getUser(userToFetch.id);
@@ -57,7 +61,8 @@ export default function DashboardPage() {
       setTasks(userTasks);
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
-      setUser(userToFetch);
+      // In case of error, still set some user data to avoid blank screen
+      setUser(userToFetch); 
       setTasks([]);
     } finally {
       setDataLoading(false);
@@ -68,9 +73,9 @@ export default function DashboardPage() {
     if (!authLoading) {
       if (!authUser) {
         router.push('/login');
-        return;
+      } else {
+        fetchDashboardData(authUser);
       }
-      fetchDashboardData(authUser);
     }
   }, [authUser, authLoading, router, fetchDashboardData]);
 
