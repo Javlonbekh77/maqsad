@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import type { Task, DayOfWeek, UserTaskSchedule } from '@/lib/types';
+import type { Task, DayOfWeek, UserTaskSchedule, TaskSchedule } from '@/lib/types';
 import { Coins } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
@@ -46,13 +46,14 @@ export default function JoinGroupDialog({
   tasks,
 }: JoinGroupDialogProps) {
   const t = useTranslations('actions');
-  const [schedules, setSchedules] = useState<Record<string, DayOfWeek[]>>({});
+  const [schedules, setSchedules] = useState<Record<string, TaskSchedule>>({});
 
   const handleDaySelection = (taskId: string, newDays: DayOfWeek[]) => {
     setSchedules(prev => {
       const updated = { ...prev };
       if (newDays.length > 0) {
-        updated[taskId] = newDays;
+        // We only care about recurring for this dialog
+        updated[taskId] = { type: 'recurring', days: newDays };
       } else {
         delete updated[taskId];
       }
@@ -63,9 +64,9 @@ export default function JoinGroupDialog({
   const isTaskSelected = (taskId: string) => schedules.hasOwnProperty(taskId);
 
   const handleConfirm = () => {
-    const finalSchedules: UserTaskSchedule[] = Object.entries(schedules).map(([taskId, days]) => ({
+    const finalSchedules: UserTaskSchedule[] = Object.entries(schedules).map(([taskId, schedule]) => ({
       taskId,
-      days,
+      schedule,
     }));
     onConfirm(finalSchedules);
     setSchedules({}); // Reset for next time
@@ -94,8 +95,10 @@ export default function JoinGroupDialog({
         <ScrollArea className="max-h-[60vh]">
             <div className="space-y-4 p-1">
             {tasks.length > 0 ? tasksToShow.map((task) => {
-              const selectedDays = schedules[task.id] || [];
+              const selectedSchedule = schedules[task.id];
+              const selectedDays = selectedSchedule?.type === 'recurring' ? selectedSchedule.days || [] : [];
               const isSelected = selectedDays.length > 0;
+              
               return (
                 <div key={task.id} className="flex items-start gap-4 rounded-lg border p-4 transition-colors data-[selected=true]:bg-muted/50" data-selected={isSelected}>
                     <div className="grid gap-2.5 leading-none flex-1">
@@ -109,7 +112,9 @@ export default function JoinGroupDialog({
                                     checked={isTaskSelected(task.id)}
                                     onCheckedChange={(checked) => {
                                         if (checked) {
-                                            handleDaySelection(task.id, daysOfWeek); // Select all days by default
+                                            // Select all days by default if the task's schedule is recurring
+                                            const defaultDays = task.schedule.type === 'recurring' && task.schedule.days ? task.schedule.days : daysOfWeek;
+                                            handleDaySelection(task.id, defaultDays); 
                                         } else {
                                             handleDaySelection(task.id, []); // Deselect
                                         }

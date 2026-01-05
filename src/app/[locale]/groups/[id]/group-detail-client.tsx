@@ -89,6 +89,7 @@ export default function GroupDetailClient() {
       await addUserToGroup(currentUser.id, group.id, schedules);
       setJoinDialogOpen(false);
       // Refresh auth context to get new user data (groups, taskSchedules)
+      // This is the key to triggering the SWR refetch on the dashboard.
       await refreshAuth();
       // Re-fetch group data to show the user as a new member immediately
       await fetchGroupData(id as string); 

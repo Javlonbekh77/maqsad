@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import AppLayout from "@/components/layout/app-layout";
 import TodaySchedule from "@/components/dashboard/today-schedule";
 import type { User, UserTask } from "@/lib/types";
@@ -42,6 +42,7 @@ function LoadingFallback() {
     );
 }
 
+// The fetcher now only depends on the user object.
 const fetcher = ([key, user]: [string, User | null]) => {
   if (!user) {
     return Promise.resolve([]);
@@ -53,15 +54,18 @@ export default function DashboardClient() {
   const t = useTranslations('dashboard');
   const { user, loading: authLoading } = useAuth();
 
+  // SWR will automatically re-fetch when the 'user' key changes.
+  // This happens when we call `refreshAuth` after joining a group.
   const { data: tasks, error, mutate, isLoading } = useSWR(
     user ? ['scheduledTasks', user] : null,
     fetcher,
     {
-      revalidateOnFocus: false,
+      revalidateOnFocus: false, // Prevents re-fetching on window focus
     }
   );
 
   const handleTaskCompletion = useCallback(async () => {
+    // Mutate tells SWR to re-run the fetcher to get fresh data
     await mutate();
   }, [mutate]);
 
@@ -76,7 +80,7 @@ export default function DashboardClient() {
        <AppLayout>
         <div className="text-center py-10">
           <h2 className="text-xl font-semibold">Could not load dashboard data.</h2>
-          <p className="text-muted-foreground mt-2">Please try refreshing the page.</p>
+          <p className="text-muted-foreground mt-2">Please try refreshing the page. Error: {error.message}</p>
         </div>
       </AppLayout>
      )

@@ -1,11 +1,10 @@
 'use client';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import DashboardClient from "./dashboard-client";
 import AppLayout from '@/components/layout/app-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from '@/navigation';
-import { useEffect } from 'react';
 
 function LoadingFallback() {
     return (
@@ -39,6 +38,8 @@ export default function DashboardPage() {
   const { user: authUser, loading: authLoading } = useAuth();
   const router = useRouter();
   
+  // This page now only handles authentication checks and renders the client.
+  // All data fetching logic is moved into DashboardClient.
   useEffect(() => {
     if (!authLoading && !authUser) {
       router.push('/login');
