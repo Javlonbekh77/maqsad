@@ -44,13 +44,6 @@ export default function DashboardClient({ user, initialTasks, onTaskCompletion }
                     userId={user.id}
                     onTaskCompletion={handleTaskCompletion}
                 />
-                 <TodaySchedule
-                    title="Guruh Vazifalari"
-                    description="Guruhlaringizdagi bugungi vazifalar."
-                    tasks={tasks.filter(t => t.taskType === 'group')}
-                    userId={user.id}
-                    onTaskCompletion={handleTaskCompletion}
-                />
                  <HabitTracker user={user} />
             </div>
             <div className="space-y-8">
