@@ -51,6 +51,7 @@ export default function DashboardPage() {
     }
     setDataLoading(true);
     try {
+      // Re-fetch the user object to ensure all fields (like taskSchedules) are up-to-date
       const fetchedUser = await getUser(userToFetch.id);
       if (!fetchedUser) {
         throw new Error("Could not fetch user profile.");
@@ -74,12 +75,14 @@ export default function DashboardPage() {
       if (!authUser) {
         router.push('/login');
       } else {
+        // Fetch data whenever authUser changes (e.g., after refreshAuth is called)
         fetchDashboardData(authUser);
       }
     }
   }, [authUser, authLoading, router, fetchDashboardData]);
 
   const handleTaskCompletion = useCallback(async () => {
+    // Re-fetch data to reflect the completed task
     if (authUser) {
       await fetchDashboardData(authUser);
     }
@@ -105,3 +108,5 @@ export default function DashboardPage() {
     </Suspense>
   );
 }
+
+    
