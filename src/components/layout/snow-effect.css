@@ -19,11 +19,26 @@
     animation: fall linear infinite;
 }
 
-.snowflake::after {
-    content: '❄'; /* Using a unicode snowflake character */
-    font-size: var(--snowflake-size, 14px);
-    color: white;
-    text-shadow: 0 0 2px #fff, 0 0 5px #fff, 0 0 10px #00aaff, 0 0 15px #00aaff;
+.snowflake::after,
+.snowflake::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 
+        /* Main arms */
+        0 -12px 0 white, 0 12px 0 white,
+        12px 0 0 white, -12px 0 0 white,
+        /* Diagonal arms */
+        9px 9px 0 white, -9px -9px 0 white,
+        9px -9px 0 white, -9px 9px 0 white;
+}
+
+.snowflake::before {
+    transform: rotate(45deg);
+    opacity: 0.7;
 }
 
 
@@ -44,67 +59,67 @@
 /* Unique snowflake styles */
 
 .snowflake:nth-child(10n) {
-    --snowflake-size: 20px;
+    transform: scale(0.8);
     animation-duration: 8s;
     animation-delay: -3s;
     --fall-x: -15vw;
 }
 
 .snowflake:nth-child(10n + 1) {
-    --snowflake-size: 12px;
+    transform: scale(0.5);
     animation-duration: 12s;
     animation-delay: -1s;
     --fall-x: 10vw;
 }
 
 .snowflake:nth-child(10n + 2) {
-    --snowflake-size: 8px;
+    transform: scale(0.3);
     animation-duration: 15s;
     animation-delay: -5s;
     --fall-x: -12vw;
 }
 
 .snowflake:nth-child(10n + 3) {
-    --snowflake-size: 16px;
+    transform: scale(0.7);
     animation-duration: 7s;
     animation-delay: -2s;
     --fall-x: 8vw;
 }
 
 .snowflake:nth-child(10n + 4) {
-    --snowflake-size: 10px;
+    transform: scale(0.4);
     animation-duration: 18s;
     animation-delay: -4s;
     --fall-x: -7vw;
 }
 
 .snowflake:nth-child(10n + 5) {
-    --snowflake-size: 22px;
+    transform: scale(0.9);
     animation-duration: 9s;
     animation-delay: -7s;
     --fall-x: 15vw;
 }
 
 .snowflake:nth-child(10n + 6) {
-    --snowflake-size: 6px;
+    transform: scale(0.2);
     animation-duration: 20s;
     animation-delay: -8s;
     --fall-x: -5vw;
 }
 .snowflake:nth-child(10n + 7) {
-    --snowflake-size: 18px;
+    transform: scale(0.75);
     animation-duration: 11s;
     animation-delay: -3.5s;
     --fall-x: 12vw;
 }
 .snowflake:nth-child(10n + 8) {
-    --snowflake-size: 14px;
+    transform: scale(0.6);
     animation-duration: 13s;
     animation-delay: -6s;
     --fall-x: -9vw;
 }
 .snowflake:nth-child(10n + 9) {
-    --snowflake-size: 9px;
+    transform: scale(0.35);
     animation-duration: 16s;
     animation-delay: -0.5s;
     --fall-x: 6vw;
