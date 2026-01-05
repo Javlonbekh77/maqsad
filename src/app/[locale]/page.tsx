@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, Users, Trophy } from 'lucide-react';
+import { BrainCircuit, CheckCircle, Users, Trophy, Clock, BookOpen } from 'lucide-react';
 import Logo from '@/components/logo';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -16,19 +16,19 @@ export default function LandingPage() {
 
   const features = [
     {
-      icon: <Users className="h-8 w-8 text-primary" />,
-      title: t('feature1Title'),
-      description: t('feature1Desc'),
+      icon: <BrainCircuit className="h-8 w-8 text-primary" />,
+      title: "Aqlli Rejalashtirish",
+      description: "AI yordamchimiz bilan maqsadlaringizni aniqlashtiring, ularni kichik, bajariladigan vazifalarga bo'ling va samaradorligingizni oshiring.",
     },
     {
-      icon: <CheckCircle className="h-8 w-8 text-primary" />,
-      title: t('feature2Title'),
-      description: t('feature2Desc'),
+      icon: <div className="flex -space-x-2"><Clock className="h-8 w-8 text-primary" /><BookOpen className="h-8 w-8 text-primary" /></div>,
+      title: "Fokus va Refleksiya",
+      description: "Pomodoro taymeri yordamida diqqatingizni jamlang va Kundalik yuritish orqali o'sishingizni tahlil qilib boring.",
     },
     {
       icon: <Trophy className="h-8 w-8 text-primary" />,
-      title: t('feature3Title'),
-      description: t('feature3Desc'),
+      title: "Raqobat va Rag'bat",
+      description: "Vazifalarni bajarib oltin va kumush tangalar yig'ing, peshqadamlar ro'yxatida yuqorilang va hamjamiyat bilan sog'lom raqobat olib boring.",
     },
   ];
 
@@ -63,8 +63,8 @@ export default function LandingPage() {
               <p className="mx-auto max-w-[700px] text-foreground/80 md:text-xl">
                 {t('heroSubtitle')}
               </p>
-               <p className="font-semibold text-lg md:text-xl text-foreground max-w-2xl">
-                "Bir maqsad yo'lida birlashganlar aql bovar qilmas kuchga ega!!!"
+               <p className="font-semibold text-2xl md:text-3xl text-foreground max-w-3xl leading-tight my-4">
+                &quot;Bir maqsad yo'lida birlashganlar aql bovar qilmas kuchga ega!!!&quot;
               </p>
               <div className="space-x-4">
                 <Button size="lg" asChild>
