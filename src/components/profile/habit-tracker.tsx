@@ -7,7 +7,7 @@ import type { User, DayOfWeek, PersonalTask, Task, UserTask, TaskSchedule } from
 import { format, add, startOfWeek, isSameDay, isToday, startOfDay, isWithinInterval, parseISO } from 'date-fns';
 import { Check, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useEffect, useState, useCallback } from "react";
-import { getTasksForUserGroups, getPersonalTasksForUser, isTaskScheduledForDate } from "@/lib/data";
+import { getTasksForUserGroups, getPersonalTasksForUser, isTaskScheduledForDate, getGroupTasksForUser } from "@/lib/data";
 import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "../ui/skeleton";
@@ -46,19 +46,14 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
   const fetchUserTasks = useCallback(async () => {
       setLoading(true);
       
-      const groupTasksPromise = user.groups && user.groups.length > 0 
-        ? getTasksForUserGroups(user.groups) 
-        : Promise.resolve([]);
-      
       const personalTasksPromise = getPersonalTasksForUser(user.id);
+      const groupTasksPromise = getGroupTasksForUser(user);
       
-      const [groupTasks, personalTasks] = await Promise.all([groupTasksPromise, personalTasksPromise]);
+      const [personalTasks, groupTasks] = await Promise.all([personalTasksPromise, groupTasksPromise]);
       
-      
-      const allGroupTasks = groupTasks.map(t => ({...t, taskType: 'group'}) as UserTask)
       const allPersonalTasks = personalTasks.map(t => ({...t, taskType: 'personal'}) as UserTask)
 
-      const combinedTasks: UserTask[] = [...allGroupTasks, ...allPersonalTasks];
+      const combinedTasks: UserTask[] = [...groupTasks, ...allPersonalTasks];
 
       setAllTasks(combinedTasks.map(task => {
           if (task.taskType === 'group') {
@@ -69,7 +64,7 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
       }));
 
       setLoading(false);
-  }, [user.groups, user.taskSchedules, user.id]);
+  }, [user]);
 
   useEffect(() => {
     fetchUserTasks();
