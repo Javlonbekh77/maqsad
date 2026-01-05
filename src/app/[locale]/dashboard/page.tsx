@@ -1,12 +1,10 @@
 'use client';
-import { Suspense, useEffect, useState, useCallback } from 'react';
+import { Suspense } from 'react';
 import DashboardClient from "./dashboard-client";
 import AppLayout from '@/components/layout/app-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from '@/navigation';
-import { getUser, getScheduledTasksForUser } from '@/lib/data';
-import type { User, UserTask } from '@/lib/types';
 
 function LoadingFallback() {
     return (
@@ -39,74 +37,28 @@ function LoadingFallback() {
 export default function DashboardPage() {
   const { user: authUser, loading: authLoading } = useAuth();
   const router = useRouter();
+  
+  if (authLoading) {
+    return <LoadingFallback />;
+  }
 
-  const [user, setUser] = useState<User | null>(authUser);
-  const [tasks, setTasks] = useState<UserTask[]>([]);
-  const [dataLoading, setDataLoading] = useState(true);
-
-  const fetchDashboardData = useCallback(async (userToFetch: User | null) => {
-    if (!userToFetch) {
-        setDataLoading(false);
-        return;
-    }
-    setDataLoading(true);
-    try {
-      // Re-fetch the user object to ensure all fields (like taskSchedules) are up-to-date
-      const fetchedUser = await getUser(userToFetch.id);
-      if (!fetchedUser) {
-        throw new Error("Could not fetch user profile.");
-      }
-      const userTasks = await getScheduledTasksForUser(fetchedUser);
-
-      setUser(fetchedUser);
-      setTasks(userTasks);
-    } catch (error) {
-      console.error("Failed to fetch dashboard data:", error);
-      // In case of error, still set some user data to avoid blank screen
-      setUser(userToFetch); 
-      setTasks([]);
-    } finally {
-      setDataLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!authLoading) {
-      if (!authUser) {
+  if (!authUser) {
+    // Redirect on the client side if not authenticated
+    // This is better than a server-side redirect for this flow
+    // as auth state is determined on the client.
+    if (typeof window !== 'undefined') {
         router.push('/login');
-      } else {
-        // Fetch data whenever authUser changes (e.g., after refreshAuth is called)
-        fetchDashboardData(authUser);
-      }
     }
-  }, [authUser, authLoading, router, fetchDashboardData]);
-
-  const handleTaskCompletion = useCallback(async () => {
-    // Re-fetch data to reflect the completed task
-    if (authUser) {
-      await fetchDashboardData(authUser);
-    }
-  }, [authUser, fetchDashboardData]);
-
-  const isLoading = authLoading || dataLoading;
+    return <LoadingFallback />;
+  }
 
   return (
     <Suspense fallback={<LoadingFallback />}>
-        {isLoading ? (
-            <LoadingFallback />
-        ) : user ? (
-            <DashboardClient 
-                user={user} 
-                initialTasks={tasks}
-                onTaskCompletion={handleTaskCompletion}
-            />
-        ) : (
-            <AppLayout>
-                <p>Foydalanuvchi topilmadi. Tizimga qaytadan kiring.</p>
-            </AppLayout>
-        )}
+      {authUser ? (
+        <DashboardClient user={authUser} />
+      ) : (
+        <LoadingFallback />
+      )}
     </Suspense>
   );
 }
-
-    

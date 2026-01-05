@@ -14,9 +14,13 @@ import { Skeleton } from "../ui/skeleton";
 import { Badge } from "../ui/badge";
 import { Timestamp } from "firebase/firestore";
 import TaskDetailDialog from "../tasks/task-detail-dialog";
+import useSWR from 'swr';
+
 
 interface HabitTrackerProps {
   user: User;
+  allTasks: UserTask[];
+  onDataNeedsRefresh: () => void;
 }
 
 const getWeekDates = (start: Date): Date[] => {
@@ -37,11 +41,13 @@ const toDate = (timestamp: Timestamp | Date): Date => {
 
 function isTaskScheduledForDate(task: UserTask, date: Date): boolean {
     const taskCreationDate = task.createdAt instanceof Timestamp ? startOfDay(task.createdAt.toDate()) : startOfDay(new Date());
-    if (date < taskCreationDate) return false;
+    if (startOfDay(date) < taskCreationDate) {
+        return false; // Don't schedule tasks for dates before they were created.
+    }
 
     const schedule = task.schedule;
     if (!schedule) return false;
-
+    
     switch(schedule.type) {
         case 'one-time':
             return schedule.date === format(date, 'yyyy-MM-dd');
@@ -60,46 +66,19 @@ function isTaskScheduledForDate(task: UserTask, date: Date): boolean {
     }
 }
 
-export default function HabitTracker({ user }: HabitTrackerProps) {
+export default function HabitTracker({ user, allTasks, onDataNeedsRefresh }: HabitTrackerProps) {
   const [weekStartDate, setWeekStartDate] = useState(startOfWeek(new Date()));
-  const [allTasks, setAllTasks] = useState<UserTask[]>([]);
-  const [loading, setLoading] = useState(true);
   const [viewingTask, setViewingTask] = useState<UserTask | null>(null);
   
   const dates = useMemo(() => getWeekDates(weekStartDate), [weekStartDate]);
   const userSchedules = useMemo(() => user.taskSchedules || [], [user.taskSchedules]);
 
-  const fetchUserTasks = useCallback(async () => {
-      setLoading(true);
-      
-      const groupTasksPromise = user.groups && user.groups.length > 0 
-        ? getTasksForUserGroups(user.groups) 
-        : Promise.resolve([]);
-      
-      const personalTasksPromise = getPersonalTasksForUser(user.id);
-      
-      const [groupTasks, personalTasks] = await Promise.all([groupTasksPromise, personalTasksPromise]);
-      
-      
-      const allGroupTasks = groupTasks.map(t => ({...t, taskType: 'group'}) as UserTask)
-      const allPersonalTasks = personalTasks.map(t => ({...t, taskType: 'personal'}) as UserTask)
-
-      const combinedTasks: UserTask[] = [...allGroupTasks, ...allPersonalTasks];
-
-      setAllTasks(combinedTasks.map(task => {
-          if (task.taskType === 'group') {
-              const userSchedule = user.taskSchedules?.find(s => s.taskId === task.id);
-              return { ...task, schedule: userSchedule ? userSchedule.schedule : task.schedule };
-          }
-          return task;
-      }));
-
-      setLoading(false);
-  }, [user.groups, user.taskSchedules, user.id]);
-
   useEffect(() => {
-    fetchUserTasks();
-  }, [fetchUserTasks]);
+    // When the user data changes (e.g., after joining a group), we might need to refresh SWR data in parent.
+    // This can be done via a callback.
+    onDataNeedsRefresh();
+  }, [user, onDataNeedsRefresh]);
+
 
   const goToPreviousWeek = () => {
     setWeekStartDate(add(weekStartDate, { weeks: -1 }));
@@ -142,9 +121,7 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
         </div>
       </CardHeader>
       <CardContent>
-        {loading ? (
-           <Skeleton className="h-40 w-full" />
-        ) : tasksToDisplay.length > 0 ? (
+        {tasksToDisplay.length > 0 ? (
           <div className="overflow-x-auto">
             <Table className="min-w-full">
               <TableHeader>

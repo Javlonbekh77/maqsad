@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } - 1;
 import AppLayout from "@/components/layout/app-layout";
 import TodaySchedule from "@/components/dashboard/today-schedule";
 import type { User, UserTask } from "@/lib/types";
@@ -8,24 +8,76 @@ import { useTranslations } from "next-intl";
 import DashboardStats from '@/components/dashboard/dashboard-stats';
 import QuickAccess from '@/components/dashboard/quick-access';
 import HabitTracker from '@/components/profile/habit-tracker';
+import { getScheduledTasksForUser } from '@/lib/data';
+import useSWR from 'swr';
+import { Skeleton } from '@/components/ui/skeleton';
+
+
+function LoadingFallback() {
+    return (
+      <AppLayout>
+        <div className="grid gap-8">
+          <div className="rounded-lg bg-background/50 backdrop-blur-sm p-6 border">
+            <Skeleton className="h-12 w-2/3" />
+            <Skeleton className="h-4 w-1/2 mt-2" />
+          </div>
+           <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+              <Skeleton className="h-28 w-full" />
+              <Skeleton className="h-28 w-full" />
+              <Skeleton className="h-28 w-full" />
+            </div>
+          <div className="grid lg:grid-cols-3 gap-8 items-start">
+             <div className="lg:col-span-2 space-y-8">
+              <Skeleton className="h-96 w-full" />
+              <Skeleton className="h-96 w-full" />
+            </div>
+            <div className="space-y-8">
+                <Skeleton className="h-48 w-full" />
+                <Skeleton className="h-48 w-full" />
+            </div>
+          </div>
+        </div>
+      </AppLayout>
+    );
+}
+
 
 interface DashboardClientProps {
     user: User;
-    initialTasks: UserTask[];
-    onTaskCompletion: () => Promise<void>;
 }
 
-export default function DashboardClient({ user, initialTasks, onTaskCompletion }: DashboardClientProps) {
+const fetcher = (user: User) => getScheduledTasksForUser(user);
+
+export default function DashboardClient({ user }: DashboardClientProps) {
   const t = useTranslations('dashboard');
-  const [tasks, setTasks] = useState<UserTask[]>(initialTasks);
+
+  const { data: tasks, error, mutate, isLoading } = useSWR(
+    user, // The key for SWR is the user object itself.
+    fetcher, // The function to fetch data.
+    {
+      revalidateOnFocus: false // Optional: prevent re-fetching on window focus
+    }
+  );
 
   const handleTaskCompletion = async () => {
-    await onTaskCompletion();
-    // The parent `DashboardPage` will re-fetch and pass new props,
-    // which will automatically update the `initialTasks` and re-render this component.
-    // However, to see instant updates, we can optimistically update or just rely on the parent's re-render.
-    // For simplicity, we let the parent handle the re-fetch and re-render.
+    // Re-trigger the SWR fetch to get fresh data
+    await mutate();
   };
+
+  if (isLoading || !tasks) {
+    return <LoadingFallback />
+  }
+  
+  if (error) {
+     return (
+       <AppLayout>
+        <div className="text-center py-10">
+          <h2 className="text-xl font-semibold">Could not load dashboard data.</h2>
+          <p className="text-muted-foreground mt-2">Please try refreshing the page.</p>
+        </div>
+      </AppLayout>
+     )
+  }
 
   return (
     <AppLayout>
@@ -42,7 +94,7 @@ export default function DashboardClient({ user, initialTasks, onTaskCompletion }
                     userId={user.id}
                     onTaskCompletion={handleTaskCompletion}
                 />
-                 <HabitTracker user={user} />
+                 <HabitTracker user={user} allTasks={tasks} onDataNeedsRefresh={mutate} />
             </div>
             <div className="space-y-8">
                  <DashboardStats user={user} tasks={tasks} />
