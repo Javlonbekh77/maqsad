@@ -16,6 +16,7 @@ import {
   limit,
   deleteDoc,
   Timestamp,
+  arrayRemove,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
@@ -90,8 +91,14 @@ export const getUserGroups = async(userId: string): Promise<Group[]> => {
 export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> => {
     if (!user) return [];
 
-    const userSchedules: UserTaskSchedule[] = Array.isArray(user.taskSchedules) ? user.taskSchedules : [];
     const userHistory = Array.isArray(user.taskHistory) ? user.taskHistory : [];
+    const userSchedules = Array.isArray(user.taskSchedules) ? user.taskSchedules : [];
+    
+    // Create a map for quick lookup of user's specific schedule for a task
+    const userScheduleMap = new Map<string, TaskSchedule>();
+    userSchedules.forEach(s => {
+        userScheduleMap.set(s.taskId, s.schedule);
+    });
 
     // 1. Fetch all personal tasks for the user
     const personalTasksQuery = query(collection(db, 'personal_tasks'), where('userId', '==', user.id));
@@ -113,6 +120,7 @@ export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> 
     let groupTasks: UserTask[] = [];
 
     if (scheduledGroupTaskIds.length > 0) {
+        // Chunking to handle Firestore 'in' query limit of 30
         const taskIdsInChunks: string[][] = [];
         for (let i = 0; i < scheduledGroupTaskIds.length; i += 30) {
             taskIdsInChunks.push(scheduledGroupTaskIds.slice(i, i + 30));
@@ -142,16 +150,17 @@ export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> 
 
             // Map the fetched tasks to UserTask[], applying the user-specific schedule
             groupTasks = fetchedTasks.map(task => {
-                const userScheduleForTask = userSchedules.find(s => s.taskId === task.id);
-                // THIS IS THE CRITICAL FIX: The task MUST have the user's specific schedule, not its default one.
-                const finalSchedule = userScheduleForTask ? userScheduleForTask.schedule : task.schedule;
+                // *** THIS IS THE CRITICAL FIX ***
+                // Get the user's specific schedule for this task from the map.
+                const userSpecificSchedule = userScheduleMap.get(task.id);
                 
                 return {
                     ...task,
                     groupName: groupMap.get(task.groupId) || 'Unknown Group',
                     isCompleted: false, // client will determine this
                     taskType: 'group',
-                    schedule: finalSchedule, 
+                    // Use the user's specific schedule. Fallback to task's default if not found.
+                    schedule: userSpecificSchedule || task.schedule,
                     history: userHistory.filter(h => h.taskId === task.id),
                 };
             });
@@ -160,6 +169,7 @@ export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> 
     
     return [...personalTasks, ...groupTasks];
 };
+
 
 export const getTasksForUserGroups = async (groupIds: string[]): Promise<Task[]> => {
   if (groupIds.length === 0) return [];
@@ -415,15 +425,25 @@ export const addUserToGroup = async (userId: string, groupId: string, taskSchedu
     if (!user) {
         throw new Error("User not found");
     }
-    
-    const newSchedules = taskSchedules.map(ts => ({ taskId: ts.taskId, schedule: ts.schedule }));
 
+    // Atomically remove old schedules for this group and add new ones.
     const batch = writeBatch(db);
+    
+    // 1. Remove existing schedules related to this group to prevent duplicates/orphans
+    const groupTasks = (await getDocs(query(collection(db, 'tasks'), where('groupId', '==', groupId)))).docs.map(d => d.id);
+    const oldSchedulesToRemove = (user.taskSchedules || []).filter(s => groupTasks.includes(s.taskId));
+    if (oldSchedulesToRemove.length > 0) {
+        batch.update(userDocRef, { taskSchedules: arrayRemove(...oldSchedulesToRemove) });
+    }
+
+    // 2. Add the user to the group and add the new task schedules
+    const newSchedules = taskSchedules.map(ts => ({ taskId: ts.taskId, schedule: ts.schedule }));
     batch.update(userDocRef, { 
       groups: arrayUnion(groupId),
       taskSchedules: arrayUnion(...newSchedules)
     });
     
+    // 3. Add user to the group's member list
     const groupDocRef = doc(db, "groups", groupId);
     batch.update(groupDocRef, { members: arrayUnion(userId) });
 
@@ -701,3 +721,5 @@ export const updateUserLastRead = async (userId: string, groupId: string) => {
         [`lastRead.${groupId}`]: Timestamp.now()
     });
 };
+
+    
