@@ -8,6 +8,7 @@ import type { Group, User } from "@/lib/types";
 import { ArrowRight, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/navigation";
+import { getInitials, getAvatarColor } from '@/lib/utils';
 
 interface GroupCardProps {
   group: Group;
@@ -40,9 +41,8 @@ export default function GroupCard({ group, members }: GroupCardProps) {
           <div className="flex -space-x-2 overflow-hidden">
               {members.slice(0, 3).map((member) => (
               member &&
-              <Avatar key={member.id} className="inline-block h-6 w-6 rounded-full ring-2 ring-background">
-                  <AvatarImage src={member.avatarUrl} />
-                  <AvatarFallback>{member.firstName.charAt(0)}</AvatarFallback>
+              <Avatar key={member.id} className="inline-block h-6 w-6 rounded-full ring-2 ring-background" style={{ backgroundColor: getAvatarColor(member.id) }}>
+                  <AvatarFallback>{getInitials(member.fullName)}</AvatarFallback>
               </Avatar>
               ))}
           </div>

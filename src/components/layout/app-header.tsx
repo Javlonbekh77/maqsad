@@ -17,6 +17,7 @@ import { useAuth } from '@/context/auth-context';
 import GlobalSearch from './global-search';
 import NotificationsDropdown from './notifications-dropdown';
 import ThemeSwitcher from '../theme-switcher';
+import { getInitials, getAvatarColor } from '@/lib/utils';
 
 export default function AppHeader() {
   const t = useTranslations();
@@ -56,9 +57,8 @@ export default function AppHeader() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={user?.avatarUrl} alt={user?.fullName} />
-                <AvatarFallback>{user?.firstName?.charAt(0)}</AvatarFallback>
+              <Avatar className="h-8 w-8" style={{ backgroundColor: getAvatarColor(user?.id || '') }}>
+                <AvatarFallback>{getInitials(user?.fullName || '')}</AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>

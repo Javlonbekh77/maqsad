@@ -68,7 +68,6 @@ export type User = {
   lastName:string;
   fullName: string; // Combined for easier display
   email: string;
-  avatarUrl: string;
   coins: number;
   silverCoins: number;
   goals: string;
@@ -85,6 +84,7 @@ export type User = {
   lastRead?: LastRead;
   notificationsLastCheckedAt?: Timestamp;
   lastJournalRewardDate?: string;
+  journalEntriesCount?: number; // New field
 };
 
 export type WeeklyMeeting = {

@@ -19,6 +19,7 @@ import {
   deleteDoc,
   Timestamp,
   arrayRemove,
+  getCountFromServer
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
@@ -56,13 +57,19 @@ export const getUser = async (userId: string): Promise<User | null> => {
   const userSnap = await getDoc(userDocRef);
   if (userSnap.exists()) {
     const userData = userSnap.data();
+
+    // Get journal entries count
+    const journalEntriesRef = collection(db, 'users', userId, 'journal_entries');
+    const journalSnapshot = await getCountFromServer(journalEntriesRef);
+    const journalEntriesCount = journalSnapshot.data().count;
+
     // Ensure fields are arrays and numbers are initialized
     const taskHistory = Array.isArray(userData.taskHistory) ? userData.taskHistory : [];
     const groups = Array.isArray(userData.groups) ? userData.groups : [];
     const taskSchedules = Array.isArray(userData.taskSchedules) ? userData.taskSchedules : [];
     const coins = typeof userData.coins === 'number' ? userData.coins : 0;
     const silverCoins = typeof userData.silverCoins === 'number' ? userData.silverCoins : 0;
-    return { ...userData, id: userSnap.id, firebaseId: userSnap.id, taskHistory, groups, taskSchedules, coins, silverCoins } as User;
+    return { ...userData, id: userSnap.id, firebaseId: userSnap.id, taskHistory, groups, taskSchedules, coins, silverCoins, journalEntriesCount } as User;
   }
   return null;
 }
@@ -238,21 +245,35 @@ export const getLeaderboardData = async (): Promise<{ topUsers: User[], topGroup
     const silverUsersQuery = query(collection(db, 'users'), orderBy('silverCoins', 'desc'), limit(10));
     
     const groupsPromise = getDocs(collection(db, 'groups'));
-    const allUsersPromise = getDocs(collection(db, 'users'));
 
-    const [usersSnapshot, silverUsersSnapshot, groupsSnapshot, allUsersSnapshot] = await Promise.all([
+    const [usersSnapshot, silverUsersSnapshot, groupsSnapshot] = await Promise.all([
         getDocs(usersQuery),
         getDocs(silverUsersQuery),
-        groupsPromise, 
-        allUsersPromise
+        groupsPromise
     ]);
     
-    const topUsers = usersSnapshot.docs.map(d => ({ ...d.data() as User, id: d.id, firebaseId: d.id }));
-    const topSilverCoinUsers = silverUsersSnapshot.docs.map(d => ({ ...d.data() as User, id: d.id, firebaseId: d.id }));
+    // Fetch journal entry counts for top users
+    const topUsersPromises = usersSnapshot.docs.map(async (d) => {
+        const user = { ...d.data(), id: d.id, firebaseId: d.id } as User;
+        const journalSnapshot = await getCountFromServer(collection(db, 'users', user.id, 'journal_entries'));
+        user.journalEntriesCount = journalSnapshot.data().count;
+        return user;
+    });
 
+    const topSilverCoinUsersPromises = silverUsersSnapshot.docs.map(async (d) => {
+        const user = { ...d.data(), id: d.id, firebaseId: d.id } as User;
+        const journalSnapshot = await getCountFromServer(collection(db, 'users', user.id, 'journal_entries'));
+        user.journalEntriesCount = journalSnapshot.data().count;
+        return user;
+    });
+
+    const topUsers = await Promise.all(topUsersPromises);
+    const topSilverCoinUsers = await Promise.all(topSilverCoinUsersPromises);
+
+    // Calculate group scores
     const groups = groupsSnapshot.docs.map(d => ({ ...d.data() as Group, id: d.id, firebaseId: d.id }));
+    const allUsersSnapshot = await getDocs(collection(db, 'users'));
     const allUsers = allUsersSnapshot.docs.map(d => ({ ...d.data() as User, id: d.id, firebaseId: d.id }));
-    
     const userMap = new Map(allUsers.map(u => [u.id, u]));
 
     const calculatedTopGroups = groups.map(group => {
@@ -467,29 +488,7 @@ export const completeUserTask = async (userId: string, task: UserTask): Promise<
 
 export const updateUserProfile = async (userId: string, data: Partial<User>): Promise<void> => {
     const userDocRef = doc(db, 'users', userId);
-    const updateData: { [key: string]: any } = {};
-
-    if (data.firstName && data.lastName) {
-        updateData.firstName = data.firstName;
-        updateData.lastName = data.lastName;
-        updateData.fullName = `${data.firstName} ${data.lastName}`.trim();
-    }
-    if (data.goals !== undefined) {
-        updateData.goals = data.goals;
-    }
-    if (data.habits !== undefined) {
-        updateData.habits = data.habits;
-    }
-    if (data.avatarUrl) {
-        updateData.avatarUrl = data.avatarUrl;
-    }
-    if (data.notificationsLastCheckedAt) {
-        updateData.notificationsLastCheckedAt = data.notificationsLastCheckedAt;
-    }
-    
-    if (Object.keys(updateData).length > 0) {
-      await updateDoc(userDocRef, updateData);
-    }
+    await updateDoc(userDocRef, data);
 };
 
 // --- Group Task / Schedule Helpers ---
@@ -570,13 +569,6 @@ export const removeUserFromGroup = async (userId: string, groupId: string, remov
     await batch.commit();
 };
 
-export const uploadAvatar = async (userId: string, file: Blob): Promise<string> => {
-    const filePath = `avatars/${userId}/${Date.now()}.jpg`;
-    const storageRef = ref(storage, filePath);
-    const snapshot = await uploadBytes(storageRef, file);
-    return await getDownloadURL(snapshot.ref);
-};
-
 export const updateGroupDetails = async (groupId: string, data: { name?: string, description?: string }): Promise<void> => {
     const groupDocRef = doc(db, 'groups', groupId);
     const updateData: { [key: string]: any } = {};
@@ -645,8 +637,8 @@ export const updateChatMessage = async (groupId: string, messageId: string, newT
   });
 };
 
-export const deleteChatMessage = async (groupId: string, messageId: string): Promise<void> => {
-  const messageRef = doc(db, `groups/${groupId}/messages`, messageId);
+export const deleteChatMessage = async (userId: string, messageId: string): Promise<void> => {
+  const messageRef = doc(db, `users/${userId}/chat_messages`, messageId);
   await deleteDoc(messageRef);
 };
 
@@ -794,8 +786,8 @@ export type ChatHistoryMessage = {
   createdAt: Timestamp;
 };
 
-export const saveChatMessage = async (userId: string, message: { role: 'user' | 'model'; content: string }) => {
-    if (!userId) return;
+export const saveChatMessage = async (userId: string, message: { role: 'user' | 'model'; content: string }): Promise<ChatHistoryMessage> => {
+    if (!userId) throw new Error("User ID is required to save chat message.");
     
     const messagesRef = collection(db, 'users', userId, 'chat_messages');
     const newMsg = {
@@ -805,14 +797,17 @@ export const saveChatMessage = async (userId: string, message: { role: 'user' | 
     };
     
     const docRef = await addDoc(messagesRef, newMsg);
-    return { id: docRef.id, ...newMsg } as ChatHistoryMessage;
+    
+    // We can't get the serverTimestamp back immediately, so we return with a placeholder
+    // The onSnapshot listener will get the real data.
+    return { id: docRef.id, ...newMsg, createdAt: Timestamp.now() } as ChatHistoryMessage;
 };
 
-export const getChatHistory = async (userId: string, limit: number = 10): Promise<ChatHistoryMessage[]> => {
+export const getChatHistory = async (userId: string): Promise<ChatHistoryMessage[]> => {
     if (!userId) return [];
     
     const messagesRef = collection(db, 'users', userId, 'chat_messages');
-    const q = query(messagesRef, orderBy('createdAt', 'desc'), limit as any);
+    const q = query(messagesRef, orderBy('createdAt', 'desc'), limit(50));
     
     try {
         const snapshot = await getDocs(q);

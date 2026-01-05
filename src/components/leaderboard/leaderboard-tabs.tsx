@@ -12,11 +12,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Coins, Crown, Medal, Trophy, Flame } from 'lucide-react';
+import { Coins, Crown, Medal, Trophy, Flame, BookOpen } from 'lucide-react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/navigation';
 import { Skeleton } from '../ui/skeleton';
+import { getInitials, getAvatarColor } from '@/lib/utils';
+
 
 const RankIcon = ({ rank }: { rank: number }) => {
   if (rank === 1) return <Medal className="h-5 w-5 text-yellow-500" />;
@@ -74,8 +76,8 @@ export default function LeaderboardTabs({ topUsers, topGroups, topSilverCoinUser
                             <TableRow>
                             <TableHead className="w-16 text-center">{t('rank')}</TableHead>
                             <TableHead>{t('user')}</TableHead>
-                            <TableHead className="text-center">Kundalik</TableHead>
-                                <TableHead className="text-right">Oltin</TableHead>
+                            <TableHead className="text-center">Jami Qaydlar</TableHead>
+                            <TableHead className="text-right">Oltin</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -86,27 +88,25 @@ export default function LeaderboardTabs({ topUsers, topGroups, topSilverCoinUser
                                     <RankIcon rank={index + 1} />
                                 </div>
                                 </TableCell>
-                                                                <TableCell>
-                                <Link href={{pathname: '/profile/[id]', params: {id: user.id}}} className="flex items-center gap-3 hover:underline">
-                                    <Avatar>
-                                    <AvatarImage src={user.avatarUrl} alt={user.fullName} />
-                                    <AvatarFallback>{user.firstName.charAt(0)}</AvatarFallback>
-                                    </Avatar>
-                                    <span className="font-medium">{user.fullName}</span>
-                                </Link>
-                                                                </TableCell>
-                                                                <TableCell className="text-center">
-                                                                    {user.lastJournalRewardDate === new Date().toISOString().slice(0,10) ? (
-                                                                        <span className="text-xs rounded-md bg-green-100 text-green-700 px-2 py-1">Yozdi</span>
-                                                                    ) : (
-                                                                        <span className="text-xs rounded-md bg-gray-100 text-gray-500 px-2 py-1">—</span>
-                                                                    )}
-                                                                </TableCell>
-                                                                <TableCell className="text-right">
-                                <div className="flex items-center justify-end gap-1 font-semibold text-amber-500">
-                                    <Coins className="w-4 h-4" />
-                                    <span>{user.coins || 0}</span>
-                                </div>
+                                <TableCell>
+                                  <Link href={{pathname: '/profile/[id]', params: {id: user.id}}} className="flex items-center gap-3 hover:underline">
+                                      <Avatar style={{ backgroundColor: getAvatarColor(user.id) }}>
+                                        <AvatarFallback>{getInitials(user.fullName)}</AvatarFallback>
+                                      </Avatar>
+                                      <span className="font-medium">{user.fullName}</span>
+                                  </Link>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                    <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground">
+                                        <BookOpen className="h-4 w-4" />
+                                        <span>{user.journalEntriesCount || 0}</span>
+                                    </div>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex items-center justify-end gap-1 font-semibold text-amber-500">
+                                      <Coins className="w-4 h-4" />
+                                      <span>{user.coins || 0}</span>
+                                  </div>
                                 </TableCell>
                             </TableRow>
                             ))}
@@ -125,7 +125,7 @@ export default function LeaderboardTabs({ topUsers, topGroups, topSilverCoinUser
                                 <TableRow>
                                 <TableHead className="w-16 text-center">{t('rank')}</TableHead>
                                 <TableHead>{t('user')}</TableHead>
-                                <TableHead className="text-center">Kundalik</TableHead>
+                                <TableHead className="text-center">Jami Qaydlar</TableHead>
                                 <TableHead className="text-right">Kumush</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -137,23 +137,21 @@ export default function LeaderboardTabs({ topUsers, topGroups, topSilverCoinUser
                                         <RankIcon rank={index + 1} />
                                     </div>
                                     </TableCell>
-                                                                        <TableCell>
-                                    <Link href={{pathname: '/profile/[id]', params: {id: user.id}}} className="flex items-center gap-3 hover:underline">
-                                        <Avatar>
-                                        <AvatarImage src={user.avatarUrl} alt={user.fullName} />
-                                        <AvatarFallback>{user.firstName.charAt(0)}</AvatarFallback>
-                                        </Avatar>
-                                        <span className="font-medium">{user.fullName}</span>
-                                    </Link>
-                                                                        </TableCell>
-                                                                        <TableCell className="text-center">
-                                                                            {user.lastJournalRewardDate === new Date().toISOString().slice(0,10) ? (
-                                                                                <span className="text-xs rounded-md bg-green-100 text-green-700 px-2 py-1">Yozdi</span>
-                                                                            ) : (
-                                                                                <span className="text-xs rounded-md bg-gray-100 text-gray-500 px-2 py-1">—</span>
-                                                                            )}
-                                                                        </TableCell>
-                                                                        <TableCell className="text-right">
+                                    <TableCell>
+                                      <Link href={{pathname: '/profile/[id]', params: {id: user.id}}} className="flex items-center gap-3 hover:underline">
+                                          <Avatar style={{ backgroundColor: getAvatarColor(user.id) }}>
+                                            <AvatarFallback>{getInitials(user.fullName)}</AvatarFallback>
+                                          </Avatar>
+                                          <span className="font-medium">{user.fullName}</span>
+                                      </Link>
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                      <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground">
+                                          <BookOpen className="h-4 w-4" />
+                                          <span>{user.journalEntriesCount || 0}</span>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell className="text-right">
                                     <div className="flex items-center justify-end gap-1 font-semibold text-slate-500">
                                         <Flame className="w-4 h-4" />
                                         <span>{user.silverCoins || 0}</span>
