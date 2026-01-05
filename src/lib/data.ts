@@ -90,9 +90,12 @@ export const getUserGroups = async(userId: string): Promise<Group[]> => {
 }
 
 export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> => {
+    if (!user) return [];
+
     const userSchedules: UserTaskSchedule[] = Array.isArray(user.taskSchedules) ? user.taskSchedules : [];
-    
-    // 1. Fetch personal tasks
+    const userHistory = Array.isArray(user.taskHistory) ? user.taskHistory : [];
+
+    // 1. Fetch all personal tasks for the user
     const personalTasksQuery = query(collection(db, 'personal_tasks'), where('userId', '==', user.id));
     const personalTasksSnapshot = await getDocs(personalTasksQuery);
     const personalTasks: UserTask[] = personalTasksSnapshot.docs.map(doc => {
@@ -100,62 +103,68 @@ export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> 
         return {
             ...taskData,
             id: doc.id,
-            isCompleted: false, // will be checked on the client
+            isCompleted: false, // This is determined by the client based on the date and history
             taskType: 'personal',
-            coins: PERSONAL_TASK_COINS,
-            history: user.taskHistory?.filter(h => h.taskId === doc.id) || [],
+            coins: PERSONAL_TASK_COINS, // Silver coin
+            history: userHistory.filter(h => h.taskId === doc.id),
         };
     });
 
-    // 2. Fetch group tasks that the user has specifically scheduled
+    // 2. Fetch all group tasks the user is subscribed to
     const scheduledGroupTaskIds = userSchedules.map(schedule => schedule.taskId);
     let groupTasks: UserTask[] = [];
 
     if (scheduledGroupTaskIds.length > 0) {
+        // Firestore 'in' query has a limit of 30 elements per query.
+        // We need to chunk the task IDs to handle cases where the user is subscribed to more than 30 tasks.
         const taskIdsInChunks: string[][] = [];
         for (let i = 0; i < scheduledGroupTaskIds.length; i += 30) {
             taskIdsInChunks.push(scheduledGroupTaskIds.slice(i, i + 30));
         }
-
+        
+        // Fetch all tasks in parallel chunks
         const taskPromises = taskIdsInChunks.map(chunk => 
             getDocs(query(collection(db, 'tasks'), where('__name__', 'in', chunk)))
         );
-
-        const groupTasksSnapshots = await Promise.all(taskPromises);
-        const fetchedTasks = groupTasksSnapshots.flatMap(snapshot => 
+        const taskSnapshots = await Promise.all(taskPromises);
+        const fetchedTasks = taskSnapshots.flatMap(snapshot => 
             snapshot.docs.map(doc => ({ ...doc.data() as Task, id: doc.id }))
         );
 
         if (fetchedTasks.length > 0) {
-            // Get all group names in one go
+            // Get all necessary group names in one go
             const groupIds = [...new Set(fetchedTasks.map(t => t.groupId))];
-            let groupMap = new Map();
+            const groupMap = new Map<string, string>();
+
             if (groupIds.length > 0) {
-                const groupChunks: string[][] = [];
+                 const groupChunks: string[][] = [];
                  for (let i = 0; i < groupIds.length; i += 30) {
                     groupChunks.push(groupIds.slice(i, i + 30));
                 }
                 const groupPromises = groupChunks.map(chunk => getDocs(query(collection(db, 'groups'), where('__name__', 'in', chunk))));
                 const allGroupsSnapshots = await Promise.all(groupPromises);
-                allGroupsSnapshots.flat().forEach(snap => snap.docs.forEach(doc => groupMap.set(doc.id, doc.data().name)));
+                allGroupsSnapshots.forEach(snap => snap.docs.forEach(doc => groupMap.set(doc.id, doc.data().name)));
             }
 
-            // Map the fetched tasks to UserTask[] with correct, user-specific schedule
+            // Map the fetched tasks to UserTask[], applying the user-specific schedule
             groupTasks = fetchedTasks.map(task => {
                 const userScheduleForTask = userSchedules.find(s => s.taskId === task.id);
+                // THIS IS THE CRITICAL FIX: The task MUST have the user's specific schedule, not its default one.
+                const finalSchedule = userScheduleForTask ? userScheduleForTask.schedule : task.schedule;
+                
                 return {
                     ...task,
                     groupName: groupMap.get(task.groupId) || 'Unknown Group',
-                    isCompleted: false, // will be checked on the client
+                    isCompleted: false, // client will determine this
                     taskType: 'group',
-                    // CRITICAL: Override with the user's specific schedule for this task
-                    schedule: userScheduleForTask!.schedule, 
-                    history: user.taskHistory?.filter(h => h.taskId === task.id) || [],
+                    // Apply the correct, user-specific schedule for this task
+                    schedule: finalSchedule, 
+                    history: userHistory.filter(h => h.taskId === task.id),
                 };
             });
         }
     }
-
+    
     // 3. Combine personal and group tasks
     return [...personalTasks, ...groupTasks];
 };
@@ -215,7 +224,7 @@ export const getGroupAndDetails = async (groupId: string): Promise<{ group: Grou
             const aTimestamp = a.createdAt as Timestamp;
             const bTimestamp = b.createdAt as Timestamp;
             if (aTimestamp && bTimestamp) {
-                return bTimestamp.toMillis() - aTimestamp.toMillis();
+                return bTimestamp.toMillis() - bTimestamp.toMillis();
             }
             return 0;
         });
@@ -636,7 +645,6 @@ export const getNotificationsData = async (user: User): Promise<{
         const groupDetails = await getUserGroups(user.id);
         const unreadCounts = await Promise.all(
             groupDetails.map(async (group) => {
-                const lastRead = user.lastRead?.[group.id] || new Timestamp(0, 0);
                 // Only consider messages that are newer than the last time notifications were checked
                 const count = await getUnreadMessageCount(group.id, lastChecked);
                 if (count > 0) {
@@ -714,10 +722,3 @@ export const updateUserLastRead = async (userId: string, groupId: string) => {
         [`lastRead.${groupId}`]: Timestamp.now()
     });
 };
-
-    
-
-
-
-
-    
