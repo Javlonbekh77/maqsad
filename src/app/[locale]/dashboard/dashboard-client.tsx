@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } - 1;
+import { useState, useCallback } from 'react';
 import AppLayout from "@/components/layout/app-layout";
 import TodaySchedule from "@/components/dashboard/today-schedule";
 import type { User, UserTask } from "@/lib/types";
@@ -46,23 +46,23 @@ interface DashboardClientProps {
     user: User;
 }
 
-const fetcher = (user: User) => getScheduledTasksForUser(user);
+const fetcher = ([, user]: [string, User]) => getScheduledTasksForUser(user);
 
 export default function DashboardClient({ user }: DashboardClientProps) {
   const t = useTranslations('dashboard');
 
   const { data: tasks, error, mutate, isLoading } = useSWR(
-    user, // The key for SWR is the user object itself.
+    ['scheduledTasks', user], // The key for SWR includes user object to re-fetch on change.
     fetcher, // The function to fetch data.
     {
       revalidateOnFocus: false // Optional: prevent re-fetching on window focus
     }
   );
 
-  const handleTaskCompletion = async () => {
+  const handleTaskCompletion = useCallback(async () => {
     // Re-trigger the SWR fetch to get fresh data
     await mutate();
-  };
+  }, [mutate]);
 
   if (isLoading || !tasks) {
     return <LoadingFallback />
