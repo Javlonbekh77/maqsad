@@ -65,7 +65,10 @@ export default function JoinGroupDialog({
   const handleConfirm = () => {
     const finalSchedules: UserTaskSchedule[] = Object.entries(schedules).map(([taskId, days]) => ({
       taskId,
-      days,
+      schedule: {
+          type: 'recurring',
+          days,
+      }
     }));
     onConfirm(finalSchedules);
     setSchedules({}); // Reset for next time
@@ -109,7 +112,8 @@ export default function JoinGroupDialog({
                                     checked={isTaskSelected(task.id)}
                                     onCheckedChange={(checked) => {
                                         if (checked) {
-                                            handleDaySelection(task.id, daysOfWeek); // Select all days by default
+                                            const originalScheduleDays = task.schedule.days || daysOfWeek;
+                                            handleDaySelection(task.id, originalScheduleDays as DayOfWeek[]);
                                         } else {
                                             handleDaySelection(task.id, []); // Deselect
                                         }

@@ -25,6 +25,7 @@ import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { Slider } from '@/components/ui/slider';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '../ui/switch';
 
 const scheduleSchema = z.object({
   type: z.enum(['one-time', 'date-range', 'recurring']),
@@ -313,11 +314,9 @@ export default function GroupTaskForm({ onSubmit, isPending, initialData, submit
                         </FormMessage>
                     </div>
                     <FormControl>
-                        <input 
-                          type="checkbox" 
+                        <Switch
                           checked={field.value || false}
-                          onChange={field.onChange}
-                          className="h-4 w-4"
+                          onCheckedChange={field.onChange}
                         />
                     </FormControl>
                     </FormItem>

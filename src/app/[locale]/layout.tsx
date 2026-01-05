@@ -9,6 +9,7 @@ import '../globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 import { ThemeProvider } from "@/context/theme-provider";
+import SnowEffect from "@/components/layout/snow-effect";
 
 const fontSans = PTSans({
   subsets: ['latin'],
@@ -39,6 +40,7 @@ export default async function RootLayout({
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
               <AuthProvider>
                 <TimerProvider>
+                  <SnowEffect />
                   {children}
                   <Toaster />
                 </TimerProvider>
