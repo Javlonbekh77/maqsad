@@ -23,7 +23,7 @@
 
 .snowflake::before,
 .snowflake::after {
-    content: "\\2744"; /* Unicode character for a snowflake */
+    content: "\2744"; /* Unicode character for a snowflake */
     position: absolute;
     color: white;
     text-shadow: 0 0 2px #000;
