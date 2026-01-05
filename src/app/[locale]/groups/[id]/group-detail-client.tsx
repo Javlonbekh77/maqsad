@@ -41,7 +41,7 @@ export default function GroupDetailClient() {
   const id = params.id as string;
   const initialTab = searchParams.get('tab') || 'tasks';
 
-  const { user: currentUser, loading: authLoading } = useAuth();
+  const { user: currentUser, loading: authLoading, refreshAuth } = useAuth();
   
   const [group, setGroup] = useState<Group | null>(null);
   const [members, setMembers] = useState<User[]>([]);
@@ -88,11 +88,14 @@ export default function GroupDetailClient() {
     try {
       await addUserToGroup(currentUser.id, group.id, schedules);
       setJoinDialogOpen(false);
-      await fetchGroupData(id as string); // Re-fetch data to show the user as a new member
+      // Refresh auth context to get new user data (groups, taskSchedules)
+      await refreshAuth();
+      // Re-fetch group data to show the user as a new member immediately
+      await fetchGroupData(id as string); 
     } catch(error) {
       console.error("Failed to join group:", error);
     }
-  }, [currentUser, group, id, fetchGroupData]);
+  }, [currentUser, group, id, fetchGroupData, refreshAuth]);
   
   const handleViewTask = (task: Task) => {
     setViewingTask({

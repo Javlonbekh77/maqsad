@@ -491,18 +491,16 @@ export const updateUserProfile = async (userId: string, data: Partial<User>): Pr
         updateData.lastName = data.lastName;
         updateData.fullName = `${data.firstName} ${data.lastName}`.trim();
     }
-    if (data.goals !== undefined) {
-        updateData.goals = data.goals;
-    }
-    if (data.habits !== undefined) {
-        updateData.habits = data.habits;
-    }
-    if (data.avatarUrl) {
-        updateData.avatarUrl = data.avatarUrl;
-    }
-    if (data.notificationsLastCheckedAt) {
-        updateData.notificationsLastCheckedAt = data.notificationsLastCheckedAt;
-    }
+     // Add other user fields
+    if (data.goals !== undefined) updateData.goals = data.goals;
+    if (data.habits !== undefined) updateData.habits = data.habits;
+    if (data.avatarUrl) updateData.avatarUrl = data.avatarUrl;
+    if (data.notificationsLastCheckedAt) updateData.notificationsLastCheckedAt = data.notificationsLastCheckedAt;
+    if (data.occupation !== undefined) updateData.occupation = data.occupation;
+    if (data.university !== undefined) updateData.university = data.university;
+    if (data.specialization !== undefined) updateData.specialization = data.specialization;
+    if (data.course !== undefined) updateData.course = data.course;
+    if (data.telegram !== undefined) updateData.telegram = data.telegram;
     
     if (Object.keys(updateData).length > 0) {
       await updateDoc(userDocRef, updateData);
@@ -618,7 +616,7 @@ export const getNotificationsData = async (user: User): Promise<{
         );
         const groupsQuery = query(collection(db, 'groups'), where('__name__', 'in', groupIds));
 
-        const [meetingsSnapshot, groupsSnapshot] = await Promise.all([getDocs(meetingsQuery), getDocs(groupsSnapshot)]);
+        const [meetingsSnapshot, groupsSnapshot] = await Promise.all([getDocs(meetingsQuery), getDocs(groupsQuery)]);
         
         const groupMap = new Map(groupsSnapshot.docs.map(doc => [doc.id, doc.data().name]));
 
@@ -725,3 +723,4 @@ export const updateUserLastRead = async (userId: string, groupId: string) => {
 };
 
     
+

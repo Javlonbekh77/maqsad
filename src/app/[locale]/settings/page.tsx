@@ -12,6 +12,7 @@ import { useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import ThemeSwitcher from "@/components/theme-switcher";
 import AvatarUpload from "@/components/profile/avatar-upload";
+import LanguageSwitcher from "@/components/language-switcher";
 
 export default function SettingsPage() {
     const tSettings = useTranslations('settings');
@@ -89,7 +90,7 @@ export default function SettingsPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Shaxsiy Ma'lumotlar</CardTitle>
-                        <CardDescription>Ism, familiya, maqsad va odatlaringizni o'zgartiring.</CardDescription>
+                        <CardDescription>Barcha shaxsiy ma'lumotlaringizni shu yerdan o'zgartirishingiz mumkin.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <ProfileForm user={user} />
@@ -118,13 +119,20 @@ export default function SettingsPage() {
 
                  <Card>
                     <CardHeader>
-                        <CardTitle>Display</CardTitle>
+                        <CardTitle>Interfeys (Ko'rinish)</CardTitle>
                         <CardDescription>
-                            Turn on or off dark mode.
+                            Kunduzgi yoki tungi rejimni tanlang va tilni o'zgartiring.
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        <ThemeSwitcher />
+                    <CardContent className="flex items-center gap-8">
+                        <div className="flex items-center gap-2">
+                           <span className="text-sm font-medium">Rejim:</span>
+                           <ThemeSwitcher />
+                        </div>
+                         <div className="flex items-center gap-2">
+                           <span className="text-sm font-medium">Til:</span>
+                           <LanguageSwitcher />
+                        </div>
                     </CardContent>
                 </Card>
             </div>
