@@ -90,7 +90,6 @@ export const getUserGroups = async(userId: string): Promise<Group[]> => {
 }
 
 export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> => {
-    // CRITICAL FIX: Ensure user.taskSchedules is an array to prevent .find() on undefined.
     const userSchedules: UserTaskSchedule[] = Array.isArray(user.taskSchedules) ? user.taskSchedules : [];
     const scheduledGroupTaskIds = userSchedules.map(schedule => schedule.taskId);
     
@@ -101,7 +100,6 @@ export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> 
     // Fetch group tasks that the user has specifically scheduled
     let groupTasksPromise: Promise<Task[]> = Promise.resolve([]);
     if (scheduledGroupTaskIds.length > 0) {
-        // Firestore 'in' query is limited to 30 elements in an array.
         const taskIdsInChunks: string[][] = [];
         for (let i = 0; i < scheduledGroupTaskIds.length; i += 30) {
             taskIdsInChunks.push(scheduledGroupTaskIds.slice(i, i + 30));
@@ -148,7 +146,6 @@ export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> 
 
     // Process group tasks
     groupTasks.forEach(task => {
-        // Safely find the schedule for the current task
         const userScheduleForTask = userSchedules.find(s => s.taskId === task.id);
         if (userScheduleForTask) {
              allTasks.push({
@@ -156,7 +153,6 @@ export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> 
                 groupName: groupMap.get(task.groupId) || 'Unknown Group',
                 isCompleted: false, // will be checked on the client
                 taskType: 'group',
-                // Use the user's specific schedule for this group task
                 schedule: userScheduleForTask.schedule,
                 history: user.taskHistory?.filter(h => h.taskId === task.id) || [],
                 createdAt: task.createdAt,
@@ -619,20 +615,22 @@ export const getNotificationsData = async (user: User): Promise<{
         const [meetingsSnapshot, groupsSnapshot] = await Promise.all([getDocs(meetingsQuery), getDocs(groupsQuery)]);
         
         const groupMap = new Map(groupsSnapshot.docs.map(doc => [doc.id, doc.data().name]));
-
+        
         todayMeetings = meetingsSnapshot.docs
             .map(doc => {
                 const meeting = doc.data() as WeeklyMeeting;
+                const createdAt = (meeting.createdAt as Timestamp)?.toDate();
+                // Filter out meetings that were created before the last check
+                if (createdAt && createdAt < lastCheckedDate) {
+                    return null;
+                }
                 return {
                     ...meeting,
                     id: doc.id,
                     groupName: groupMap.get(meeting.groupId) || 'Noma\'lum guruh'
                 };
             })
-            .filter(meeting => {
-                const createdAt = (meeting.createdAt as Timestamp)?.toDate();
-                return createdAt ? createdAt > lastCheckedDate : true;
-            });
+            .filter((m): m is WeeklyMeeting & { groupName: string } => m !== null);
     }
     
     // 2. Get unread messages
@@ -643,11 +641,9 @@ export const getNotificationsData = async (user: User): Promise<{
             groupDetails.map(async (group) => {
                 const lastRead = user.lastRead?.[group.id] || new Timestamp(0, 0);
                 // Only consider messages that are newer than the last time notifications were checked
-                if (lastRead.toDate() > lastCheckedDate) { 
-                     const count = await getUnreadMessageCount(group.id, lastRead);
-                     if (count > 0) {
-                        return { groupId: group.id, groupName: group.name, count };
-                     }
+                const count = await getUnreadMessageCount(group.id, lastChecked);
+                if (count > 0) {
+                   return { groupId: group.id, groupName: group.name, count };
                 }
                 return null;
             })
@@ -666,18 +662,18 @@ export const getNotificationsData = async (user: User): Promise<{
         const taskCreatedAt = (task.createdAt as Timestamp)?.toDate();
         if (!taskCreatedAt) return;
 
-        // Check only for yesterday's overdue tasks, and only if the task is "new" since last check
-        if (isTaskScheduledForDate(task, yesterday) && taskCreatedAt < yesterday && taskCreatedAt > lastCheckedDate) {
+        // Check for yesterday's overdue tasks, but only if the task was created before yesterday
+        if (taskCreatedAt < yesterday && isTaskScheduledForDate(task, yesterday)) {
              const isCompletedYesterday = user.taskHistory.some(h => h.taskId === task.id && h.date === format(yesterday, 'yyyy-MM-dd'));
-             if (!isCompletedYesterday) {
+             if (!isCompletedYesterday && yesterday > lastCheckedDate) {
                 overdueTasks.push(task);
              }
         }
         
-        // Check for today's tasks, and only if the task is "new" since last check
-        if (isTaskScheduledForDate(task, today) && taskCreatedAt > lastCheckedDate) {
+        // Check for today's tasks
+        if (isTaskScheduledForDate(task, today)) {
             const isCompletedToday = user.taskHistory.some(h => h.taskId === task.id && h.date === format(today, 'yyyy-MM-dd'));
-            if (!isCompletedToday) {
+            if (!isCompletedToday && taskCreatedAt > lastCheckedDate) {
                 todayIncompletedTasks.push(task);
             }
         }
