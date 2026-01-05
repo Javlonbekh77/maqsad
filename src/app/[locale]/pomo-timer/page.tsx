@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AppLayout from '@/components/layout/app-layout';
 import { Button } from '@/components/ui/button';
 import { useTimer } from '@/context/timer-context';
-import { format } from 'date-fns';
+import { format as formatTime } from 'date-fns';
 import { Play, Pause, RotateCcw, Volume2, VolumeX } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 
@@ -15,20 +15,36 @@ const POMO_DURATIONS = [
   { label: '60 min', value: 60 },
 ];
 
+function formatDisplayTime(seconds: number): string {
+    if (seconds <= 0) return "00:00";
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
 export default function PomoTimerPage() {
-  const { startTimer, pauseTimer, resumeTimer, stopTimer, activeTimer } = useTimer();
+  const { startTimer, pauseTimer, resumeTimer, stopTimer, activeTimer, timeRemaining, isRunning } = useTimer();
+  
+  // Local state for duration selection before a timer starts
   const [selectedDuration, setSelectedDuration] = useState(25);
-  const [customDuration, setCustomDuration] = useState(25);
   const [isMuted, setIsMuted] = useState(false);
+
+  // When a timer becomes active, sync the local duration state
+  useEffect(() => {
+    if (activeTimer) {
+        setSelectedDuration(activeTimer.duration / 60);
+    }
+  }, [activeTimer]);
+
 
   const handleStartPomo = () => {
     const task = {
       id: 'pomo-' + Date.now(),
-      title: `Pomodoro (${selectedDuration} min)`,
-      description: 'Focus session',
-      coins: 0,
+      title: `Fokus sessiyasi (${selectedDuration} daqiqa)`,
+      description: 'Pomodoro texnikasi bilan diqqatni jamlash',
+      coins: 0, // No coins for pomo by default
       taskType: 'personal',
-      schedule: { type: 'one-time', date: format(new Date(), 'yyyy-MM-dd') },
+      schedule: { type: 'one-time', date: formatTime(new Date(), 'yyyy-MM-dd') },
       isCompleted: false,
       history: [],
       createdAt: Timestamp.now(),
@@ -38,9 +54,23 @@ export default function PomoTimerPage() {
     
     startTimer(task, selectedDuration);
   };
+  
+  const handleReset = () => {
+    stopTimer();
+    // Optionally reset to a default duration
+    setSelectedDuration(25);
+  };
 
-  const displayTime = activeTimer ? '00:00' : `${String(selectedDuration).padStart(2, '0')}:00`;
-  const timerStatus = activeTimer ? (activeTimer.paused ? 'Pauza' : 'Ishlayapti') : 'Tayyor';
+  const handlePauseResume = () => {
+    if(isRunning) {
+        pauseTimer();
+    } else {
+        resumeTimer();
+    }
+  };
+
+  const displayTime = activeTimer ? formatDisplayTime(timeRemaining) : formatDisplayTime(selectedDuration * 60);
+  const timerStatus = activeTimer ? (isRunning ? 'Ishlayapti' : 'Pauza') : 'Tayyor';
 
   return (
     <AppLayout>
@@ -58,45 +88,33 @@ export default function PomoTimerPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 mb-8">
+          <div className="grid grid-cols-4 gap-2 mb-8">
             {POMO_DURATIONS.map((item) => (
               <Button
                 key={item.value}
                 variant={selectedDuration === item.value && !activeTimer ? 'default' : 'outline'}
                 disabled={!!activeTimer}
+                onClick={() => setSelectedDuration(item.value)}
               >
                 {item.label}
               </Button>
             ))}
           </div>
 
-          <div className="mb-8 flex gap-2">
-            <input
-              type="number"
-              min="1"
-              max="180"
-              value={customDuration}
-              disabled={!!activeTimer}
-              className="flex-1 px-3 py-2 border rounded-md bg-background text-foreground"
-              placeholder="Minut"
-            />
-            <span className="flex items-center text-sm text-muted-foreground">min</span>
-          </div>
-
           <div className="flex gap-4 justify-center mb-8">
-            {!activeTimer || activeTimer.paused ? (
-              <Button size="lg" className="w-24 h-24 rounded-full">
-                <Play className="w-8 h-8" />
-              </Button>
+            {!activeTimer ? (
+               <Button size="lg" className="w-24 h-24 rounded-full" onClick={handleStartPomo}>
+                    <Play className="w-8 h-8" />
+                </Button>
             ) : (
-              <Button size="lg" variant="secondary" className="w-24 h-24 rounded-full">
-                <Pause className="w-8 h-8" />
-              </Button>
+                <Button size="lg" variant="secondary" className="w-24 h-24 rounded-full" onClick={handlePauseResume}>
+                    {isRunning ? <Pause className="w-8 h-8" /> : <Play className="w-8 h-8" />}
+                </Button>
             )}
-            <Button variant="outline" size="lg" className="w-24 h-24 rounded-full">
+            <Button variant="outline" size="lg" className="w-24 h-24 rounded-full" onClick={handleReset} disabled={!activeTimer}>
               <RotateCcw className="w-8 h-8" />
             </Button>
-            <Button variant="outline" size="lg" className="w-24 h-24 rounded-full">
+            <Button variant="outline" size="lg" className="w-24 h-24 rounded-full" onClick={() => setIsMuted(prev => !prev)}>
               {isMuted ? <VolumeX className="w-8 h-8" /> : <Volume2 className="w-8 h-8" />}
             </Button>
           </div>
@@ -104,9 +122,9 @@ export default function PomoTimerPage() {
           <div className="bg-muted/50 p-4 rounded-lg text-center text-sm text-muted-foreground">
             <p className="mb-2">💡 Maslahat:</p>
             <ul className="text-left space-y-1 text-xs">
-              <li>• 25 daqiqali Pomodoro</li>
-              <li>• Her 4 sessiyadan keyin dam oling</li>
-              <li>• Fokusni saqlang</li>
+              <li>• Fokusni saqlash uchun 25 daqiqalik sessiyalardan foydalaning.</li>
+              <li>• Har bir sessiyadan so'ng 5 daqiqa dam oling.</li>
+              <li>• Har 4 sessiyadan keyin uzoqroq tanaffus qiling (15-30 daqiqa).</li>
             </ul>
           </div>
         </div>
