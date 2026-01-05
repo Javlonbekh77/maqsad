@@ -38,7 +38,16 @@ export default function DashboardClient({ user, initialTasks, onTaskCompletion }
         <div className="grid lg:grid-cols-3 gap-8 items-start">
             <div className="lg:col-span-2 space-y-8">
                  <TodaySchedule
+                    title="Bugungi Reja"
+                    description="Sizning bugungi rejalashtirgan barcha vazifalaringiz."
                     tasks={tasks}
+                    userId={user.id}
+                    onTaskCompletion={handleTaskCompletion}
+                />
+                 <TodaySchedule
+                    title="Guruh Vazifalari"
+                    description="Guruhlaringizdagi bugungi vazifalar."
+                    tasks={tasks.filter(t => t.taskType === 'group')}
                     userId={user.id}
                     onTaskCompletion={handleTaskCompletion}
                 />

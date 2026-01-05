@@ -7,7 +7,9 @@ import {
   Trophy,
   UserCircle,
   PlusSquare,
-  ClipboardList
+  ClipboardList,
+  Clock,
+  BookOpen
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useTranslations } from 'next-intl';
@@ -19,16 +21,18 @@ export default function MobileBottomNav() {
   const t = useTranslations('nav');
 
   const navItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/dashboard', label: 'Asosiy', icon: LayoutDashboard },
     { href: '/groups', label: 'Guruhlar', icon: Users },
     { href: '/my-tasks', label: 'Vazifalar', icon: ClipboardList },
+    { href: '/pomo-timer', label: 'Fokus', icon: Clock },
+    { href: '/kundalik', label: 'Kundalik', icon: BookOpen },
     { href: '/leaderboard', label: 'Liderlar', icon: Trophy },
     { href: `/profile/${user?.id}`, label: 'Profil', icon: UserCircle },
   ];
 
   return (
     <div className="sm:hidden fixed bottom-0 left-0 z-50 w-full h-16 bg-background/80 border-t backdrop-blur-sm">
-      <div className="grid h-full max-w-lg grid-cols-5 mx-auto font-medium">
+      <div className="grid h-full w-full grid-cols-7 mx-auto font-medium">
         {navItems.map((item) => {
           // Don't render profile link if user is not loaded
           if (item.label === 'Profil' && !user) return null;
@@ -42,14 +46,14 @@ export default function MobileBottomNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                'inline-flex flex-col items-center justify-center px-2 group',
+                'inline-flex flex-col items-center justify-center px-1 group',
                 isActive
                   ? 'text-primary'
                   : 'text-muted-foreground hover:bg-muted/50'
               )}
             >
               <item.icon className="w-5 h-5 mb-1" />
-              <span className="text-xs">{item.label}</span>
+              <span className="text-[10px] text-center leading-tight">{item.label}</span>
             </Link>
           );
         })}

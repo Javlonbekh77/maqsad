@@ -18,6 +18,8 @@ import { useTimer } from '@/context/timer-context';
 
 
 interface TodayScheduleProps {
+  title: string;
+  description: string;
   tasks: UserTask[];
   userId: string;
   onTaskCompletion: () => void;
@@ -30,7 +32,7 @@ const toDate = (timestamp: Timestamp | Date): Date => {
     return timestamp.toDate();
 }
 
-export default function TodaySchedule({ tasks, userId, onTaskCompletion }: TodayScheduleProps) {
+export default function TodaySchedule({ title, description, tasks, userId, onTaskCompletion }: TodayScheduleProps) {
   const t = useTranslations('todoList');
   const { startTimer, activeTimer } = useTimer();
   const [selectedTask, setSelectedTask] = useState<UserTask | null>(null);
@@ -82,11 +84,11 @@ export default function TodaySchedule({ tasks, userId, onTaskCompletion }: Today
   }, [tasks, displayDate]);
 
   const dateTitle = useMemo(() => {
-    if (isToday(displayDate)) return "Bugungi Reja";
+    if (isToday(displayDate)) return title;
     if (isYesterday(displayDate)) return "Kechagi Reja";
     if (isTomorrow(displayDate)) return "Ertangi Reja";
     return format(displayDate, 'MMMM d, yyyy');
-  }, [displayDate]);
+  }, [displayDate, title]);
 
   return (
     <>
@@ -95,7 +97,7 @@ export default function TodaySchedule({ tasks, userId, onTaskCompletion }: Today
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>{dateTitle}</CardTitle>
-              <CardDescription>Sizning rejalashtirgan vazifalaringiz.</CardDescription>
+              <CardDescription>{description}</CardDescription>
             </div>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="icon" onClick={() => changeDay(-1)}>

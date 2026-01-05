@@ -7,7 +7,7 @@ import type { User, DayOfWeek, PersonalTask, Task, UserTask, TaskSchedule } from
 import { format, add, startOfWeek, isSameDay, isToday, startOfDay, isWithinInterval, parseISO } from 'date-fns';
 import { Check, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useEffect, useState, useCallback } from "react";
-import { getTasksForUserGroups, getPersonalTasksForUser } from "@/lib/data";
+import { getTasksForUserGroups, getPersonalTasksForUser, isTaskScheduledForDate } from "@/lib/data";
 import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "../ui/skeleton";
@@ -32,32 +32,6 @@ const toDate = (timestamp: Timestamp | Date): Date => {
         return timestamp;
     }
     return timestamp.toDate();
-}
-
-
-function isTaskScheduledForDate(task: UserTask, date: Date): boolean {
-    const taskCreationDate = task.createdAt instanceof Timestamp ? startOfDay(task.createdAt.toDate()) : startOfDay(new Date());
-    if (date < taskCreationDate) return false;
-
-    const schedule = task.schedule;
-    if (!schedule) return false;
-
-    switch(schedule.type) {
-        case 'one-time':
-            return schedule.date === format(date, 'yyyy-MM-dd');
-        case 'date-range':
-            if (schedule.startDate && schedule.endDate) {
-                 const start = parseISO(schedule.startDate);
-                 const end = parseISO(schedule.endDate);
-                 return isWithinInterval(date, { start, end }) || isSameDay(date, start) || isSameDay(date, end);
-            }
-            return false;
-        case 'recurring':
-            const dayOfWeek = format(date, 'EEEE') as DayOfWeek;
-            return schedule.days?.includes(dayOfWeek) ?? false;
-        default:
-            return false;
-    }
 }
 
 export default function HabitTracker({ user }: HabitTrackerProps) {
@@ -110,14 +84,12 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
   };
   
   const tasksToDisplay = useMemo(() => {
-    // Only show tasks that have some schedule within the user's context
     return allTasks.filter(task => {
-        if (task.taskType === 'group') {
-            return userSchedules.some(s => s.taskId === task.id);
-        }
-        return true; // Personal tasks are always relevant
+      // Check if the task is scheduled for any day in the current visible week
+      return dates.some(date => isTaskScheduledForDate(task, date));
     });
-  }, [allTasks, userSchedules]);
+  }, [allTasks, dates]);
+
 
   return (
     <>
@@ -181,9 +153,7 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
                                 const isScheduled = isTaskScheduledForDate(task, currentDate);
                                 
                                 if (!isScheduled) {
-                                  return <TableCell key={date.toISOString()} className="text-center p-2 bg-muted/30">
-                                     <span className="text-muted-foreground text-lg">-</span>
-                                  </TableCell>
+                                  return <TableCell key={date.toISOString()} className="text-center p-2"></TableCell>
                                 }
 
                                 const completed = user.taskHistory.some(historyItem => 

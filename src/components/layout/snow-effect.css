@@ -10,64 +10,78 @@
 }
 
 .snowflake {
+    color: white;
+    font-size: 1em;
+    font-family: Arial;
+    text-shadow: 0 0 1px #000;
     position: absolute;
-    width: 10px;
-    height: 10px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-snowflake'%3E%3Cline x1='2' x2='22' y1='12' y2='12'/%3E%3Cline x1='12' x2='12' y1='2' y2='22'/%3E%3Cpath d='m20 16-4-4 4-4'/%3E%3Cpath d='m4 8 4 4-4 4'/%3E%3Cpath d='m16 4-4 4-4-4'/%3E%3Cpath d='m8 20 4-4 4 4'/%3E%3C/svg%3E");
-    background-size: contain;
-    background-repeat: no-repeat;
-    opacity: 0;
+    top: -10%;
+    z-index: 9999;
+    user-select: none;
     animation: fall linear infinite;
 }
 
+.snowflake::before,
+.snowflake::after {
+    content: "\\2744"; /* Unicode character for a snowflake */
+    position: absolute;
+    color: white;
+    text-shadow: 0 0 2px #000;
+    opacity: 0.8;
+}
+
+.snowflake::before {
+    transform: rotate(15deg);
+}
+.snowflake::after {
+    transform: rotate(-15deg);
+}
 
 @keyframes fall {
     0% {
-        transform: translateY(-5vh) translateX(0vw) rotate(0deg);
+        transform: translateY(-10vh) translateX(0vw);
         opacity: 1;
     }
-    90% {
-         opacity: 1;
-    }
     100% {
-        transform: translateY(105vh) translateX(var(--fall-x, 0vw)) rotate(360deg);
+        transform: translateY(105vh) translateX(var(--fall-x, 0vw));
         opacity: 0;
     }
 }
 
+
 /* Different sizes and durations for variety */
 .snowflake:nth-of-type(6n) {
-    width: 10px; height: 10px;
+    font-size: 1.2em;
     animation-duration: 10s;
     animation-delay: -3s;
     --fall-x: -15vw;
 }
 .snowflake:nth-of-type(6n + 1) {
-    width: 8px; height: 8px;
+    font-size: 0.8em;
     animation-duration: 14s;
     animation-delay: -1s;
     --fall-x: 10vw;
 }
 .snowflake:nth-of-type(6n + 2) {
-    width: 6px; height: 6px;
+    font-size: 0.6em;
     animation-duration: 18s;
     animation-delay: -5s;
     --fall-x: -12vw;
 }
 .snowflake:nth-of-type(6n + 3) {
-    width: 12px; height: 12px;
+    font-size: 1.5em;
     animation-duration: 9s;
     animation-delay: -2.5s;
     --fall-x: 8vw;
 }
 .snowflake:nth-of-type(6n + 4) {
-    width: 5px; height: 5px;
+    font-size: 0.5em;
     animation-duration: 20s;
     animation-delay: -4s;
     --fall-x: -7vw;
 }
 .snowflake:nth-of-type(6n + 5) {
-    width: 9px; height: 9px;
+    font-size: 1.1em;
     animation-duration: 12s;
     animation-delay: -1.5s;
     --fall-x: 15vw;
