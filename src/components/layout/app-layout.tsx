@@ -5,15 +5,7 @@ import MobileBottomNav from "./mobile-bottom-nav";
 import AiChatAssistant from "../ai/ai-chat-assistant";
 import GlobalTimerWidget from "../global-timer-widget";
 import { useEffect } from "react";
-import './snow-effect.css';
-
-const Snow = () => {
-    // Create an array of snowflakes to render
-    const snowflakes = Array.from({ length: 150 }).map((_, i) => (
-        <div key={i} className="snowflake"></div>
-    ));
-    return <div className="snow-container">{snowflakes}</div>;
-};
+import SnowEffect from "./snow-effect";
 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -28,7 +20,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40 relative">
-      <Snow />
+      <SnowEffect />
       <AppSidebar />
       <div className="flex flex-col sm:gap-4 sm:pl-64">
         <AppHeader />

@@ -34,6 +34,24 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
   const { user, refreshAuth } = useAuth();
   const { toast } = useToast();
 
+  const handleCompleteTask = useCallback(async (taskToComplete: UserTask) => {
+    if (!user) {
+        console.error("Cannot complete task, user is not logged in.");
+        return;
+    }
+    try {
+        await completeUserTask(user.id, taskToComplete);
+        toast({ title: 'Vazifa bajarildi!', description: `"${taskToComplete.title}" muvaffaqiyatli yakunlandi.` });
+        if (refreshAuth) {
+            await refreshAuth();
+        }
+    } catch (e) {
+        console.error('Error completing task on timer finish', e);
+        toast({ title: 'Xatolik', description: 'Vazifani yakunlashda xatolik yuz berdi.', variant: 'destructive' });
+    }
+  }, [user, toast, refreshAuth]);
+
+
   // Load timer from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('maqsadm_active_timer');
@@ -59,30 +77,24 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const tick = async () => {
+    const tick = () => {
       const elapsed = (Date.now() - activeTimer.startedAt) / 1000;
       const remaining = Math.max(0, activeTimer.remainingOnPause - elapsed);
       setTimeRemaining(remaining);
 
       if (remaining <= 0) {
         setIsRunning(false);
-        try {
-          if (user) {
-            await completeUserTask(user.id, activeTimer.task);
-            toast({ title: 'Vaqt tugadi!', description: `"${activeTimer.task.title}" vazifasi bajarildi.` });
-            await refreshAuth?.();
-          }
-        } catch (e) {
-          console.error('Error auto-completing task on timer finish', e);
-        }
+        handleCompleteTask(activeTimer.task);
         // Clear timer after completion
-        stopTimer();
+        setActiveTimer(null);
+        setIsRunning(false);
+        setTimeRemaining(0);
       }
     };
 
     const intervalId = setInterval(tick, 1000);
     return () => clearInterval(intervalId);
-  }, [activeTimer, isRunning, user, toast, refreshAuth]);
+  }, [activeTimer, isRunning, handleCompleteTask]);
 
   // Persist timer to localStorage
   useEffect(() => {
@@ -140,16 +152,11 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
 
   const completeTimer = useCallback(() => {
     // This is for manual completion, not when timer runs out
-     if (activeTimer && user) {
-        completeUserTask(user.id, activeTimer.task)
-            .then(() => {
-                toast({ title: 'Vazifa bajarildi!', description: `"${activeTimer.task.title}" muvaffaqiyatli yakunlandi.` });
-                refreshAuth?.();
-            })
-            .catch(e => console.error("Error completing task", e));
+     if (activeTimer) {
+        handleCompleteTask(activeTimer.task);
     }
     stopTimer();
-  }, [activeTimer, user, stopTimer, toast, refreshAuth]);
+  }, [activeTimer, stopTimer, handleCompleteTask]);
 
   return (
     <TimerContext.Provider
