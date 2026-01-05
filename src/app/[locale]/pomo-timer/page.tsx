@@ -23,6 +23,13 @@ function formatDisplayTime(seconds: number): string {
     return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 }
 
+function formatLargeDisplayTime(seconds: number): string {
+    if (seconds <= 0) return "00";
+    const minutes = Math.floor(seconds / 60);
+    return `${String(minutes).padStart(2, '0')}`;
+}
+
+
 export default function PomoTimerPage() {
   const { startTimer, pauseTimer, resumeTimer, stopTimer, activeTimer, timeRemaining, isRunning } = useTimer();
   
@@ -79,6 +86,7 @@ export default function PomoTimerPage() {
     : (selectedDuration === null ? customDuration : selectedDuration) * 60;
 
   const displayTime = activeTimer ? formatDisplayTime(timeRemaining) : formatDisplayTime(durationInSeconds);
+  const largeDisplayTime = activeTimer ? formatLargeDisplayTime(timeRemaining) : String(selectedDuration === null ? customDuration : selectedDuration).padStart(2, '0');
   const timerStatus = activeTimer ? (isRunning ? 'Ishlayapti' : 'Pauza') : 'Tayyor';
 
   return (
@@ -92,7 +100,8 @@ export default function PomoTimerPage() {
 
           <div className="bg-gradient-to-br from-primary/20 to-primary/10 rounded-3xl w-64 h-64 mx-auto flex items-center justify-center mb-8 border border-primary/20">
             <div className="text-center">
-              <div className="text-7xl font-bold font-mono">{displayTime}</div>
+              <div className="text-7xl font-bold font-mono">{largeDisplayTime}</div>
+              <div className="text-sm text-muted-foreground mt-1">daqida</div>
               <div className="text-sm text-muted-foreground mt-2">{timerStatus}</div>
             </div>
           </div>
