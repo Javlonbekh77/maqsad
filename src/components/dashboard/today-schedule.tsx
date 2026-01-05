@@ -4,7 +4,7 @@ import { useState, useCallback, useMemo } from 'react';
 import type { UserTask, DayOfWeek } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, Coins, Clock, ChevronLeft, ChevronRight, Flame } from 'lucide-react';
+import { Check, Coins, Clock, ChevronLeft, ChevronRight, Flame, Timer } from 'lucide-react';
 import TaskCompletionDialog from './task-completion-dialog';
 import { useTranslations } from 'next-intl';
 import { completeUserTask, isTaskScheduledForDate } from '@/lib/data';
@@ -14,6 +14,7 @@ import { addDays, format, isToday, isYesterday, isTomorrow, startOfDay } from 'd
 import { cn } from '@/lib/utils';
 import { Timestamp } from 'firebase/firestore';
 import TaskDetailDialog from '../tasks/task-detail-dialog';
+import { useTimer } from '@/context/timer-context';
 
 
 interface TodayScheduleProps {
@@ -31,6 +32,7 @@ const toDate = (timestamp: Timestamp | Date): Date => {
 
 export default function TodaySchedule({ tasks, userId, onTaskCompletion }: TodayScheduleProps) {
   const t = useTranslations('todoList');
+  const { startTimer, activeTimer } = useTimer();
   const [selectedTask, setSelectedTask] = useState<UserTask | null>(null);
   const [viewingTask, setViewingTask] = useState<UserTask | null>(null);
   const [displayDate, setDisplayDate] = useState(() => startOfDay(new Date()));
@@ -38,6 +40,11 @@ export default function TodaySchedule({ tasks, userId, onTaskCompletion }: Today
   const handleCompleteClick = useCallback((task: UserTask) => {
     setSelectedTask(task);
   }, []);
+
+  const handleStartTimer = useCallback((task: UserTask) => {
+    const timerDuration = (task as any).timerDuration || 30; // default 30 min
+    startTimer(task, timerDuration);
+  }, [startTimer]);
 
   const handleConfirmCompletion = useCallback(async () => {
     if (!selectedTask || !userId) return;
@@ -55,7 +62,10 @@ export default function TodaySchedule({ tasks, userId, onTaskCompletion }: Today
   const { activeTasks, completedTasks } = useMemo(() => {
     const displayDateStr = format(displayDate, 'yyyy-MM-dd');
 
-    const tasksForDay = tasks.filter(task => isTaskScheduledForDate(task, displayDate));
+    const tasksForDay = tasks.filter(task => {
+      // Check if task is scheduled for this display date
+      return isTaskScheduledForDate(task, displayDate);
+    });
 
     const active = tasksForDay.filter(t => {
       const history = (t as any).history || [];
@@ -109,7 +119,10 @@ export default function TodaySchedule({ tasks, userId, onTaskCompletion }: Today
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {activeTasks.map((task) => (
+                {activeTasks.map((task) => {
+                  const hasTimer = (task as any).hasTimer;
+                  const isTimerActive = activeTimer?.taskId === task.id;
+                  return (
                   <TableRow key={task.id}>
                     <TableCell 
                       className="font-medium cursor-pointer hover:underline"
@@ -129,14 +142,25 @@ export default function TodaySchedule({ tasks, userId, onTaskCompletion }: Today
                             <span>{task.coins}</span>
                         </div>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right space-x-2">
+                      {hasTimer && !isTimerActive && (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleStartTimer(task)}
+                        >
+                          <Timer className="w-4 h-4 mr-1" />
+                          Taymer
+                        </Button>
+                      )}
                        <Button size="sm" onClick={() => handleCompleteClick(task)} disabled={!isToday(displayDate)}>
                         <Check className="w-4 h-4 mr-2" />
                         {t('completeButton')}
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           )}

@@ -12,6 +12,7 @@ export const ChatInputSchema = z.object({
     )
     .optional(),
   message: z.string(),
+  userId: z.string().optional(),
 });
 
 export const ChatOutputSchema = z.object({

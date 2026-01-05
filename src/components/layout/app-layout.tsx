@@ -3,8 +3,19 @@ import AppHeader from "./app-header";
 import AppSidebar from "./app-sidebar";
 import MobileBottomNav from "./mobile-bottom-nav";
 import AiChatAssistant from "../ai/ai-chat-assistant";
+import GlobalTimerWidget from "../global-timer-widget";
+import { useEffect } from "react";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
+  // Request notification permission on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+    }
+  }, []);
+
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
       <AppSidebar />
@@ -16,6 +27,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </div>
       <MobileBottomNav />
       <AiChatAssistant />
+      <GlobalTimerWidget />
     </div>
   )
 }

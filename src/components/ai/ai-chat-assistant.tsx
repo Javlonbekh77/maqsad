@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useRef, useEffect, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
@@ -11,11 +10,16 @@ import { chatAssistant } from '@/ai/flows/chat-assistant-flow';
 import type { ChatInput, ChatOutput } from '@/ai/flows/chat-assistant-flow';
 import { useAuth } from '@/context/auth-context';
 import { marked } from 'marked';
+import { saveChatMessage, getChatHistory } from '@/lib/data';
 
 type ChatMessage = {
   role: 'user' | 'model';
   content: string;
 };
+
+const CHAT_LOCAL_STORAGE_KEY = 'maqsadm_chat_history';
+const MAX_LOCAL_MESSAGES = 50;
+const MAX_FIREBASE_MESSAGES = 10;
 
 export default function AiChatAssistant() {
   const [isOpen, setIsOpen] = useState(false);
@@ -24,17 +28,63 @@ export default function AiChatAssistant() {
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   const initialMessage: ChatMessage = {
     role: 'model',
     content: "Salom! Men MaqsadM yordamchisiman. Bugun qanday vazifalarni rejalashtirishimiz mumkin?",
   };
 
+  // Load chat history from local storage and Firebase on sheet open
   useEffect(() => {
     if (isOpen && messages.length === 0) {
-      setMessages([initialMessage]);
+      loadChatHistory();
     }
   }, [isOpen, messages.length]);
+
+  const loadChatHistory = async () => {
+    setLoadingHistory(true);
+    try {
+      // 1. Load from local storage
+      const localData = localStorage.getItem(CHAT_LOCAL_STORAGE_KEY);
+      if (localData) {
+        try {
+          const parsed = JSON.parse(localData);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setMessages(parsed);
+            setLoadingHistory(false);
+            return;
+          }
+        } catch (e) {
+          console.error('Error parsing local chat history', e);
+        }
+      }
+
+      // 2. Load from Firebase (fallback)
+      if (user?.id) {
+        const firebaseHistory = await getChatHistory(user.id, MAX_FIREBASE_MESSAGES);
+        if (firebaseHistory.length > 0) {
+          const converted = firebaseHistory.map(msg => ({
+            role: msg.role,
+            content: msg.content,
+          }));
+          setMessages(converted);
+          // Save to local storage for next time
+          localStorage.setItem(CHAT_LOCAL_STORAGE_KEY, JSON.stringify(converted));
+          setLoadingHistory(false);
+          return;
+        }
+      }
+
+      // 3. Show initial message if no history
+      setMessages([initialMessage]);
+    } catch (e) {
+      console.error('Error loading chat history', e);
+      setMessages([initialMessage]);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -42,11 +92,34 @@ export default function AiChatAssistant() {
     }
   }, [messages]);
 
+  const saveChatMessageToStorage = async (message: ChatMessage) => {
+    // 1. Save to local storage
+    const updated = [...messages, message];
+    const trimmed = updated.slice(-MAX_LOCAL_MESSAGES);
+    localStorage.setItem(CHAT_LOCAL_STORAGE_KEY, JSON.stringify(trimmed));
+
+    // 2. Save to Firebase (async, don't block)
+    if (user?.id) {
+      try {
+        // Only save last MAX_FIREBASE_MESSAGES to Firebase
+        if (updated.length % 2 === 0) { // Save every 2nd message to Firebase (user + model)
+          saveChatMessage(user.id, message).catch(e => 
+            console.error('Error saving chat to Firebase', e)
+          );
+        }
+      } catch (e) {
+        console.error('Error saving to Firebase', e);
+      }
+    }
+  };
+
   const handleSendMessage = async () => {
     if (!input.trim()) return;
 
     const userMessage: ChatMessage = { role: 'user', content: input };
     setMessages(prev => [...prev, userMessage]);
+    await saveChatMessageToStorage(userMessage);
+
     const currentInput = input;
     setInput('');
     setIsLoading(true);
@@ -60,10 +133,12 @@ export default function AiChatAssistant() {
       const response = await chatAssistant({
         history: chatHistory,
         message: currentInput,
+        userId: user?.id,
       });
 
       const modelMessage: ChatMessage = { role: 'model', content: response.reply };
       setMessages(prev => [...prev, modelMessage]);
+      await saveChatMessageToStorage(modelMessage);
 
     } catch (error) {
       console.error("AI chat error:", error);
@@ -72,6 +147,7 @@ export default function AiChatAssistant() {
         content: "Kechirasiz, hozirda javob bera olmayman. Iltimos, keyinroq qayta urinib ko'ring.",
       };
       setMessages(prev => [...prev, errorMessage]);
+      await saveChatMessageToStorage(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -104,32 +180,40 @@ export default function AiChatAssistant() {
           </SheetHeader>
           <ScrollArea className="flex-1" viewportRef={scrollAreaRef}>
              <div className="p-6 space-y-6">
-                {messages.map((msg, index) => (
-                    <div key={index} className={`flex items-start gap-4 ${msg.role === 'user' ? 'justify-end' : ''}`}>
-                    {msg.role === 'model' && (
-                        <Avatar className="w-8 h-8 border">
-                            <AvatarFallback><Bot size={20} /></AvatarFallback>
-                        </Avatar>
-                    )}
-                    <div className={`rounded-lg p-3 max-w-[80%] ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                        <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={parseMarkdown(msg.content)} />
-                    </div>
-                    {msg.role === 'user' && (
-                        <Avatar className="w-8 h-8 border">
-                             <AvatarFallback>{user?.firstName?.charAt(0) || 'U'}</AvatarFallback>
-                        </Avatar>
-                    )}
-                    </div>
-                ))}
-                {isLoading && (
-                     <div className="flex items-start gap-4">
-                        <Avatar className="w-8 h-8 border">
-                             <AvatarFallback><Bot size={20} /></AvatarFallback>
-                        </Avatar>
-                        <div className="rounded-lg p-3 bg-muted flex items-center">
-                            <Loader2 className="h-5 w-5 animate-spin" />
+                {loadingHistory ? (
+                  <div className="flex items-center justify-center py-10">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <>
+                    {messages.map((msg, index) => (
+                        <div key={index} className={`flex items-start gap-4 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                        {msg.role === 'model' && (
+                            <Avatar className="w-8 h-8 border">
+                                <AvatarFallback><Bot size={20} /></AvatarFallback>
+                            </Avatar>
+                        )}
+                        <div className={`rounded-lg p-3 max-w-[80%] ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                            <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={parseMarkdown(msg.content)} />
                         </div>
-                    </div>
+                        {msg.role === 'user' && (
+                            <Avatar className="w-8 h-8 border">
+                                 <AvatarFallback>{user?.firstName?.charAt(0) || 'U'}</AvatarFallback>
+                            </Avatar>
+                        )}
+                        </div>
+                    ))}
+                    {isLoading && (
+                         <div className="flex items-start gap-4">
+                            <Avatar className="w-8 h-8 border">
+                                 <AvatarFallback><Bot size={20} /></AvatarFallback>
+                            </Avatar>
+                            <div className="rounded-lg p-3 bg-muted flex items-center">
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                            </div>
+                        </div>
+                    )}
+                  </>
                 )}
             </div>
           </ScrollArea>
