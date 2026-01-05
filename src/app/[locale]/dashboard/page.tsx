@@ -5,6 +5,7 @@ import AppLayout from '@/components/layout/app-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from '@/navigation';
+import { useEffect } from 'react';
 
 function LoadingFallback() {
     return (
@@ -38,27 +39,19 @@ export default function DashboardPage() {
   const { user: authUser, loading: authLoading } = useAuth();
   const router = useRouter();
   
-  if (authLoading) {
-    return <LoadingFallback />;
-  }
-
-  if (!authUser) {
-    // Redirect on the client side if not authenticated
-    // This is better than a server-side redirect for this flow
-    // as auth state is determined on the client.
-    if (typeof window !== 'undefined') {
-        router.push('/login');
+  useEffect(() => {
+    if (!authLoading && !authUser) {
+      router.push('/login');
     }
+  }, [authLoading, authUser, router]);
+  
+  if (authLoading || !authUser) {
     return <LoadingFallback />;
   }
 
   return (
     <Suspense fallback={<LoadingFallback />}>
-      {authUser ? (
-        <DashboardClient user={authUser} />
-      ) : (
-        <LoadingFallback />
-      )}
+      <DashboardClient />
     </Suspense>
   );
 }

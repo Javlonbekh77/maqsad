@@ -11,6 +11,7 @@ import HabitTracker from '@/components/profile/habit-tracker';
 import { getScheduledTasksForUser } from '@/lib/data';
 import useSWR from 'swr';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/context/auth-context';
 
 
 function LoadingFallback() {
@@ -41,31 +42,33 @@ function LoadingFallback() {
     );
 }
 
+const fetcher = ([key, user]: [string, User | null]) => {
+  if (!user) {
+    return Promise.resolve([]);
+  }
+  return getScheduledTasksForUser(user);
+};
 
-interface DashboardClientProps {
-    user: User;
-}
-
-const fetcher = ([, user]: [string, User]) => getScheduledTasksForUser(user);
-
-export default function DashboardClient({ user }: DashboardClientProps) {
+export default function DashboardClient() {
   const t = useTranslations('dashboard');
+  const { user, loading: authLoading } = useAuth();
 
   const { data: tasks, error, mutate, isLoading } = useSWR(
-    ['scheduledTasks', user], // The key for SWR includes user object to re-fetch on change.
-    fetcher, // The function to fetch data.
+    user ? ['scheduledTasks', user] : null,
+    fetcher,
     {
-      revalidateOnFocus: false // Optional: prevent re-fetching on window focus
+      revalidateOnFocus: false,
     }
   );
 
   const handleTaskCompletion = useCallback(async () => {
-    // Re-trigger the SWR fetch to get fresh data
     await mutate();
   }, [mutate]);
 
-  if (isLoading || !tasks) {
-    return <LoadingFallback />
+  const isLoadingData = authLoading || isLoading;
+
+  if (isLoadingData || !user) {
+    return <LoadingFallback />;
   }
   
   if (error) {
@@ -79,6 +82,8 @@ export default function DashboardClient({ user }: DashboardClientProps) {
      )
   }
 
+  const allTasks = tasks || [];
+
   return (
     <AppLayout>
       <div className="grid gap-8">
@@ -90,14 +95,14 @@ export default function DashboardClient({ user }: DashboardClientProps) {
         <div className="grid lg:grid-cols-3 gap-8 items-start">
             <div className="lg:col-span-2 space-y-8">
                  <TodaySchedule
-                    tasks={tasks}
+                    tasks={allTasks}
                     userId={user.id}
                     onTaskCompletion={handleTaskCompletion}
                 />
-                 <HabitTracker user={user} allTasks={tasks} onDataNeedsRefresh={mutate} />
+                 <HabitTracker user={user} allTasks={allTasks} onDataNeedsRefresh={mutate} />
             </div>
             <div className="space-y-8">
-                 <DashboardStats user={user} tasks={tasks} />
+                 <DashboardStats user={user} tasks={allTasks} />
                 <QuickAccess />
             </div>
         </div>
