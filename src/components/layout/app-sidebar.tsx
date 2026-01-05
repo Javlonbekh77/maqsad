@@ -9,7 +9,9 @@ import {
   UserCircle,
   MessageSquare,
   PlusSquare,
-  ClipboardList
+  ClipboardList,
+  Clock,
+  BookOpen
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
@@ -96,6 +98,8 @@ export default function AppSidebar() {
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/my-tasks', label: 'Mening Vazifalarim', icon: ClipboardList },
+    { href: '/pomo-timer', label: 'Fokus Vaqti', icon: Clock },
+    { href: '/kundalik', label: 'Kundalik', icon: BookOpen },
     { href: '/groups', label: 'Guruhlar', icon: Users },
     { href: '/leaderboard', label: 'Peshqadamlar', icon: Trophy },
     { href: `/profile/${user?.id}`, label: 'Profil', icon: UserCircle },

@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { PT_Sans as PTSans } from 'next/font/google';
 import { AuthProvider } from '@/context/auth-context';
+import { TimerProvider } from '@/context/timer-context';
 
 import '../globals.css';
 import { Toaster } from '@/components/ui/toaster';
@@ -35,12 +36,14 @@ export default async function RootLayout({
     <html lang={locale} suppressHydrationWarning>
        <body className={cn('min-h-screen bg-background font-sans antialiased', fontSans.variable)}>
         <NextIntlClientProvider locale={locale} messages={messages}>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <AuthProvider>
-              {children}
-              <Toaster />
-            </AuthProvider>
-          </ThemeProvider>
+            <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+              <AuthProvider>
+                <TimerProvider>
+                  {children}
+                  <Toaster />
+                </TimerProvider>
+              </AuthProvider>
+            </ThemeProvider>
         </NextIntlClientProvider>
       </body>
     </html>

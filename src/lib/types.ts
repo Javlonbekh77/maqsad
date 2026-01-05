@@ -27,6 +27,8 @@ export type Task = {
   estimatedTime?: string;
   satisfactionRating?: number;
   schedule: TaskSchedule;
+  hasTimer?: boolean; // Whether this task has a timer
+  timerDuration?: number; // Timer duration in minutes (if hasTimer is true)
 };
 
 export type PersonalTask = {
@@ -40,6 +42,8 @@ export type PersonalTask = {
   satisfactionRating?: number;
   schedule: TaskSchedule;
   visibility: 'public' | 'private';
+  hasTimer?: boolean; // Whether this task has a timer
+  timerDuration?: number; // Timer duration in minutes (if hasTimer is true)
 }
 
 export type TaskHistory = {
@@ -132,4 +136,13 @@ export type UnreadMessageInfo = {
     groupId: string;
     groupName: string;
     count: number;
+};
+
+export type JournalEntry = {
+  id: string;
+  userId: string;
+  date: string; // YYYY-MM-DD format
+  content: string;
+  createdAt: FieldValue | Timestamp;
+  updatedAt: FieldValue | Timestamp;
 };

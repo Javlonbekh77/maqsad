@@ -22,7 +22,10 @@ export const pathnames = {
   '/groups/[id]': '/groups/[id]',
   '/groups/[id]/add-task': '/groups/[id]/add-task',
   '/groups/[id]/edit-task/[taskId]': '/groups/[id]/edit-task/[taskId]',
+  '/pomo-timer': '/pomo-timer',
+  '/kundalik': '/kundalik',
 } satisfies Pathnames<typeof locales>;
  
 export const {Link, redirect, usePathname, useRouter} =
   createLocalizedPathnamesNavigation({locales, pathnames, localePrefix});
+

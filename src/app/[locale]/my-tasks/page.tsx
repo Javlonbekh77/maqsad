@@ -4,11 +4,11 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter, Link } from '@/navigation';
 import { useEffect, useState, useCallback, useTransition } from 'react';
 import type { PersonalTask, UserTask } from '@/lib/types';
-import { getPersonalTasksForUser, deletePersonalTask } from '@/lib/data';
+import { getPersonalTasksForUser, deletePersonalTask, getGroupTasksForUser, removeGroupTaskFromUserSchedule, getUser, updateGroupTaskSchedule, removeUserFromGroup } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Edit, Trash2, PlusCircle, Eye, EyeOff } from 'lucide-react';
+import { Edit, Trash2, PlusCircle, Eye, EyeOff, Clock, Calendar } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   AlertDialog,
@@ -21,6 +21,17 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useToast } from '@/hooks/use-toast';
 import TaskDetailDialog from '@/components/tasks/task-detail-dialog';
 
@@ -48,21 +59,38 @@ function MyTasksLoadingSkeleton() {
 
 
 export default function MyTasksPage() {
-    const { user, loading: authLoading } = useAuth();
+    const { user, loading: authLoading, refreshAuth } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
     const [tasks, setTasks] = useState<PersonalTask[]>([]);
+    const [groupTasks, setGroupTasks] = useState<UserTask[]>([]);
     const [loadingTasks, setLoadingTasks] = useState(true);
     const [isPending, startTransition] = useTransition();
     const [viewingTask, setViewingTask] = useState<UserTask | null>(null);
+    const [editingScheduleTaskId, setEditingScheduleTaskId] = useState<string | null>(null);
+    const [showScheduleEditDialog, setShowScheduleEditDialog] = useState(false);
+    const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+    const [leaveGroupId, setLeaveGroupId] = useState<string | null>(null);
+    const [leaveGroupName, setLeaveGroupName] = useState<string | null>(null);
+    const [isLeaving, setIsLeaving] = useState(false);
+    const [newScheduleType, setNewScheduleType] = useState<'one-time' | 'recurring' | 'date-range'>('one-time');
+    const [newScheduleDate, setNewScheduleDate] = useState<string>('');
+    const [newScheduleDays, setNewScheduleDays] = useState<string[]>([]);
 
     const fetchTasks = useCallback(async (userId: string) => {
         setLoadingTasks(true);
         try {
             const userTasks = await getPersonalTasksForUser(userId);
             setTasks(userTasks);
+            
+            // Fetch group tasks
+            const userDoc = await getUser(userId);
+            if (userDoc) {
+                const userGroupTasks = await getGroupTasksForUser(userDoc as any);
+                setGroupTasks(userGroupTasks);
+            }
         } catch (error) {
-            console.error("Failed to fetch personal tasks", error);
+            console.error("Failed to fetch tasks", error);
         } finally {
             setLoadingTasks(false);
         }
@@ -97,6 +125,57 @@ export default function MyTasksPage() {
             }
         });
     };
+
+    const handleDeleteGroupTask = (taskId: string) => {
+        startTransition(async () => {
+            try {
+                if (!user) return;
+                await removeGroupTaskFromUserSchedule(user.id, taskId);
+                toast({
+                    title: "Guruh Vazifasi o'chirildi",
+                    description: "Guruh vazifasi sizning rejangizdan muvaffaqiyatli o'chirildi.",
+                });
+                setGroupTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+            } catch (error) {
+                console.error("Failed to delete group task", error);
+                toast({
+                    title: "Xatolik",
+                    description: "Guruh vazifasini o'chirishda xatolik yuz berdi.",
+                    variant: "destructive",
+                });
+            }
+        });
+    };
+
+    const handleLeaveGroup = (task: UserTask) => {
+        const gid = (task as any).groupId || null;
+        setLeaveGroupId(gid);
+        setLeaveGroupName(task.groupName || 'Guruh');
+        setShowLeaveDialog(true);
+    };
+
+    const handleConfirmLeave = (removeTasks: boolean) => {
+        if (!user || !leaveGroupId) return;
+        startTransition(async () => {
+            setIsLeaving(true);
+            try {
+                await removeUserFromGroup(user.id, leaveGroupId, removeTasks);
+                // update local view
+                setGroupTasks(prev => prev.filter(t => (t as any).groupId !== leaveGroupId));
+                // refresh auth/user data
+                if (refreshAuth) await refreshAuth();
+                toast({ title: 'Guruh tark etildi', description: removeTasks ? 'Guruh vazifalari ham o\'chirildi.' : 'Guruhdan chiqildi.' });
+            } catch (e) {
+                console.error('Failed to leave group', e);
+                toast({ title: 'Xatolik', description: 'Guruhni tark etishda xatolik yuz berdi.', variant: 'destructive' });
+            } finally {
+                setIsLeaving(false);
+                setShowLeaveDialog(false);
+                setLeaveGroupId(null);
+                setLeaveGroupName(null);
+            }
+        });
+    };
     
     const handleViewTask = (task: PersonalTask) => {
         setViewingTask({
@@ -104,6 +183,51 @@ export default function MyTasksPage() {
             taskType: 'personal',
             isCompleted: false, // Not relevant for detail view from this page
             coins: 1 // Silver coin
+        });
+    };
+
+    const handleSaveScheduleEdit = async () => {
+        if (!user || !editingScheduleTaskId) return;
+        
+        startTransition(async () => {
+            try {
+                const newSchedule = {
+                    type: newScheduleType,
+                    date: newScheduleType === 'one-time' ? newScheduleDate : undefined,
+                    startDate: newScheduleType === 'date-range' ? newScheduleDate : undefined,
+                    endDate: newScheduleType === 'date-range' ? undefined : undefined,
+                    days: newScheduleType === 'recurring' ? newScheduleDays.map(d => d as any) : undefined,
+                };
+
+                await updateGroupTaskSchedule(user.id, editingScheduleTaskId, newSchedule);
+                
+                // Update local state
+                setGroupTasks(prevTasks =>
+                    prevTasks.map(task =>
+                        task.id === editingScheduleTaskId
+                            ? { ...task, schedule: newSchedule }
+                            : task
+                    )
+                );
+
+                toast({
+                    title: "Jadval Yangilandi",
+                    description: "Vazifaning jadavli muvaffaqiyatli yangilandi.",
+                });
+                
+                setShowScheduleEditDialog(false);
+                setEditingScheduleTaskId(null);
+                setNewScheduleType('one-time');
+                setNewScheduleDate('');
+                setNewScheduleDays([]);
+            } catch (error) {
+                console.error("Failed to update schedule", error);
+                toast({
+                    title: "Xatolik",
+                    description: "Jadvalni yangilashda xatolik yuz berdi.",
+                    variant: "destructive",
+                });
+            }
         });
     };
 
@@ -129,6 +253,7 @@ export default function MyTasksPage() {
                     </Button>
                 </div>
 
+                {/* PERSONAL TASKS SECTION */}
                 <Card>
                     <CardHeader>
                         <CardTitle>Barcha Shaxsiy Vazifalar</CardTitle>
@@ -210,6 +335,97 @@ export default function MyTasksPage() {
                         )}
                     </CardContent>
                 </Card>
+
+                {/* GROUP TASKS SECTION */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Clock className="h-5 w-5" />
+                            Guruh Vazifalarim
+                        </CardTitle>
+                        <CardDescription>
+                            Siz qo'shilgan guruhlardagi vazifalar va ularning shaxsiy jadvallaringiz.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {groupTasks.length > 0 ? (
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Guruh</TableHead>
+                                            <TableHead>Sarlavha</TableHead>
+                                            <TableHead className='text-right'>Amallar</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {groupTasks.map(task => (
+                                            <TableRow key={task.id}>
+                                                <TableCell className="font-medium text-sm">
+                                                    {task.groupName || 'Noma\'lum Guruh'}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div 
+                                                        className="flex flex-col cursor-pointer hover:underline"
+                                                        onClick={() => setViewingTask(task)}
+                                                    >
+                                                        <span>{task.title}</span>
+                                                        <span className="text-xs text-muted-foreground line-clamp-1">{task.description}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-right space-x-1">
+                                                     <Button 
+                                                        variant="ghost" 
+                                                        size="icon"
+                                                        onClick={() => {
+                                                            setEditingScheduleTaskId(task.id);
+                                                            setNewScheduleType('one-time');
+                                                            setShowScheduleEditDialog(true);
+                                                        }}
+                                                    >
+                                                        <Clock className="h-4 w-4" />
+                                                    </Button>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className='text-destructive hover:text-destructive'>
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Guruh vazifasini o'chrmoqchimisiz?</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    Bu amalni ortga qaytarib bo'lmaydi. "{task.title}" guruh vazifasi sizning rejangizdan o'chiriladi.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
+                                                                <AlertDialogAction
+                                                                    onClick={() => handleDeleteGroupTask(task.id)}
+                                                                    className='bg-destructive hover:bg-destructive/90'
+                                                                    disabled={isPending}
+                                                                >
+                                                                    {isPending ? "O'chirilmoqda..." : "O'chirish"}
+                                                                </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                    <Button variant="ghost" size="icon" onClick={() => handleLeaveGroup(task)}>
+                                                        Chiqish
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        ) : (
+                            <div className="text-center py-10 text-muted-foreground">
+                                Hozircha guruh vazifalaringiz yo'q. Biror guruha qo'shiling va ularning vazifalarini rejalashtiring!
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
             </div>
              {viewingTask && (
                 <TaskDetailDialog 
@@ -218,6 +434,126 @@ export default function MyTasksPage() {
                     onClose={() => setViewingTask(null)}
                 />
             )}
+
+            {/* Leave Group Dialog */}
+            <AlertDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Guruhni tark etish</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Siz "{leaveGroupName}" guruhini tark etmoqchisiz. Guruh vazifalarini ham o'chirmoqchimisiz?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <div className="flex gap-2">
+                            <button onClick={() => handleConfirmLeave(false)} disabled={isLeaving} className="px-3 py-2 rounded-md border">
+                                Guruhni tark etish (vazifalarni saqlash)
+                            </button>
+                            <button onClick={() => handleConfirmLeave(true)} disabled={isLeaving} className="px-3 py-2 rounded-md bg-destructive text-white">
+                                {isLeaving ? 'Jarayonda...' : 'Tark etish va vazifalarni o\'chirish'}
+                            </button>
+                        </div>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Schedule Edit Dialog */}
+            <Dialog open={showScheduleEditDialog} onOpenChange={setShowScheduleEditDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Jadvalini Tahrirlash</DialogTitle>
+                        <DialogDescription>
+                            Vazifaning yangi jadvalini belgilang - kunlarini yoki sanalarini o'zgartiring
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-6">
+                        {/* Schedule Type */}
+                        <div>
+                            <Label htmlFor="schedule-type">Jadval Turi</Label>
+                            <Select value={newScheduleType} onValueChange={(value: any) => {
+                                setNewScheduleType(value);
+                                setNewScheduleDate('');
+                                setNewScheduleDays([]);
+                            }}>
+                                <SelectTrigger id="schedule-type">
+                                    <SelectValue placeholder="Jadval turini tanlang" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="one-time">Bir Marta</SelectItem>
+                                    <SelectItem value="recurring">Takrorlanuvchi</SelectItem>
+                                    <SelectItem value="date-range">Sana Oralig'i</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* One-time Date */}
+                        {newScheduleType === 'one-time' && (
+                            <div>
+                                <Label htmlFor="date-input">Sana</Label>
+                                <Input
+                                    id="date-input"
+                                    type="date"
+                                    value={newScheduleDate}
+                                    onChange={(e) => setNewScheduleDate(e.target.value)}
+                                />
+                            </div>
+                        )}
+
+                        {/* Date Range */}
+                        {newScheduleType === 'date-range' && (
+                            <div>
+                                <Label htmlFor="start-date">Boshlanish Sanasi</Label>
+                                <Input
+                                    id="start-date"
+                                    type="date"
+                                    value={newScheduleDate}
+                                    onChange={(e) => setNewScheduleDate(e.target.value)}
+                                />
+                            </div>
+                        )}
+
+                        {/* Recurring Days */}
+                        {newScheduleType === 'recurring' && (
+                            <div>
+                                <Label>Kunlar</Label>
+                                <div className="grid grid-cols-2 gap-2 mt-2">
+                                    {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
+                                        <Button
+                                            key={day}
+                                            variant={newScheduleDays.includes(day) ? 'default' : 'outline'}
+                                            size="sm"
+                                            onClick={() => {
+                                                setNewScheduleDays(prev =>
+                                                    prev.includes(day)
+                                                        ? prev.filter(d => d !== day)
+                                                        : [...prev, day]
+                                                );
+                                            }}
+                                        >
+                                            {day.slice(0, 3)}
+                                        </Button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => {
+                            setShowScheduleEditDialog(false);
+                            setNewScheduleType('one-time');
+                            setNewScheduleDate('');
+                            setNewScheduleDays([]);
+                        }}>
+                            Bekor qilish
+                        </Button>
+                        <Button onClick={handleSaveScheduleEdit} disabled={isPending}>
+                            {isPending ? "Saqlanmoqda..." : "Saqlash"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }

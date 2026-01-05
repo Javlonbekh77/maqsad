@@ -50,6 +50,8 @@ const personalTaskSchema = z.object({
   satisfactionRating: z.number().min(1).max(10),
   schedule: scheduleSchema,
   visibility: z.enum(['public', 'private']),
+  hasTimer: z.boolean().optional(),
+  timerDuration: z.number().min(1).max(480).optional(), // max 8 hours
 });
 
 export type PersonalTaskFormValues = z.infer<typeof personalTaskSchema>;
@@ -304,6 +306,55 @@ export default function PersonalTaskForm({ onSubmit, isPending, initialData, sub
                     </FormItem>
                 )}
             />
+
+            <FormField
+                control={form.control}
+                name="hasTimer"
+                render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                        <FormLabel className="text-base">
+                            Taymer bilan
+                        </FormLabel>
+                        <FormDescription>
+                            Yoqilgan bo'lsa, vazifa uchun taymer ishga tushadi.
+                        </FormDescription>
+                    </div>
+                    <FormControl>
+                        <Switch
+                        checked={field.value || false}
+                        onCheckedChange={field.onChange}
+                        />
+                    </FormControl>
+                    </FormItem>
+                )}
+            />
+
+            {form.watch('hasTimer') && (
+              <FormField
+                  control={form.control}
+                  name="timerDuration"
+                  render={({ field }) => (
+                      <FormItem>
+                      <FormLabel>Taymer vaqti (daqiqa)</FormLabel>
+                      <FormControl>
+                          <Input 
+                              type="number" 
+                              min="1" 
+                              max="480" 
+                              placeholder="30"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                          />
+                      </FormControl>
+                      <FormDescription>
+                          1-480 daqiqa (1 soat - 8 soat)
+                      </FormDescription>
+                      <FormMessage />
+                      </FormItem>
+                  )}
+              />
+            )}
             
             <div className="flex justify-end">
                 <Button type="submit" disabled={isPending}>

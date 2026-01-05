@@ -122,6 +122,15 @@ export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> 
 
     const personalTasks = personalTasksSnapshot.docs.map(doc => ({ ...doc.data() as PersonalTask, id: doc.id, createdAt: doc.data().createdAt || serverTimestamp() }));
 
+    // Additionally fetch all tasks from groups the user is a member of so that group tasks
+    // always appear in the user's schedule (even if they haven't explicitly scheduled them).
+    let allMemberGroupTasks: Task[] = [];
+    if (Array.isArray(user.groups) && user.groups.length > 0) {
+        const groupIds = user.groups.slice(0, 30);
+        const groupTasksSnapshot = await getDocs(query(collection(db, 'tasks'), where('groupId', 'in', groupIds)));
+        allMemberGroupTasks = groupTasksSnapshot.docs.map(d => ({ ...d.data() as Task, id: d.id, createdAt: d.data().createdAt || serverTimestamp() }));
+    }
+
     // Get all group names in one go for the fetched tasks
     let groupMap = new Map();
     if (groupTasks.length > 0) {
@@ -146,22 +155,23 @@ export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> 
         });
     });
 
-    // Process group tasks
-    groupTasks.forEach(task => {
-        // Safely find the schedule for the current task
+    // Combine explicitly scheduled group tasks + all group tasks the user is a member of
+    const combinedGroupTasksMap = new Map<string, Task>();
+    groupTasks.forEach(t => combinedGroupTasksMap.set(t.id, t));
+    allMemberGroupTasks.forEach(t => combinedGroupTasksMap.set(t.id, t));
+
+    combinedGroupTasksMap.forEach(task => {
         const userScheduleForTask = userSchedules.find(s => s.taskId === task.id);
-        if (userScheduleForTask) {
-             allTasks.push({
-                ...task,
-                groupName: groupMap.get(task.groupId) || 'Unknown Group',
-                isCompleted: false, // will be checked on the client
-                taskType: 'group',
-                // Use the user's specific schedule for this group task
-                schedule: userScheduleForTask.schedule,
-                history: user.taskHistory?.filter(h => h.taskId === task.id) || [],
-                createdAt: task.createdAt,
-            });
-        }
+        allTasks.push({
+            ...task,
+            groupName: groupMap.get(task.groupId) || 'Unknown Group',
+            isCompleted: false,
+            taskType: 'group',
+            // Prefer user's explicit schedule for this task if present, otherwise use task.schedule
+            schedule: userScheduleForTask ? userScheduleForTask.schedule : (task.schedule as TaskSchedule),
+            history: user.taskHistory?.filter(h => h.taskId === task.id) || [],
+            createdAt: task.createdAt,
+        });
     });
 
     return allTasks;
@@ -424,17 +434,43 @@ export const addUserToGroup = async (userId: string, groupId: string, taskSchedu
         throw new Error("User not found");
     }
 
-    // Filter out old schedules for the tasks in the current group
+    // Fetch all tasks in this group
     const tasksInGroupQuery = query(collection(db, 'tasks'), where('groupId', '==', groupId));
     const tasksInGroupSnapshot = await getDocs(tasksInGroupQuery);
-    const taskIdsInGroup = tasksInGroupSnapshot.docs.map(doc => doc.id);
+    const tasksInGroup = tasksInGroupSnapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data() 
+    })) as Task[];
 
+    const taskIdsInGroup = tasksInGroup.map(t => t.id);
+
+    // Filter out old schedules for tasks in this group
     const existingSchedules = user.taskSchedules || [];
     const updatedSchedules = existingSchedules.filter(schedule => !taskIdsInGroup.includes(schedule.taskId));
     
-    // Add the new schedules
+    // Add provided schedules (from user selection)
     taskSchedules.forEach(newSchedule => {
         updatedSchedules.push(newSchedule);
+    });
+
+    // Auto-add tasks that weren't explicitly scheduled
+    // Use a default recurring schedule (all days of the week) for tasks without explicit schedule
+    const scheduledTaskIds = taskSchedules.map(ts => ts.taskId);
+    tasksInGroup.forEach(task => {
+        if (!scheduledTaskIds.includes(task.id)) {
+            // Check if already in updated schedules
+            const alreadyExists = updatedSchedules.some(s => s.taskId === task.id);
+            if (!alreadyExists) {
+                // Add with default daily schedule
+                updatedSchedules.push({
+                    taskId: task.id,
+                    schedule: {
+                        type: 'recurring',
+                        days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                    }
+                });
+            }
+        }
     });
 
     const batch = writeBatch(db);
@@ -507,6 +543,84 @@ export const updateUserProfile = async (userId: string, data: Partial<User>): Pr
     if (Object.keys(updateData).length > 0) {
       await updateDoc(userDocRef, updateData);
     }
+};
+
+// --- Group Task / Schedule Helpers ---
+
+export const getGroupTasksForUser = async (user: User): Promise<UserTask[]> => {
+    if (!user) return [];
+    const groupIds = Array.isArray(user.groups) ? user.groups.slice(0, 30) : [];
+    if (groupIds.length === 0) return [];
+
+    const tasksQuery = query(collection(db, 'tasks'), where('groupId', 'in', groupIds));
+    const tasksSnapshot = await getDocs(tasksQuery);
+    const tasks = tasksSnapshot.docs.map(d => ({ ...d.data() as Task, id: d.id, createdAt: d.data().createdAt || serverTimestamp() }));
+
+    // Map each task to a UserTask with user's schedule if exists
+    const userSchedules: UserTaskSchedule[] = Array.isArray(user.taskSchedules) ? user.taskSchedules : [];
+    const grouped = tasks.map(task => {
+        const userScheduleForTask = userSchedules.find(s => s.taskId === task.id);
+        return {
+            ...task,
+            groupName: task.groupId || 'Unknown Group',
+            isCompleted: false,
+            taskType: 'group' as const,
+            coins: task.coins || 0,
+            schedule: userScheduleForTask ? userScheduleForTask.schedule : (task.schedule as TaskSchedule),
+            history: user.taskHistory?.filter(h => h.taskId === task.id) || [],
+            createdAt: task.createdAt,
+        } as UserTask;
+    });
+
+    return grouped;
+};
+
+export const updateGroupTaskSchedule = async (userId: string, taskId: string, schedule: TaskSchedule): Promise<void> => {
+    const userRef = doc(db, 'users', userId);
+    const user = await getUser(userId);
+    if (!user) throw new Error('User not found');
+
+    const existingSchedules: UserTaskSchedule[] = Array.isArray(user.taskSchedules) ? user.taskSchedules : [];
+    const idx = existingSchedules.findIndex(s => s.taskId === taskId);
+    if (idx >= 0) {
+        existingSchedules[idx] = { taskId, schedule };
+    } else {
+        existingSchedules.push({ taskId, schedule });
+    }
+
+    await updateDoc(userRef, { taskSchedules: existingSchedules });
+};
+
+export const removeGroupTaskFromUserSchedule = async (userId: string, taskId: string): Promise<void> => {
+    const userRef = doc(db, 'users', userId);
+    const user = await getUser(userId);
+    if (!user) throw new Error('User not found');
+
+    const existingSchedules: UserTaskSchedule[] = Array.isArray(user.taskSchedules) ? user.taskSchedules : [];
+    const filtered = existingSchedules.filter(s => s.taskId !== taskId);
+    await updateDoc(userRef, { taskSchedules: filtered });
+};
+
+export const removeUserFromGroup = async (userId: string, groupId: string, removeTasks = false): Promise<void> => {
+    const userRef = doc(db, 'users', userId);
+    const groupRef = doc(db, 'groups', groupId);
+    const user = await getUser(userId);
+    if (!user) throw new Error('User not found');
+
+    const batch = writeBatch(db);
+    batch.update(userRef, { groups: (user.groups || []).filter((g: string) => g !== groupId) });
+    batch.update(groupRef, { members: arrayRemove(userId) });
+
+    if (removeTasks) {
+        // remove all taskSchedules for tasks belonging to this group
+        const tasksSnapshot = await getDocs(query(collection(db, 'tasks'), where('groupId', '==', groupId)));
+        const taskIds = tasksSnapshot.docs.map(d => d.id);
+        const existingSchedules: UserTaskSchedule[] = Array.isArray(user.taskSchedules) ? user.taskSchedules : [];
+        const filtered = existingSchedules.filter(s => !taskIds.includes(s.taskId));
+        batch.update(userRef, { taskSchedules: filtered });
+    }
+
+    await batch.commit();
 };
 
 export const uploadAvatar = async (userId: string, file: Blob): Promise<string> => {
@@ -724,4 +838,112 @@ export const updateUserLastRead = async (userId: string, groupId: string) => {
     });
 };
 
+// --- Chat History Functions ---
+
+export type ChatHistoryMessage = {
+  id: string;
+  role: 'user' | 'model';
+  content: string;
+  createdAt: Timestamp;
+};
+
+export const saveChatMessage = async (userId: string, message: { role: 'user' | 'model'; content: string }) => {
+    if (!userId) return;
     
+    const messagesRef = collection(db, 'users', userId, 'chat_messages');
+    const newMsg = {
+        role: message.role,
+        content: message.content,
+        createdAt: serverTimestamp(),
+    };
+    
+    const docRef = await addDoc(messagesRef, newMsg);
+    return { id: docRef.id, ...newMsg } as ChatHistoryMessage;
+};
+
+export const getChatHistory = async (userId: string, limit: number = 10): Promise<ChatHistoryMessage[]> => {
+    if (!userId) return [];
+    
+    const messagesRef = collection(db, 'users', userId, 'chat_messages');
+    const q = query(messagesRef, orderBy('createdAt', 'desc'), limit as any);
+    
+    try {
+        const snapshot = await getDocs(q);
+        return snapshot.docs
+            .reverse()
+            .map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+            } as ChatHistoryMessage));
+    } catch (e) {
+        console.error('Error fetching chat history', e);
+        return [];
+    }
+};
+
+// --- Journal Functions ---
+
+export const getJournalEntry = async (userId: string, date: string): Promise<any | null> => {
+    try {
+        const entryDocRef = doc(db, `users/${userId}/journal_entries/${date}`);
+        const entrySnap = await getDoc(entryDocRef);
+        if (entrySnap.exists()) {
+            return { ...entrySnap.data(), id: entrySnap.id, date };
+        }
+        return null;
+    } catch (e) {
+        console.error('Error fetching journal entry', e);
+        return null;
+    }
+};
+
+export const saveJournalEntry = async (userId: string, date: string, content: string): Promise<void> => {
+    try {
+        const entryDocRef = doc(db, `users/${userId}/journal_entries/${date}`);
+        const now = serverTimestamp();
+        
+        const user = await getUser(userId);
+        if (!user) throw new Error('User not found');
+        
+        const entryExists = await getJournalEntry(userId, date);
+        const lastRewardDate = user.lastJournalRewardDate || '';
+        
+        const updateData: any = {
+            content,
+            updatedAt: now,
+        };
+        
+        // Award 1 silver coin if this is first entry of the day
+        if (!entryExists && lastRewardDate !== date) {
+            updateData.createdAt = now;
+            
+            // Also update user's lastJournalRewardDate and silverCoins
+            const userDocRef = doc(db, 'users', userId);
+            await updateDoc(userDocRef, {
+                lastJournalRewardDate: date,
+                silverCoins: (user.silverCoins || 0) + 1,
+            });
+        } else if (!entryExists) {
+            updateData.createdAt = now;
+        }
+        
+        await setDoc(entryDocRef, updateData, { merge: true });
+    } catch (e) {
+        console.error('Error saving journal entry', e);
+        throw e;
+    }
+};
+
+export const getAllJournalEntries = async (userId: string): Promise<any[]> => {
+    try {
+        const entriesQuery = query(
+            collection(db, `users/${userId}/journal_entries`),
+            orderBy('date', 'desc')
+        );
+        const snapshot = await getDocs(entriesQuery);
+        return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, date: doc.id }));
+    } catch (e) {
+        console.error('Error fetching journal entries', e);
+        return [];
+    }
+};
