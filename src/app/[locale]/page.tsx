@@ -2,10 +2,8 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, CheckCircle, Trophy } from 'lucide-react';
+import { Users, CheckCircle, Trophy, Bot, BookOpen, Clock } from 'lucide-react';
 import Logo from '@/components/logo';
-import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/navigation';
 import ThemeSwitcher from '@/components/theme-switcher';
@@ -94,6 +92,36 @@ export default function LandingPage() {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+
+            <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-2 md:gap-12 lg:max-w-none lg:grid-cols-3 mt-12">
+               <Card className="bg-background border-border/50 hover:border-primary/50 transition-all hover:shadow-lg hover:-translate-y-1">
+                  <CardHeader className="flex flex-col items-center text-center gap-4">
+                    <Bot className="h-8 w-8 text-primary" />
+                    <CardTitle className="font-display">Aqlli Yordamchi (AI)</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-center text-foreground/80">
+                    Maqsadlaringizni aniqlashtirish, ularni kichik, boshqariladigan vazifalarga bo'lish va samarali reja tuzishda sun'iy intellektdan yordam oling.
+                  </CardContent>
+                </Card>
+                 <Card className="bg-background border-border/50 hover:border-primary/50 transition-all hover:shadow-lg hover:-translate-y-1">
+                  <CardHeader className="flex flex-col items-center text-center gap-4">
+                    <BookOpen className="h-8 w-8 text-primary" />
+                    <CardTitle className="font-display">Kundalik Yuritish</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-center text-foreground/80">
+                    Har kungi fikrlaringizni, yutuqlaringizni va mulohazalaringizni yozib boring. Har bir yozuv uchun kumush tanga ishlab oling va o'z-o'zingizni tahlil qiling.
+                  </CardContent>
+                </Card>
+                 <Card className="bg-background border-border/50 hover:border-primary/50 transition-all hover:shadow-lg hover:-translate-y-1">
+                  <CardHeader className="flex flex-col items-center text-center gap-4">
+                    <Clock className="h-8 w-8 text-primary" />
+                    <CardTitle className="font-display">Fokus Taymer</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-center text-foreground/80">
+                    Pomodoro texnikasidan foydalanib, ish vaqtingizni intervallarga bo'ling. Diqqatingizni jamlang, samaradorligingizni oshiring va chalg'ishlardan saqlaning.
+                  </CardContent>
+                </Card>
             </div>
           </div>
         </section>
