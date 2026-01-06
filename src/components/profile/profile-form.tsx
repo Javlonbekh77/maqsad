@@ -33,6 +33,10 @@ const profileFormSchema = z.object({
     .string()
     .max(300, { message: 'Odatlar 300 belgidan oshmasligi kerak.' })
     .optional().or(z.literal('')),
+  university: z.string().optional(),
+  specialization: z.string().optional(),
+  course: z.string().optional(),
+  telegram: z.string().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -50,6 +54,10 @@ export default function ProfileForm({ user }: { user: User }) {
       lastName: user.lastName || '',
       goals: user.goals || '',
       habits: user.habits || '',
+      university: user.university || '',
+      specialization: user.specialization || '',
+      course: user.course || '',
+      telegram: user.telegram || '',
     },
     mode: 'onChange',
   });
@@ -60,6 +68,10 @@ export default function ProfileForm({ user }: { user: User }) {
       lastName: user.lastName || '',
       goals: user.goals || '',
       habits: user.habits || '',
+      university: user.university || '',
+      specialization: user.specialization || '',
+      course: user.course || '',
+      telegram: user.telegram || '',
     });
   }, [user, form]);
 
@@ -115,6 +127,65 @@ export default function ProfileForm({ user }: { user: User }) {
               )}
             />
         </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <FormField
+                control={form.control}
+                name="university"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Universitet</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., TUIT" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            <FormField
+            control={form.control}
+            name="specialization"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Mutaxassislik</FormLabel>
+                <FormControl>
+                    <Input placeholder="e.g., Software Engineering" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <FormField
+                control={form.control}
+                name="course"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Kurs</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="e.g., 3" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            <FormField
+            control={form.control}
+            name="telegram"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Telegram</FormLabel>
+                <FormControl>
+                    <Input placeholder="e.g., johndoe" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
+
         <FormField
           control={form.control}
           name="goals"

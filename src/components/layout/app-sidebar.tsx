@@ -58,7 +58,7 @@ function UserGroupList() {
                 {Array.from({length: 3}).map((_, i) => (
                     <div key={i} className="flex items-center gap-3 rounded-lg px-3 py-2">
                         <Skeleton className="h-5 w-5 rounded-md" />
-                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-4 w-32 md:w-full" />
                     </div>
                 ))}
             </div>
@@ -66,7 +66,7 @@ function UserGroupList() {
     }
 
     if (error || !groups || groups.length === 0) {
-        return <p className="px-7 text-xs text-muted-foreground">You haven't joined any groups yet.</p>;
+        return <p className="px-4 text-xs text-muted-foreground md:px-7">You haven't joined any groups yet.</p>;
     }
 
     return (
@@ -80,7 +80,7 @@ function UserGroupList() {
                     <div className="h-5 w-5 relative rounded-md overflow-hidden">
                         <Image src={group.imageUrl} alt={group.name} fill className="object-cover" />
                     </div>
-                    <span className='truncate flex-1'>{group.name}</span>
+                    <span className='truncate flex-1 hidden md:inline'>{group.name}</span>
                     <UnreadCountBadge groupId={group.id} />
                 </Link>
             ))}
@@ -106,15 +106,15 @@ export default function AppSidebar() {
   ];
 
   return (
-     <aside className="fixed inset-y-0 left-0 z-10 hidden w-64 flex-col border-r bg-background sm:flex">
-        <div className="flex h-16 shrink-0 items-center border-b px-6">
+     <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex md:w-64">
+        <div className="flex h-16 shrink-0 items-center border-b px-4 md:px-6 justify-center md:justify-start">
              <Link href="/" className="flex items-center gap-2 font-semibold">
                 <Logo />
             </Link>
         </div>
         <ScrollArea className="flex-1">
             <nav className="py-4">
-                <ul className="grid items-start px-4 text-sm font-medium">
+                <ul className="grid items-start px-2 text-sm font-medium md:px-4">
                     {navItems.map((item) => (
                         // Don't render profile link if user is not loaded
                         (item.label === 'Profil' && !user) ? null :
@@ -123,19 +123,19 @@ export default function AppSidebar() {
                             href={item.href}
                             className={cn(
                                 'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-                                pathname === item.href && 'bg-muted text-primary'
+                                pathname.startsWith(item.href) && 'bg-muted text-primary'
                             )}
                             >
-                            <item.icon className="h-4 w-4" />
-                            {item.label}
+                            <item.icon className="h-5 w-5" />
+                            <span className="hidden md:inline">{item.label}</span>
                             </Link>
                         </li>
                     ))}
                 </ul>
             </nav>
-            <Separator className="my-4" />
+            <Separator className="my-4 hidden md:block" />
             <div className="space-y-4">
-                 <h3 className="px-7 text-xs font-semibold uppercase text-muted-foreground tracking-wider flex items-center gap-2"><MessageSquare className='h-4 w-4' />Group Chats</h3>
+                 <h3 className="px-4 text-xs font-semibold uppercase text-muted-foreground tracking-wider md:px-7 md:flex items-center gap-2 hidden"><MessageSquare className='h-4 w-4' />Group Chats</h3>
                 <UserGroupList />
             </div>
         </ScrollArea>

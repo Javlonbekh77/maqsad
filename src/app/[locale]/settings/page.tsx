@@ -76,7 +76,7 @@ export default function SettingsPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Shaxsiy Ma'lumotlar</CardTitle>
-                        <CardDescription>Ism, familiya, maqsad va odatlaringizni o'zgartiring.</CardDescription>
+                        <CardDescription>Ism, familiya, universitet va boshqa ma'lumotlaringizni o'zgartiring.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <ProfileForm user={user} />

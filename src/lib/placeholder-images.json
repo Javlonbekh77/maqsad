@@ -29,6 +29,36 @@
       "description": "Image for 'Fitness Fanatics' group",
       "imageUrl": "https://images.unsplash.com/photo-1653773869760-5b0f846231fb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxneW0lMjB3b3Jrb3V0fGVufDB8fHx8MTc1OTEyMTA5Mnww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "gym workout"
+    },
+    {
+      "id": "group5",
+      "description": "Image for 'Study Hub' group",
+      "imageUrl": "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wzOTE5Mjh8MHwxfHNlYXJjaHw1fHxzdHVkeSUyMGdyb3VwfGVufDB8fHx8MTcyMDczMTI1Nnww&ixlib=rb-4.0.3&q=80&w=1080",
+      "imageHint": "study group"
+    },
+    {
+      "id": "group6",
+      "description": "Image for 'Wellness Warriors' group",
+      "imageUrl": "https://images.unsplash.com/photo-1506126613408-4e7e9b780d72?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wzOTE5Mjh8MHwxfHNlYXJjaHwxfHxtZWRpdGF0aW9ufGVufDB8fHx8MTcyMDczMTMwN3ww&ixlib=rb-4.0.3&q=80&w=1080",
+      "imageHint": "meditation wellness"
+    },
+    {
+      "id": "group7",
+      "description": "Image for 'Art & Soul' group",
+      "imageUrl": "https://images.unsplash.com/photo-1513364776144-60967b0f800f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wzOTE5Mjh8MHwxfHNlYXJjaHwxfHxhcnQlMjBzdHVkaW98ZW58MHx8fHwxNzIwNzMxMzM5fDA&ixlib=rb-4.0.3&q=80&w=1080",
+      "imageHint": "art studio"
+    },
+    {
+      "id": "group8",
+      "description": "Image for 'Wanderlust Crew' group",
+      "imageUrl": "https://images.unsplash.com/photo-1501785888041-af3ef285b470?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wzOTE5Mjh8MHwxfHNlYXJjaHwzfHx0cmF2ZWx8ZW58MHx8fHwxNzIwNzMxMzc0fDA&ixlib=rb-4.0.3&q=80&w=1080",
+      "imageHint": "travel wanderlust"
+    },
+    {
+      "id": "group9",
+      "description": "Image for 'Language Learners' group",
+      "imageUrl": "https://images.unsplash.com/photo-1534349762237-7a26d7d91903?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wzOTE5Mjh8MHwxfHNlYXJjaHw1fHxsYW5ndWFnZSUyMGV4Y2hhbmdlfGVufDB8fHx8MTcyMDczMTQyNnww&ixlib=rb-4.0.3&q=80&w=1080",
+      "imageHint": "language exchange"
     }
   ]
 }
