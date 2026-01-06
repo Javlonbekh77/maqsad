@@ -46,14 +46,14 @@ export default function MobileBottomNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                'inline-flex flex-col items-center justify-center px-1 group',
+                'inline-flex flex-col items-center justify-center px-0.5 group', // Reduced padding
                 isActive
                   ? 'text-primary'
                   : 'text-muted-foreground hover:bg-muted/50'
               )}
             >
-              <item.icon className="w-5 h-5 mb-1" />
-              <span className="text-[10px] text-center leading-tight">{item.label}</span>
+              <item.icon className="w-4 h-4 mb-1" /> {/* Smaller icon */}
+              <span className="text-[9px] text-center leading-tight">{item.label}</span> {/* Smaller text */}
             </Link>
           );
         })}

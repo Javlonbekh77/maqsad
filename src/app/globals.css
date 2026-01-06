@@ -85,4 +85,11 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Smaller base font size for small screens */
+  @media (max-width: 360px) {
+    html {
+      font-size: 14px;
+    }
+  }
 }
