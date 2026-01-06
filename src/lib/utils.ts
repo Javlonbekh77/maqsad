@@ -14,18 +14,18 @@ export function getInitials(name: string): string {
     return name.substring(0, 2).toUpperCase();
 }
 
-const avatarColors = [
-    '#f87171', // red-400
-    '#fb923c', // orange-400
-    '#fbbf24', // amber-400
-    '#a3e635', // lime-400
-    '#4ade80', // green-400
-    '#34d399', // emerald-400
-    '#2dd4bf', // teal-400
-    '#60a5fa', // blue-400
-    '#818cf8', // indigo-400
-    '#c084fc', // purple-400
-    '#f472b6', // pink-400
+export const avatarColors = [
+    { name: 'red', color: '#f87171' }, 
+    { name: 'orange', color: '#fb923c' }, 
+    { name: 'amber', color: '#fbbf24' },
+    { name: 'lime', color: '#a3e635' }, 
+    { name: 'green', color: '#4ade80' },
+    { name: 'emerald', color: '#34d399' },
+    { name: 'teal', color: '#2dd4bf' },
+    { name: 'blue', color: '#60a5fa' },
+    { name: 'indigo', color: '#818cf8' },
+    { name: 'purple', color: '#c084fc' },
+    { name: 'pink', color: '#f472b6' },
 ];
 
 function simpleHash(str: string): number {
@@ -40,8 +40,8 @@ function simpleHash(str: string): number {
 
 export function getAvatarColor(userId: string): string {
     if (!userId) {
-        return avatarColors[0];
+        return avatarColors[0].color;
     }
     const hash = simpleHash(userId);
-    return avatarColors[hash % avatarColors.length];
+    return avatarColors[hash % avatarColors.length].color;
 }

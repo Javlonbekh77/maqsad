@@ -17,14 +17,9 @@ interface DashboardClientProps {
 
 export default function DashboardClient({ user, initialTasks, onTaskCompletion }: DashboardClientProps) {
   const t = useTranslations('dashboard');
-  const [tasks, setTasks] = useState<UserTask[]>(initialTasks);
 
   const handleTaskCompletion = async () => {
     await onTaskCompletion();
-    // The parent `DashboardPage` will re-fetch and pass new props,
-    // which will automatically update the `initialTasks` and re-render this component.
-    // However, to see instant updates, we can optimistically update or just rely on the parent's re-render.
-    // For simplicity, we let the parent handle the re-fetch and re-render.
   };
 
   return (
@@ -40,14 +35,14 @@ export default function DashboardClient({ user, initialTasks, onTaskCompletion }
                  <TodaySchedule
                     title="Bugungi Reja"
                     description="Sizning bugungi rejalashtirgan barcha vazifalaringiz."
-                    tasks={tasks}
+                    tasks={initialTasks}
                     userId={user.id}
                     onTaskCompletion={handleTaskCompletion}
                 />
                  <HabitTracker user={user} />
             </div>
             <div className="space-y-8">
-                 <DashboardStats user={user} tasks={tasks} />
+                 <DashboardStats user={user} tasks={initialTasks} />
                 <QuickAccess />
             </div>
         </div>

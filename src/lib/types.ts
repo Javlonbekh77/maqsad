@@ -85,6 +85,7 @@ export type User = {
   notificationsLastCheckedAt?: Timestamp;
   lastJournalRewardDate?: string;
   journalEntriesCount?: number; // New field
+  profileColor?: string;
 };
 
 export type WeeklyMeeting = {

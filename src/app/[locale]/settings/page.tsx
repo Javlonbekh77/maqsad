@@ -8,21 +8,34 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/context/auth-context";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/navigation";
-import { useEffect } from "react";
+import { useEffect, useTransition } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import ThemeSwitcher from "@/components/theme-switcher";
+import { avatarColors } from "@/lib/utils";
+import { updateUserProfile } from "@/lib/data";
+import { Check, Palette } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function SettingsPage() {
     const tSettings = useTranslations('settings');
     const tProfile = useTranslations('profile');
     const { user, loading, refreshAuth } = useAuth();
     const router = useRouter();
+    const [isPending, startTransition] = useTransition();
 
     useEffect(() => {
         if (!loading && !user) {
             router.push('/login');
         }
     }, [user, loading, router]);
+
+    const handleColorSelect = async (colorName: string) => {
+        if (!user) return;
+        startTransition(async () => {
+             await updateUserProfile(user.id, { profileColor: colorName });
+             await refreshAuth();
+        });
+    }
 
 
     if (loading || !user) {
@@ -80,6 +93,30 @@ export default function SettingsPage() {
                     </CardHeader>
                     <CardContent>
                         <ProfileForm user={user} />
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Profil Rangi</CardTitle>
+                        <CardDescription>Profilingiz fonini shaxsiylashtirish uchun rang tanlang.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex flex-wrap gap-3">
+                            {avatarColors.map(color => (
+                                <Button
+                                    key={color.name}
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-10 w-10 rounded-full"
+                                    style={{ backgroundColor: color.color }}
+                                    onClick={() => handleColorSelect(color.name)}
+                                    disabled={isPending}
+                                >
+                                    {user.profileColor === color.name && <Check className="h-5 w-5 text-white" />}
+                                </Button>
+                            ))}
+                        </div>
                     </CardContent>
                 </Card>
 

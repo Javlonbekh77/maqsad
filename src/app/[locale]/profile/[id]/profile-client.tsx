@@ -19,6 +19,9 @@ import { useRouter } from '@/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getUserProfileData } from '@/lib/data';
 import TaskDetailDialog from '@/components/tasks/task-detail-dialog';
+import { getInitials, getAvatarColor, avatarColors } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+
 
 export default function ProfileClient() {
   const t = useTranslations('profile');
@@ -79,6 +82,13 @@ export default function ProfileClient() {
 
   const isLoading = authLoading || loadingData;
   const isCurrentUserProfile = userId === currentUser?.id;
+  
+  const profileColor = useMemo(() => {
+    if (user?.profileColor) {
+      return avatarColors.find(c => c.name === user.profileColor)?.color || getAvatarColor(user.id);
+    }
+    return user ? getAvatarColor(user.id) : '#f1f5f9';
+  }, [user]);
 
   if (isLoading || !currentUser) {
     return (
@@ -125,6 +135,10 @@ export default function ProfileClient() {
 
   return (
     <AppLayout>
+      <div 
+        className="absolute inset-x-0 top-0 h-48 -z-10" 
+        style={{ backgroundColor: profileColor, opacity: 0.2 }}
+      ></div>
       <div className="space-y-8">
         <div className="flex items-center justify-between">
             <div className="rounded-lg bg-background/50 backdrop-blur-sm px-4 py-2 border">
@@ -141,9 +155,10 @@ export default function ProfileClient() {
         <Card>
           <CardHeader>
             <div className="flex flex-col md:flex-row gap-6">
-                <Avatar className="w-32 h-32 border-4 border-background ring-4 ring-primary">
-                  <AvatarImage src={user.avatarUrl} alt={user.fullName} />
-                  <AvatarFallback className="text-4xl">{user.firstName.charAt(0)}</AvatarFallback>
+                <Avatar className="w-32 h-32 border-4 border-background ring-4" style={{ 'ringColor': profileColor }}>
+                   <AvatarFallback className="text-4xl" style={{ backgroundColor: getAvatarColor(user.id) }}>
+                        {getInitials(user.fullName)}
+                    </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col justify-center gap-1">
                     <h2 className="text-3xl font-bold font-display">{user.fullName}</h2>

@@ -4,7 +4,7 @@ import { useState, useCallback, useMemo } from 'react';
 import type { UserTask, DayOfWeek } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, Coins, Clock, ChevronLeft, ChevronRight, Flame, Timer } from 'lucide-react';
+import { Check, Coins, Clock, ChevronLeft, ChevronRight, Flame, Timer, Users, User } from 'lucide-react';
 import TaskCompletionDialog from './task-completion-dialog';
 import { useTranslations } from 'next-intl';
 import { completeUserTask, isTaskScheduledForDate } from '@/lib/data';
@@ -134,8 +134,8 @@ export default function TodaySchedule({ title, description, tasks, userId, onTas
                     </TableCell>
                     <TableCell>
                         {task.taskType === 'group' ? 
-                            <Badge variant="outline">{task.groupName}</Badge> : 
-                            <Badge variant="secondary">Shaxsiy</Badge>
+                            <Badge variant="outline" className="gap-1.5"><Users className="h-3 w-3"/> Guruh</Badge> : 
+                            <Badge variant="secondary" className="gap-1.5"><User className="h-3 w-3"/> Shaxsiy</Badge>
                         }
                     </TableCell>
                     <TableCell className="text-right">
