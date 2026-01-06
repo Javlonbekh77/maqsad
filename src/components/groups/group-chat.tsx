@@ -163,7 +163,6 @@ export default function GroupChat({ groupId, members, latestMeeting }: GroupChat
   }
 
   return (
-    <>
     <div className="flex flex-col h-[70vh]">
          {latestMeeting && (
             <div className="p-3 border-b bg-secondary/50">
@@ -262,22 +261,22 @@ export default function GroupChat({ groupId, members, latestMeeting }: GroupChat
           </Button>
         </form>
       </div>
+       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Haqiqatan ham o'chirmoqchimisiz?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bu amalni ortga qaytarib bo'lmaydi. Xabar butunlay o'chiriladi.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeletingMessageId(null)}>Bekor qilish</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteMessage} className="bg-destructive hover:bg-destructive/90">
+              O'chirish
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
-     <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Haqiqatan ham o'chirmoqchimisiz?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Bu amalni ortga qaytarib bo'lmaydi. Xabar butunlay o'chiriladi.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={() => setDeletingMessageId(null)}>Bekor qilish</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDeleteMessage} className="bg-destructive hover:bg-destructive/90">
-            O'chirish
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </>
   );
 }
