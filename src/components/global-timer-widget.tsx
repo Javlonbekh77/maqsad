@@ -41,7 +41,7 @@ export default function GlobalTimerWidget() {
     <motion.div
       drag
       dragMomentum={false}
-      className="fixed bottom-6 left-1/2 transform -translate-x-1/2 md:bottom-6 md:right-6 md:left-auto md:translate-x-0 w-72 z-40 cursor-grab active:cursor-grabbing"
+      className="fixed bottom-20 sm:bottom-6 left-1/2 transform -translate-x-1/2 md:bottom-6 md:right-6 md:left-auto md:translate-x-0 w-72 z-50 cursor-grab active:cursor-grabbing"
     >
       <div className="bg-gray-900/90 dark:bg-black/90 text-white backdrop-blur-sm border border-white/20 rounded-xl shadow-lg p-3 flex items-center justify-between gap-4">
         <div className="flex-1 min-w-0">

@@ -55,7 +55,7 @@ export default function NotificationsDropdown() {
       const now = Timestamp.now();
       updateUserProfile(user.id, { notificationsLastCheckedAt: now }).then(() => {
          // Optimistically update the user object in auth context
-         refreshAuth();
+         if (refreshAuth) refreshAuth();
       });
     }
   }, [isOpen, user, refreshAuth]);
@@ -69,7 +69,7 @@ export default function NotificationsDropdown() {
         mutate(['notifications', user], { todayTasks: [], overdueTasks: [], todayMeetings: [], unreadMessages: [] }, false);
         // And update the timestamp on the backend
         await updateUserProfile(user.id, { notificationsLastCheckedAt: Timestamp.now() });
-        await refreshAuth();
+        if (refreshAuth) await refreshAuth();
     }
   };
 
