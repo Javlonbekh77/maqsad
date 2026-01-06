@@ -27,7 +27,9 @@
     background: transparent;
     opacity: 0;
     animation: fall linear infinite;
+    color: white;
 }
+
 
 /* Snowflake shape using pseudo-elements */
 .snowflake::before,
@@ -36,7 +38,7 @@
     position: absolute;
     width: 100%;
     height: 2px;
-    background: white;
+    background: currentColor;
     border-radius: 1px;
     top: 4px; /* Center the line */
     left: 0;
@@ -54,7 +56,7 @@
     position: absolute;
     width: 2px;
     height: 100%;
-    background: white;
+    background: currentColor;
     left: 4px;
     top: 0;
     border-radius: 1px;

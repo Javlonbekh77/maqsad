@@ -9,25 +9,25 @@
     {
       "id": "group1",
       "description": "Image for 'Morning Runners' group",
-      "imageUrl": "https://images.unsplash.com/photo-1609262377442-ca6b66985b16?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxydW5uaW5nJTIwc3VucmlzZXxlbnwwfHx8fDE3NTkxMjI1MjJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1609262377442-ca6b66985b16?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wzOTE5Mjh8MHwxfHNlYXJjaHwyfHxydW5uaW5nJTIwc3VucmlzZXxlbnwwfHx8fDE3NTkxMjI1MjJ8MA&ixlib=rb-4.0.3&q=80&w=1080",
       "imageHint": "running sunrise"
     },
     {
       "id": "group2",
       "description": "Image for 'Book Worms Society' group",
-      "imageUrl": "https://images.unsplash.com/photo-1553538644-f3fa6f592bc5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxib29rcyUyMGxpYnJhcnl8ZW58MHx8fHwxNzU5MTIyMDQ0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1553538644-f3fa6f592bc5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wzOTE5Mjh8MHwxfHNlYXJjaHw5fHxib29rcyUyMGxpYnJhcnl8ZW58MHx8fHwxNzU5MTIyMDQ0fDA&ixlib=rb-4.0.3&q=80&w=1080",
       "imageHint": "books library"
     },
     {
       "id": "group3",
       "description": "Image for 'Code Crafters' group",
-      "imageUrl": "https://images.unsplash.com/photo-1742072594003-abf6ca86e154?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxjb2RlJTIwc2NyZWVufGVufDB8fHx8MTc1OTAxNjYxM3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1742072594003-abf6ca86e154?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wzOTE5Mjh8MHwxfHNlYXJjaHw4fHxjb2RlJTIwc2NyZWVufGVufDB8fHx8MTc1OTAxNjYxM3ww&ixlib=rb-4.0.3&q=80&w=1080",
       "imageHint": "code screen"
     },
     {
       "id": "group4",
       "description": "Image for 'Fitness Fanatics' group",
-      "imageUrl": "https://images.unsplash.com/photo-1653773869760-5b0f846231fb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxneW0lMjB3b3Jrb3V0fGVufDB8fHx8MTc1OTEyMTA5Mnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1653773869760-5b0f846231fb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wzOTE5Mjh8MHwxfHNlYXJjaHw5fHxneW0lMjB3b3Jrb3V0fGVufDB8fHx8MTc1OTEyMTA5Mnww&ixlib=rb-4.0.3&q=80&w=1080",
       "imageHint": "gym workout"
     },
     {

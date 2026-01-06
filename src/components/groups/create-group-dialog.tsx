@@ -28,6 +28,7 @@ import Image from 'next/image';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { cn } from '@/lib/utils';
 import { Label } from '../ui/label';
+import { ScrollArea } from '../ui/scroll-area';
 
 const groupImages = PlaceHolderImages.filter(p => p.id.startsWith('group'));
 
@@ -111,75 +112,79 @@ export default function CreateGroupDialog({ onGroupCreated }: CreateGroupDialogP
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-             <FormField
-              control={form.control}
-              name="imageUrl"
-              render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormLabel>Choose Group Image</FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className="grid grid-cols-2 gap-4"
-                    >
-                      {groupImages.map(image => (
-                          <FormItem key={image.id} className="flex items-center justify-center">
-                            <FormControl>
-                              <RadioGroupItem value={image.imageUrl} id={image.id} className="sr-only" />
-                            </FormControl>
-                            <Label
-                              htmlFor={image.id}
-                              className={cn(
-                                "cursor-pointer rounded-lg overflow-hidden w-full h-32 border-4 border-transparent transition-all relative",
-                                field.value === image.imageUrl && "ring-4 ring-primary ring-offset-2 border-primary"
-                              )}
-                            >
-                              <Image
-                                src={image.imageUrl}
-                                alt={image.description}
-                                fill
-                                className="object-cover"
-                              />
-                               <div className="absolute inset-0 bg-black/30 flex items-end p-2">
-                                <p className="text-white text-sm font-semibold">{image.description.replace("Image for '", "").replace("' group", "")}</p>
-                               </div>
-                            </Label>
-                          </FormItem>
-                      ))}
-                    </RadioGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Group Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Morning Runners" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="What is this group about?" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <ScrollArea className="h-72 pr-6">
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="imageUrl"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel>Choose Group Image</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          className="grid grid-cols-2 gap-4"
+                        >
+                          {groupImages.map(image => (
+                              <FormItem key={image.id} className="flex items-center justify-center">
+                                <FormControl>
+                                  <RadioGroupItem value={image.imageUrl} id={image.id} className="sr-only" />
+                                </FormControl>
+                                <Label
+                                  htmlFor={image.id}
+                                  className={cn(
+                                    "cursor-pointer rounded-lg overflow-hidden w-full h-32 border-4 border-transparent transition-all relative",
+                                    field.value === image.imageUrl && "ring-4 ring-primary ring-offset-2 border-primary"
+                                  )}
+                                >
+                                  <Image
+                                    src={image.imageUrl}
+                                    alt={image.description}
+                                    fill
+                                    className="object-cover"
+                                  />
+                                   <div className="absolute inset-0 bg-black/30 flex items-end p-2">
+                                    <p className="text-white text-sm font-semibold">{image.description.replace("Image for '", "").replace("' group", "")}</p>
+                                   </div>
+                                </Label>
+                              </FormItem>
+                          ))}
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Group Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Morning Runners" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="What is this group about?" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </ScrollArea>
             <DialogFooter>
                 <DialogClose asChild>
                     <Button variant="outline">{tActions('cancel')}</Button>
