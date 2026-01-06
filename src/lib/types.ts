@@ -68,6 +68,7 @@ export type User = {
   lastName:string;
   fullName: string; // Combined for easier display
   email: string;
+  avatarUrl?: string; // Optional avatar URL
   coins: number;
   silverCoins: number;
   goals: string;
@@ -128,6 +129,7 @@ export interface ChatMessage {
   senderId: string;
   createdAt: FieldValue | Timestamp;
   user: {
+    id: string;
     name: string;
     avatarUrl: string;
   }

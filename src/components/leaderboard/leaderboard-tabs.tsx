@@ -90,8 +90,9 @@ export default function LeaderboardTabs({ topUsers, topGroups, topSilverCoinUser
                                 </TableCell>
                                 <TableCell>
                                   <Link href={{pathname: '/profile/[id]', params: {id: user.id}}} className="flex items-center gap-3 hover:underline">
-                                      <Avatar style={{ backgroundColor: getAvatarColor(user.id) }}>
-                                        <AvatarFallback>{getInitials(user.fullName)}</AvatarFallback>
+                                      <Avatar>
+                                        <AvatarImage src={user.avatarUrl} />
+                                        <AvatarFallback style={{ backgroundColor: getAvatarColor(user.id) }}>{getInitials(user.fullName)}</AvatarFallback>
                                       </Avatar>
                                       <span className="font-medium">{user.fullName}</span>
                                   </Link>
@@ -139,8 +140,9 @@ export default function LeaderboardTabs({ topUsers, topGroups, topSilverCoinUser
                                     </TableCell>
                                     <TableCell>
                                       <Link href={{pathname: '/profile/[id]', params: {id: user.id}}} className="flex items-center gap-3 hover:underline">
-                                          <Avatar style={{ backgroundColor: getAvatarColor(user.id) }}>
-                                            <AvatarFallback>{getInitials(user.fullName)}</AvatarFallback>
+                                          <Avatar>
+                                            <AvatarImage src={user.avatarUrl} />
+                                            <AvatarFallback style={{ backgroundColor: getAvatarColor(user.id) }}>{getInitials(user.fullName)}</AvatarFallback>
                                           </Avatar>
                                           <span className="font-medium">{user.fullName}</span>
                                       </Link>

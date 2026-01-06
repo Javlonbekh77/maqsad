@@ -31,6 +31,7 @@ import {
 import { Textarea } from '../ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { updateChatMessage, deleteChatMessage, updateUserLastRead } from '@/lib/data';
+import { getInitials, getAvatarColor } from '@/lib/utils';
 
 
 interface GroupChatProps {
@@ -93,6 +94,7 @@ export default function GroupChat({ groupId, members, latestMeeting }: GroupChat
       user: {
         name: user.fullName,
         avatarUrl: user.avatarUrl,
+        id: user.id
       },
       isEdited: false,
     });
@@ -190,7 +192,7 @@ export default function GroupChat({ groupId, members, latestMeeting }: GroupChat
                     {!isSender && (
                     <Avatar className="h-8 w-8">
                         <AvatarImage src={msg.user?.avatarUrl} />
-                        <AvatarFallback>{msg.user?.name?.charAt(0) || 'U'}</AvatarFallback>
+                        <AvatarFallback style={{ backgroundColor: getAvatarColor(msg.user?.id || '') }}>{getInitials(msg.user?.name || 'U')}</AvatarFallback>
                     </Avatar>
                     )}
                     <div className={`flex items-end gap-2 ${isSender ? 'flex-row-reverse' : 'flex-row'}`}>
@@ -239,7 +241,7 @@ export default function GroupChat({ groupId, members, latestMeeting }: GroupChat
                      {isSender && (
                     <Avatar className="h-8 w-8">
                         <AvatarImage src={user?.avatarUrl} />
-                        <AvatarFallback>{user?.firstName?.charAt(0) || 'U'}</AvatarFallback>
+                        <AvatarFallback style={{ backgroundColor: getAvatarColor(user?.id || '') }}>{getInitials(user?.fullName || 'U')}</AvatarFallback>
                     </Avatar>
                     )}
                 </div>
@@ -276,7 +278,6 @@ export default function GroupChat({ groupId, members, latestMeeting }: GroupChat
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
-    </AlertDialog>
     </>
   );
 }
