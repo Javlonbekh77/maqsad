@@ -11,7 +11,6 @@ import { useRouter } from "@/navigation";
 import { useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import ThemeSwitcher from "@/components/theme-switcher";
-import AvatarUpload from "@/components/profile/avatar-upload";
 
 export default function SettingsPage() {
     const tSettings = useTranslations('settings');
@@ -74,18 +73,6 @@ export default function SettingsPage() {
                     <p className="text-muted-foreground mt-1">{tSettings('subtitle')}</p>
                 </div>
                 
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Profil Rasmi</CardTitle>
-                        <CardDescription>
-                            Profil rasmingizni yangilang.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <AvatarUpload user={user} onUploadComplete={refreshAuth} />
-                    </CardContent>
-                </Card>
-
                 <Card>
                     <CardHeader>
                         <CardTitle>Shaxsiy Ma'lumotlar</CardTitle>

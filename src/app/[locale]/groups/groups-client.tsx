@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/auth-context";
 import { useRouter } from "@/navigation";
 import { getAllGroups, getAllUsers } from "@/lib/data";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function GroupsClient() {
   const t = useTranslations('groups');
@@ -51,11 +52,48 @@ export default function GroupsClient() {
 
   const userMap = useMemo(() => new Map(users.map(u => [u.id, u])), [users]);
 
-  const filteredGroups = useMemo(() => {
-    return groups.filter(group => group.name.toLowerCase().includes(searchTerm.toLowerCase()));
-  }, [groups, searchTerm]);
+  const { myGroups, allOtherGroups } = useMemo(() => {
+    if (!authUser) return { myGroups: [], allOtherGroups: [] };
+    const my: Group[] = [];
+    const others: Group[] = [];
+    groups.forEach(group => {
+      if (group.members.includes(authUser.id)) {
+        my.push(group);
+      } else {
+        others.push(group);
+      }
+    });
+    return { myGroups: my, allOtherGroups: others };
+  }, [groups, authUser]);
+
+  const filteredAllGroups = useMemo(() => {
+    return allOtherGroups.filter(group => group.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  }, [allOtherGroups, searchTerm]);
 
   const isLoading = authLoading || loadingData;
+
+  const renderGroupList = (groupList: Group[]) => {
+    if (groupList.length === 0) {
+      return (
+        <div className="text-center py-16">
+          <h3 className="text-xl font-semibold">Guruhlar topilmadi</h3>
+          <p className="text-muted-foreground mt-2">
+            Hozircha ko'rsatish uchun guruhlar mavjud emas.
+          </p>
+        </div>
+      );
+    }
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {groupList.map((group) => {
+          const memberDetails = group.members
+            .map(memberId => userMap.get(memberId))
+            .filter(Boolean) as User[];
+          return <GroupCard key={group.id} group={group} members={memberDetails} />;
+        })}
+      </div>
+    );
+  };
 
   if (isLoading || !authUser) {
     return (
@@ -101,23 +139,18 @@ export default function GroupsClient() {
             </div>
         </div>
         
-        {filteredGroups.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredGroups.map((group) => {
-              const memberDetails = group.members
-                .map(memberId => userMap.get(memberId))
-                .filter(Boolean) as User[];
-              return <GroupCard key={group.id} group={group} members={memberDetails} />;
-            })}
-          </div>
-        ) : (
-          <div className="text-center py-16">
-            <h3 className="text-xl font-semibold">No Groups Found</h3>
-            <p className="text-muted-foreground mt-2">
-              {searchTerm ? `No groups match your search for "${searchTerm}".` : "There are no groups to display yet. Why not create one?"}
-            </p>
-          </div>
-        )}
+        <Tabs defaultValue="my-groups" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="my-groups">Mening Guruhlarim</TabsTrigger>
+            <TabsTrigger value="all-groups">Barcha Guruhlar</TabsTrigger>
+          </TabsList>
+          <TabsContent value="my-groups" className="mt-6">
+            {renderGroupList(myGroups)}
+          </TabsContent>
+          <TabsContent value="all-groups" className="mt-6">
+            {renderGroupList(filteredAllGroups)}
+          </TabsContent>
+        </Tabs>
 
       </div>
     </AppLayout>

@@ -81,7 +81,7 @@ export const getAllUsers = async (): Promise<User[]> => {
 }
 
 export const getAllGroups = async (): Promise<Group[]> => {
-    const groupsQuery = collection(db, 'groups');
+    const groupsQuery = query(collection(db, 'groups'), orderBy('createdAt', 'desc'));
     const snapshot = await getDocs(groupsQuery);
     return snapshot.docs.map(doc => ({ ...doc.data() as Group, id: doc.id, firebaseId: doc.id }));
 }
@@ -585,6 +585,27 @@ export const updateGroupDetails = async (groupId: string, data: { name?: string,
     }
 };
 
+export const deleteGroup = async (groupId: string): Promise<void> => {
+    const batch = writeBatch(db);
+
+    const groupRef = doc(db, 'groups', groupId);
+    batch.delete(groupRef);
+
+    const tasksQuery = query(collection(db, 'tasks'), where('groupId', '==', groupId));
+    const tasksSnapshot = await getDocs(tasksQuery);
+    tasksSnapshot.forEach(doc => {
+        batch.delete(doc.ref);
+    });
+    
+    // Cloud Function would be better for this, but for now we remove it from users who are online.
+    const usersSnapshot = await getDocs(query(collection(db, 'users'), where('groups', 'array-contains', groupId)));
+    usersSnapshot.forEach(userDoc => {
+        batch.update(userDoc.ref, { groups: arrayRemove(groupId) });
+    });
+
+    await batch.commit();
+};
+
 
 export const performSearch = async (searchTerm: string): Promise<{ users: User[], groups: Group[] }> => {
     if (!searchTerm.trim()) {
@@ -671,7 +692,7 @@ export const getNotificationsData = async (user: User): Promise<{
         );
         const groupsQuery = query(collection(db, 'groups'), where('__name__', 'in', groupIds));
 
-        const [meetingsSnapshot, groupsSnapshot] = await Promise.all([getDocs(meetingsQuery), getDocs(groupsSnapshot)]);
+        const [meetingsSnapshot, groupsSnapshot] = await Promise.all([getDocs(meetingsQuery), getDocs(groupsQuery)]);
         
         const groupMap = new Map(groupsSnapshot.docs.map(doc => [doc.id, doc.data().name]));
 
