@@ -7,7 +7,6 @@ import Logo from '@/components/logo';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/navigation';
 import ThemeSwitcher from '@/components/theme-switcher';
-import SnowEffect from '@/components/layout/snow-effect';
 
 export default function LandingPage() {
   const t = useTranslations('landing');
@@ -32,7 +31,6 @@ export default function LandingPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <SnowEffect />
       <header className="px-4 lg:px-6 h-16 flex items-center bg-background/80 backdrop-blur-sm fixed top-0 left-0 right-0 z-50">
         <Link href="/" className="flex items-center justify-center" prefetch={false}>
           <Logo />

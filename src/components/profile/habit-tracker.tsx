@@ -17,6 +17,7 @@ import TaskDetailDialog from "../tasks/task-detail-dialog";
 
 interface HabitTrackerProps {
   user: User;
+  isCurrentUserProfile?: boolean;
 }
 
 const getWeekDates = (start: Date): Date[] => {
@@ -34,7 +35,7 @@ const toDate = (timestamp: Timestamp | Date): Date => {
     return timestamp.toDate();
 }
 
-export default function HabitTracker({ user }: HabitTrackerProps) {
+export default function HabitTracker({ user, isCurrentUserProfile = true }: HabitTrackerProps) {
   const [weekStartDate, setWeekStartDate] = useState(startOfWeek(new Date()));
   const [allTasks, setAllTasks] = useState<UserTask[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,7 +47,7 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
   const fetchUserTasks = useCallback(async () => {
       setLoading(true);
       
-      const personalTasksPromise = getPersonalTasksForUser(user.id);
+      const personalTasksPromise = getPersonalTasksForUser(user.id, !isCurrentUserProfile);
       const groupTasksPromise = getGroupTasksForUser(user);
       
       const [personalTasks, groupTasks] = await Promise.all([personalTasksPromise, groupTasksPromise]);
@@ -64,7 +65,7 @@ export default function HabitTracker({ user }: HabitTrackerProps) {
       }));
 
       setLoading(false);
-  }, [user]);
+  }, [user, isCurrentUserProfile]);
 
   useEffect(() => {
     fetchUserTasks();

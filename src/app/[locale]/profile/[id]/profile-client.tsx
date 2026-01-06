@@ -33,7 +33,6 @@ export default function ProfileClient() {
   
   const [user, setUser] = useState<User | null>(null);
   const [userGroups, setUserGroups] = useState<Group[]>([]);
-  const [publicTasks, setPublicTasks] = useState<PersonalTask[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [viewingTask, setViewingTask] = useState<UserTask | null>(null);
@@ -47,7 +46,6 @@ export default function ProfileClient() {
         setUser(profileData.user);
         setUserGroups(profileData.userGroups);
         setAllUsers(profileData.allUsers);
-        setPublicTasks(profileData.publicPersonalTasks);
       } else {
         setUser(null);
       }
@@ -69,14 +67,6 @@ export default function ProfileClient() {
     }
   }, [userId, authLoading, currentUser, router, fetchData]);
   
-  const handleViewTask = (task: PersonalTask) => {
-    setViewingTask({
-        ...task,
-        taskType: 'personal',
-        isCompleted: false, // Not relevant for this view
-        coins: 1, // Silver coin
-    });
-  };
 
   const userMap = useMemo(() => new Map(allUsers.map(u => [u.id, u])), [allUsers]);
 
@@ -195,27 +185,6 @@ export default function ProfileClient() {
               </div>
           </CardContent>
         </Card>
-        
-        {publicTasks.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Ommaviy Vazifalar</CardTitle>
-              <CardDescription>{user.firstName}ning boshqalar bilan bo'lishgan vazifalari.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {publicTasks.map(task => (
-                <div 
-                    key={task.id} 
-                    className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-muted/50"
-                    onClick={() => handleViewTask(task)}
-                >
-                    <p className="font-medium">{task.title}</p>
-                    <Eye className="h-5 w-5 text-muted-foreground" />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
 
         {userGroups.length > 0 && (
           <Card>
@@ -233,7 +202,7 @@ export default function ProfileClient() {
           </Card>
         )}
         
-        <HabitTracker user={user} />
+        <HabitTracker user={user} isCurrentUserProfile={isCurrentUserProfile} />
 
         <GoalMates userId={user.id} />
 

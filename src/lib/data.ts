@@ -185,9 +185,14 @@ export const getTasksForUserGroups = async (groupIds: string[]): Promise<Task[]>
   return tasksSnapshot.docs.map(doc => ({ ...doc.data() as Task, id: doc.id, createdAt: doc.data().createdAt || serverTimestamp() }));
 }
 
-export const getPersonalTasksForUser = async (userId: string): Promise<PersonalTask[]> => {
+export const getPersonalTasksForUser = async (userId: string, publicOnly = false): Promise<PersonalTask[]> => {
     if (!userId) return [];
-    const tasksQuery = query(collection(db, 'personal_tasks'), where('userId', '==', userId));
+    let tasksQuery;
+    if (publicOnly) {
+        tasksQuery = query(collection(db, 'personal_tasks'), where('userId', '==', userId), where('visibility', '==', 'public'));
+    } else {
+        tasksQuery = query(collection(db, 'personal_tasks'), where('userId', '==', userId));
+    }
     const tasksSnapshot = await getDocs(tasksQuery);
     const tasks = tasksSnapshot.docs.map(doc => ({ ...doc.data() as PersonalTask, id: doc.id, createdAt: doc.data().createdAt || serverTimestamp() }));
     
@@ -287,7 +292,7 @@ export const getLeaderboardData = async (): Promise<{ topUsers: User[], topGroup
 };
 
 
-export const getUserProfileData = async (userId: string): Promise<{user: User, userGroups: Group[], allUsers: User[], publicPersonalTasks: PersonalTask[]} | null> => {
+export const getUserProfileData = async (userId: string): Promise<{user: User, userGroups: Group[], allUsers: User[] } | null> => {
      const user = await getUser(userId);
      if (!user) return null;
 
@@ -300,18 +305,12 @@ export const getUserProfileData = async (userId: string): Promise<{user: User, u
         groupsPromise = getDocs(groupsQuery).then(snap => snap.docs.map(d => ({...d.data() as Group, id: d.id, firebaseId: d.id})));
       }
     
-    const publicTasksQuery = query(collection(db, 'personal_tasks'), where('userId', '==', userId), where('visibility', '==', 'public'));
-    const publicTasksPromise = getDocs(publicTasksQuery);
-      
-    const [userGroups, allUsers, publicTasksSnapshot] = await Promise.all([
+    const [userGroups, allUsers] = await Promise.all([
         groupsPromise,
         allUsersPromise,
-        publicTasksPromise
     ]);
-    
-    const publicPersonalTasks = publicTasksSnapshot.docs.map(doc => ({ ...doc.data() as PersonalTask, id: doc.id }));
 
-    return { user, userGroups, allUsers, publicPersonalTasks };
+    return { user, userGroups, allUsers };
 }
 
 export const getGoalMates = async (userId: string): Promise<User[]> => {
@@ -692,7 +691,7 @@ export const getNotificationsData = async (user: User): Promise<{
         );
         const groupsQuery = query(collection(db, 'groups'), where('__name__', 'in', groupIds));
 
-        const [meetingsSnapshot, groupsSnapshot] = await Promise.all([getDocs(meetingsQuery), getDocs(groupsQuery)]);
+        const [meetingsSnapshot, groupsSnapshot] = await Promise.all([getDocs(meetingsQuery), getDocs(groupsSnapshot)]);
         
         const groupMap = new Map(groupsSnapshot.docs.map(doc => [doc.id, doc.data().name]));
 
