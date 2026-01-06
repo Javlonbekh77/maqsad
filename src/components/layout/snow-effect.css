@@ -15,31 +15,30 @@
         opacity: 1;
     }
     100% {
-        transform: translateY(105vh) rotate(720deg);
+        transform: translateY(105vh) rotate(360deg);
         opacity: 0;
     }
 }
 
 .snowflake {
     position: absolute;
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
     background: transparent;
-    border-radius: 50%;
     opacity: 0;
     animation: fall linear infinite;
 }
 
-/* Create snowflake shape */
+/* Snowflake shape using pseudo-elements */
 .snowflake::before,
 .snowflake::after {
     content: '';
     position: absolute;
-    background: white;
-    border-radius: 1px;
     width: 100%;
     height: 2px;
-    top: 3px;
+    background: white;
+    border-radius: 1px;
+    top: 4px; /* Center the line */
     left: 0;
 }
 
@@ -51,12 +50,13 @@
     transform: rotate(-45deg);
 }
 
-/* Vertical line */
 .snowflake > div {
+    position: absolute;
     width: 2px;
     height: 100%;
     background: white;
-    margin-left: 3px;
+    left: 4px;
+    top: 0;
     border-radius: 1px;
 }
 
