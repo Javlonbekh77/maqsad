@@ -6,6 +6,7 @@ import AiChatAssistant from "../ai/ai-chat-assistant";
 import GlobalTimerWidget from "../global-timer-widget";
 import { useEffect } from "react";
 import SnowEffect from "./snow-effect";
+import AppFooter from "./app-footer";
 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -26,6 +27,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 pb-20 sm:pb-6 z-10">
           {children}
         </main>
+        <AppFooter />
       </div>
       <MobileBottomNav />
       <AiChatAssistant />
