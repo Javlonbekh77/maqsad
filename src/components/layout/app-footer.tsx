@@ -17,15 +17,16 @@ export default function AppFooter() {
           <p className="max-w-md mx-auto mt-4 text-sm text-muted-foreground">
             Maqsadlaringiz sari birgalikda harakat qiluvchi hamjamiyat. Unity Team tomonidan ishtiyoq bilan yaratilgan.
           </p>
-          <div className="flex items-center mt-6">
+          <div className="flex flex-col items-center mt-6">
             <a 
               href="https://t.me/Javlonbekhs_Blog"
               target="_blank" 
               rel="noopener noreferrer" 
-              className="mx-3 text-muted-foreground hover:text-primary transition-colors"
+              className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
               aria-label="Unity Team Telegram"
             >
               <Send className="h-5 w-5" />
+              <span>Murojaat uchun</span>
             </a>
           </div>
         </div>
