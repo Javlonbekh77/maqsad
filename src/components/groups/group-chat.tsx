@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Textarea } from '../ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { updateChatMessage, deleteChatMessage, updateUserLastRead } from '@/lib/data';
+import { updateChatMessage, deleteChatMessage as deleteChatMessageFromDB, updateUserLastRead } from '@/lib/data';
 import { getInitials, getAvatarColor } from '@/lib/utils';
 
 
@@ -93,7 +93,7 @@ export default function GroupChat({ groupId, members, latestMeeting }: GroupChat
       createdAt: serverTimestamp(),
       user: {
         name: user.fullName,
-        avatarUrl: user.avatarUrl,
+        avatarUrl: user.avatarUrl || '',
         id: user.id
       },
       isEdited: false,
@@ -134,7 +134,7 @@ export default function GroupChat({ groupId, members, latestMeeting }: GroupChat
     if (!deletingMessageId) return;
 
     try {
-      await deleteChatMessage(groupId, deletingMessageId);
+      await deleteChatMessageFromDB(groupId, deletingMessageId);
       toast({ title: "Xabar o'chirildi" });
     } catch (error) {
       console.error("Error deleting message: ", error);
