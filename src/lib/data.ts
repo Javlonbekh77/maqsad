@@ -388,26 +388,41 @@ export const createTask = async (taskData: Omit<Task, 'id' | 'createdAt'>): Prom
 
 export const createPersonalTask = async (taskData: Omit<PersonalTask, 'id' | 'createdAt'>): Promise<PersonalTask> => {
     const { schedule, ...restOfTaskData } = taskData;
-    
-    const dataToSave: any = {
+
+    // Build the data object with only defined values
+    const dataToSave: { [key: string]: any } = {
         ...restOfTaskData,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
     };
-    
-    const cleanedSchedule: any = { type: schedule.type };
+
+    if (restOfTaskData.estimatedTime === "") {
+        delete dataToSave.estimatedTime;
+    }
+    if (restOfTaskData.hasTimer === undefined) {
+         dataToSave.hasTimer = false;
+    }
+    if (!dataToSave.hasTimer) {
+        delete dataToSave.timerDuration;
+    }
+
+
+    // Build a clean schedule object
+    const cleanedSchedule: { [key: string]: any } = { type: schedule.type };
     if (schedule.type === 'one-time' && schedule.date) {
         cleanedSchedule.date = schedule.date;
     } else if (schedule.type === 'date-range' && schedule.startDate && schedule.endDate) {
         cleanedSchedule.startDate = schedule.startDate;
         cleanedSchedule.endDate = schedule.endDate;
-    } else if (schedule.type === 'recurring' && schedule.days) {
+    } else if (schedule.type === 'recurring' && schedule.days && schedule.days.length > 0) {
         cleanedSchedule.days = schedule.days;
     }
     dataToSave.schedule = cleanedSchedule;
-    
+
+    // Create the document
     const docRef = await addDoc(collection(db, 'personal_tasks'), dataToSave);
     await updateDoc(docRef, { id: docRef.id });
-    
+
+    // Return the created task
     const docSnap = await getDoc(docRef);
     return { ...docSnap.data(), id: docRef.id } as PersonalTask;
 };
@@ -683,7 +698,7 @@ export const getNotificationsData = async (user: User): Promise<{
         );
         const groupsQuery = query(collection(db, 'groups'), where('__name__', 'in', groupIds));
 
-        const [meetingsSnapshot, groupsSnapshot] = await Promise.all([getDocs(meetingsQuery), getDocs(groupsSnapshot)]);
+        const [meetingsSnapshot, groupsSnapshot] = await Promise.all([getDocs(meetingsQuery), getDocs(groupsQuery)]);
         
         const groupMap = new Map(groupsSnapshot.docs.map(doc => [doc.id, doc.data().name]));
 

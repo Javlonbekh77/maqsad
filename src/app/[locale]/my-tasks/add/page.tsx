@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useTransition } from 'react';
@@ -7,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { createPersonalTask } from '@/lib/data';
-import type { TaskSchedule } from '@/lib/types';
 import GoBackButton from '@/components/go-back-button';
 import PersonalTaskForm, { type PersonalTaskFormValues } from '@/components/forms/personal-task-form';
 
@@ -18,15 +18,18 @@ export default function AddPersonalTaskPage() {
   const { user } = useAuth();
   
   const handleAddTask = async (values: PersonalTaskFormValues) => {
-    if(!user) return;
+    if(!user) {
+        toast({ title: "Xatolik", description: "Foydalanuvchi topilmadi. Iltimos, qayta tizimga kiring.", variant: "destructive" });
+        return;
+    }
 
     startTransition(async () => {
       try {
-        await createPersonalTask({
-            ...values,
-            userId: user.id,
-            schedule: values.schedule as TaskSchedule,
-        });
+        const taskData = {
+          ...values,
+          userId: user.id,
+        };
+        await createPersonalTask(taskData);
         toast({
           title: "Shaxsiy Vazifa Yaratildi!",
           description: "Yangi odatingiz muvaffaqiyatli qo'shildi.",

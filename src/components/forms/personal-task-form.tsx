@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm, Controller } from 'react-hook-form';
@@ -50,8 +51,14 @@ const personalTaskSchema = z.object({
   satisfactionRating: z.number().min(1).max(10),
   schedule: scheduleSchema,
   visibility: z.enum(['public', 'private']),
-  hasTimer: z.boolean().optional(),
-  timerDuration: z.number().min(1).max(480).optional(), // max 8 hours
+  hasTimer: z.boolean().default(false),
+  timerDuration: z.number().min(1).max(480).optional(),
+}).refine(data => {
+    if(data.hasTimer && !data.timerDuration) return false;
+    return true;
+}, {
+    message: "Taymer vaqtini kiritish majburiy.",
+    path: ['timerDuration']
 });
 
 export type PersonalTaskFormValues = z.infer<typeof personalTaskSchema>;
@@ -81,6 +88,8 @@ export default function PersonalTaskForm({ onSubmit, isPending, initialData, sub
         days: [],
       },
       visibility: 'private',
+      hasTimer: false,
+      timerDuration: 30,
     },
   });
 
