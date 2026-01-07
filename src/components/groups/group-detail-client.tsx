@@ -42,7 +42,7 @@ export default function GroupDetailClient() {
   const id = params.id as string;
   const initialTab = searchParams.get('tab') || 'tasks';
 
-  const { user: currentUser, loading: authLoading } = useAuth();
+  const { user: currentUser, loading: authLoading, refreshAuth } = useAuth();
   
   const [group, setGroup] = useState<Group | null>(null);
   const [members, setMembers] = useState<User[]>([]);
@@ -89,11 +89,16 @@ export default function GroupDetailClient() {
     try {
       await addUserToGroup(currentUser.id, group.id, schedules);
       setJoinDialogOpen(false);
-      await fetchGroupData(id as string); // Re-fetch data to show the user as a new member
+      // Re-fetch all data to show user and update dashboard
+      await fetchGroupData(id as string);
+      if (refreshAuth) {
+        await refreshAuth();
+      }
+      router.push('/dashboard');
     } catch(error) {
       console.error("Failed to join group:", error);
     }
-  }, [currentUser, group, id, fetchGroupData]);
+  }, [currentUser, group, id, fetchGroupData, refreshAuth, router]);
   
   const handleViewTask = (task: Task) => {
     setViewingTask({
@@ -273,6 +278,7 @@ export default function GroupDetailClient() {
                     <div key={member.id} className="flex items-center justify-between">
                       <Link href={{pathname: '/profile/[id]', params: {id: member.id}}} className="flex items-center gap-3 hover:underline">
                         <Avatar style={{ backgroundColor: getAvatarColor(member.id) }}>
+                          <AvatarImage src={member.avatarUrl} alt={member.fullName} />
                           <AvatarFallback>{getInitials(member.fullName)}</AvatarFallback>
                         </Avatar>
                         <div className='flex flex-col'>

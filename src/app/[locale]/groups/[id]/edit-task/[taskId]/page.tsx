@@ -6,7 +6,7 @@ import AppLayout from '@/components/layout/app-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getTask, updateTask } from '@/lib/data';
-import type { Task } from '@/lib/types';
+import type { Task, TaskSchedule } from '@/lib/types';
 import GoBackButton from '@/components/go-back-button';
 import GroupTaskForm, { type GroupTaskFormValues } from '@/components/forms/group-task-form';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -40,7 +40,7 @@ export default function EditGroupTaskPage() {
   const handleEditTask = async (values: GroupTaskFormValues) => {
     startTransition(async () => {
       try {
-        await updateTask(taskId, values);
+        await updateTask(taskId, { ...values, schedule: values.schedule as TaskSchedule });
         toast({
           title: "Vazifa Yangilandi!",
           description: "Vazifa muvaffaqiyatli yangilandi.",
