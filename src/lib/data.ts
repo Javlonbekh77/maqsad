@@ -386,28 +386,28 @@ export const createTask = async (taskData: Omit<Task, 'id' | 'createdAt'>): Prom
     return docRef.id;
 };
 
-export const createPersonalTask = async (taskData: Omit<PersonalTask, 'id' | 'createdAt'>): Promise<PersonalTask> => {
-    const { schedule, ...restOfTaskData } = taskData;
-
-    // Build the data object with only defined values
+export const createPersonalTask = async (taskData: Omit<PersonalTask, 'id' | 'createdAt'>): Promise<string> => {
     const dataToSave: { [key: string]: any } = {
-        ...restOfTaskData,
+        userId: taskData.userId,
+        title: taskData.title,
+        description: taskData.description,
+        satisfactionRating: taskData.satisfactionRating,
+        visibility: taskData.visibility,
+        hasTimer: taskData.hasTimer || false,
         createdAt: serverTimestamp(),
     };
 
-    if (restOfTaskData.estimatedTime === "") {
-        delete dataToSave.estimatedTime;
+    if (taskData.estimatedTime) {
+        dataToSave.estimatedTime = taskData.estimatedTime;
     }
-    if (restOfTaskData.hasTimer === undefined) {
-         dataToSave.hasTimer = false;
-    }
-    if (!dataToSave.hasTimer) {
-        delete dataToSave.timerDuration;
+    
+    if (dataToSave.hasTimer && taskData.timerDuration) {
+        dataToSave.timerDuration = taskData.timerDuration;
     }
 
-
-    // Build a clean schedule object
+    const schedule = taskData.schedule;
     const cleanedSchedule: { [key: string]: any } = { type: schedule.type };
+
     if (schedule.type === 'one-time' && schedule.date) {
         cleanedSchedule.date = schedule.date;
     } else if (schedule.type === 'date-range' && schedule.startDate && schedule.endDate) {
@@ -418,14 +418,10 @@ export const createPersonalTask = async (taskData: Omit<PersonalTask, 'id' | 'cr
     }
     dataToSave.schedule = cleanedSchedule;
 
-    // Create the document
     const docRef = await addDoc(collection(db, 'personal_tasks'), dataToSave);
-    await updateDoc(docRef, { id: docRef.id });
-
-    // Return the created task
-    const docSnap = await getDoc(docRef);
-    return { ...docSnap.data(), id: docRef.id } as PersonalTask;
+    return docRef.id;
 };
+
 
 export const updateTask = async (taskId: string, data: Partial<Task>): Promise<void> => {
     const taskDocRef = doc(db, 'tasks', taskId);
@@ -918,4 +914,22 @@ export const getAllJournalEntries = async (userId: string): Promise<any[]> => {
         console.error('Error fetching journal entries', e);
         return [];
     }
+};
+
+export const uploadProfileImage = async (userId: string, file: Blob): Promise<string> => {
+  if (!userId) throw new Error("User ID is required to upload image.");
+  
+  const filePath = `avatars/${userId}/${Date.now()}`;
+  const storageRef = ref(storage, filePath);
+  
+  await uploadBytes(storageRef, file);
+  
+  const downloadURL = await getDownloadURL(storageRef);
+  
+  const userDocRef = doc(db, 'users', userId);
+  await updateDoc(userDocRef, {
+    avatarUrl: downloadURL
+  });
+  
+  return downloadURL;
 };

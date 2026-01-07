@@ -5,7 +5,7 @@ import AppLayout from "@/components/layout/app-layout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Coins, Briefcase, Settings, Flame, Eye } from "lucide-react";
+import { Coins, Briefcase, Settings, Flame, Eye, Edit } from "lucide-react";
 import HabitTracker from '@/components/profile/habit-tracker';
 import type { User, Group, PersonalTask, UserTask } from "@/lib/types";
 import { Separator } from '@/components/ui/separator';
@@ -19,8 +19,9 @@ import { useRouter } from '@/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getUserProfileData } from '@/lib/data';
 import TaskDetailDialog from '@/components/tasks/task-detail-dialog';
-import { getInitials, getAvatarColor, avatarColors } from '@/lib/utils';
 import { cn } from '@/lib/utils';
+import { getInitials, getAvatarColor, avatarColors } from '@/lib/utils';
+import ProfileImageUploader from '@/components/profile/profile-image-uploader';
 
 
 export default function ProfileClient() {
@@ -29,13 +30,14 @@ export default function ProfileClient() {
   const userId = params.id as string;
   const router = useRouter();
   
-  const { user: currentUser, loading: authLoading } = useAuth();
+  const { user: currentUser, loading: authLoading, refreshAuth } = useAuth();
   
   const [user, setUser] = useState<User | null>(null);
   const [userGroups, setUserGroups] = useState<Group[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [viewingTask, setViewingTask] = useState<UserTask | null>(null);
+  const [isUploaderOpen, setIsUploaderOpen] = useState(false);
 
   const fetchData = useCallback(async (uid: string) => {
     if (!uid) return;
@@ -67,12 +69,20 @@ export default function ProfileClient() {
     }
   }, [userId, authLoading, currentUser, router, fetchData]);
   
+  const handleUploadComplete = async (newUrl: string) => {
+    setUser(prevUser => prevUser ? { ...prevUser, avatarUrl: newUrl } : null);
+    if(refreshAuth) {
+      await refreshAuth();
+    }
+  };
+
 
   const userMap = useMemo(() => new Map(allUsers.map(u => [u.id, u])), [allUsers]);
 
   const isLoading = authLoading || loadingData;
   const isCurrentUserProfile = userId === currentUser?.id;
-  
+  const canEditPhoto = isCurrentUserProfile && currentUser?.email === 'javlonbekh2007@gmail.com';
+
   const profileColor = useMemo(() => {
     if (user?.profileColor) {
       return avatarColors.find(c => c.name === user.profileColor)?.color || getAvatarColor(user.id);
@@ -143,15 +153,26 @@ export default function ProfileClient() {
                 )}
                 </div>
 
-                <Card className="overflow-hidden" style={{ backgroundColor: profileColor, '--tw-bg-opacity': 0.1 } as React.CSSProperties}>
-                    <div className="bg-background/80 backdrop-blur-sm">
+                <Card className="overflow-hidden">
+                    <div className="bg-background/80 backdrop-blur-sm" style={{ backgroundColor: profileColor, '--tw-bg-opacity': 0.1 } as React.CSSProperties}>
                         <CardHeader>
                             <div className="flex flex-col md:flex-row gap-6">
-                                <Avatar className="w-32 h-32 border-4 border-background ring-4" style={{ 'ringColor': profileColor }}>
-                                   <AvatarFallback className="text-4xl" style={{ backgroundColor: getAvatarColor(user.id) }}>
-                                        {getInitials(user.fullName)}
-                                    </AvatarFallback>
-                                </Avatar>
+                                <div className="relative group">
+                                  <Avatar className="w-32 h-32 border-4 border-background ring-4" style={{ 'ringColor': profileColor }}>
+                                      <AvatarImage src={user.avatarUrl} alt={user.fullName} />
+                                      <AvatarFallback className="text-4xl" style={{ backgroundColor: getAvatarColor(user.id) }}>
+                                          {getInitials(user.fullName)}
+                                      </AvatarFallback>
+                                  </Avatar>
+                                   {canEditPhoto && (
+                                     <button 
+                                        onClick={() => setIsUploaderOpen(true)}
+                                        className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                      >
+                                          <Edit className="h-8 w-8 text-white" />
+                                      </button>
+                                  )}
+                                </div>
                                 <div className="flex flex-col justify-center gap-1">
                                     <h2 className="text-3xl font-bold font-display">{user.fullName}</h2>
                                     <div className="flex items-center gap-2 text-muted-foreground">
@@ -216,6 +237,13 @@ export default function ProfileClient() {
             task={viewingTask}
             isOpen={!!viewingTask}
             onClose={() => setViewingTask(null)}
+        />
+      )}
+      {canEditPhoto && (
+        <ProfileImageUploader 
+            isOpen={isUploaderOpen}
+            onClose={() => setIsUploaderOpen(false)}
+            onUploadComplete={handleUploadComplete}
         />
       )}
     </AppLayout>
