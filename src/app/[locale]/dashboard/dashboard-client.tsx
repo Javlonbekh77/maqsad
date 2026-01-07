@@ -30,7 +30,8 @@ export default function DashboardClient({ user, initialTasks, onTaskCompletion }
           <p className="text-muted-foreground mt-1">{t('welcomeSubtitle')}</p>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+            {/* Main Content Column */}
             <div className="lg:col-span-2 space-y-8">
                  <TodaySchedule
                     title="Bugungi Reja"
@@ -42,6 +43,8 @@ export default function DashboardClient({ user, initialTasks, onTaskCompletion }
                  <HabitTracker user={user} />
                  <QuickAccess />
             </div>
+            
+            {/* Sidebar Column */}
             <div className="lg:col-span-1 space-y-8">
                  <DashboardStats user={user} tasks={initialTasks} />
             </div>
