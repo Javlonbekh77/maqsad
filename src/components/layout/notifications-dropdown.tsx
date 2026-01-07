@@ -102,12 +102,12 @@ export default function NotificationsDropdown() {
                     <>
                          <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground flex items-center gap-2"><MessageSquare className='h-4 w-4' /> Yangi Xabarlar</DropdownMenuLabel>
                         {data.unreadMessages.map(msgInfo => (
-                             <Link key={msgInfo.groupId} href={`/groups/${msgInfo.groupId}?tab=chat`}>
-                                <DropdownMenuItem className="flex justify-between items-center">
+                             <DropdownMenuItem key={msgInfo.groupId} asChild className="cursor-pointer">
+                                <Link href={`/groups/${msgInfo.groupId}?tab=chat`} className="flex justify-between items-center w-full">
                                      <p className="font-medium">{msgInfo.groupName}</p>
                                      <Badge variant="destructive">{msgInfo.count}</Badge>
-                                </DropdownMenuItem>
-                            </Link>
+                                </Link>
+                            </DropdownMenuItem>
                         ))}
                          <DropdownMenuSeparator />
                     </>
@@ -116,12 +116,12 @@ export default function NotificationsDropdown() {
                     <>
                         <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground flex items-center gap-2"><CalendarClock className='h-4 w-4' /> Bugungi uchrashuvlar</DropdownMenuLabel>
                         {data.todayMeetings.map(meeting => (
-                            <Link key={meeting.id} href={`/groups/${meeting.groupId}?tab=meetings`}>
-                                <DropdownMenuItem className="flex justify-between items-center">
+                            <DropdownMenuItem key={meeting.id} asChild className="cursor-pointer">
+                                <Link href={`/groups/${meeting.groupId}?tab=meetings`} className="flex justify-between items-center w-full">
                                     <p className="font-medium">{meeting.title}</p>
                                     <Badge variant="secondary">{meeting.groupName}</Badge>
-                                </DropdownMenuItem>
-                            </Link>
+                                </Link>
+                            </DropdownMenuItem>
                         ))}
                          <DropdownMenuSeparator />
                     </>
@@ -130,15 +130,15 @@ export default function NotificationsDropdown() {
                     <>
                         <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground flex items-center gap-2"><ListTodo className='h-4 w-4' /> Bugungi vazifalar</DropdownMenuLabel>
                         {data.todayTasks.map(task => (
-                             <Link key={task.id} href="/dashboard">
-                                <DropdownMenuItem className="flex justify-between items-center">
+                             <DropdownMenuItem key={task.id} asChild className="cursor-pointer">
+                                <Link href="/dashboard" className="flex justify-between items-center w-full">
                                     <div>
                                         <p className="font-medium">{task.title}</p>
                                         {task.groupName && <p className="text-xs text-muted-foreground">{task.groupName}</p>}
                                     </div>
                                     <Badge variant="outline">{task.taskType === 'group' ? `${task.coins} oltin` : '1 kumush'}</Badge>
-                                </DropdownMenuItem>
-                            </Link>
+                                </Link>
+                            </DropdownMenuItem>
                         ))}
                          <DropdownMenuSeparator />
                     </>
@@ -147,14 +147,14 @@ export default function NotificationsDropdown() {
                     <>
                         <DropdownMenuLabel className="text-xs font-semibold text-destructive flex items-center gap-2"><History className='h-4 w-4' /> Vaqti o'tgan vazifalar</DropdownMenuLabel>
                         {data.overdueTasks.map(task => (
-                             <Link key={task.id} href="/dashboard">
-                                <DropdownMenuItem className="flex justify-between items-center">
+                             <DropdownMenuItem key={task.id} asChild className="cursor-pointer">
+                                <Link href="/dashboard" className="flex justify-between items-center w-full">
                                      <div>
                                         <p className="font-medium">{task.title}</p>
                                         {task.groupName && <p className="text-xs text-muted-foreground">{task.groupName}</p>}
                                     </div>
-                                </DropdownMenuItem>
-                            </Link>
+                                </Link>
+                            </DropdownMenuItem>
                         ))}
                     </>
                 )}
