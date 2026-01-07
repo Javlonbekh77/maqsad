@@ -83,7 +83,7 @@ export default function ProfileClient() {
   const isCurrentUserProfile = userId === currentUser?.id;
   const canEditPhoto = isCurrentUserProfile && currentUser?.email === 'javlonbekh2007@gmail.com';
 
-  const profileColor = useMemo(() => {
+ const avatarColorStyle = useMemo(() => {
     if (user?.profileColor) {
       return avatarColors.find(c => c.name === user.profileColor)?.color || getAvatarColor(user.id);
     }
@@ -136,10 +136,6 @@ export default function ProfileClient() {
   return (
     <AppLayout>
         <div className="relative">
-             <div 
-                className="absolute inset-x-0 top-[-4rem] h-48 -z-10" 
-                style={{ backgroundColor: profileColor, opacity: 0.2 }}
-            ></div>
             <div className="space-y-8">
                 <div className="flex items-center justify-between">
                     <div className="rounded-lg bg-background/50 backdrop-blur-sm px-4 py-2 border">
@@ -154,60 +150,58 @@ export default function ProfileClient() {
                 </div>
 
                 <Card className="overflow-hidden">
-                    <div className="bg-background/80 backdrop-blur-sm" style={{ backgroundColor: profileColor, '--tw-bg-opacity': 0.1 } as React.CSSProperties}>
-                        <CardHeader>
-                            <div className="flex flex-col md:flex-row gap-6">
-                                <div className="relative group">
-                                  <Avatar className="w-32 h-32 border-4 border-background ring-4" style={{ 'ringColor': profileColor }}>
-                                      <AvatarImage src={user.avatarUrl} alt={user.fullName} />
-                                      <AvatarFallback className="text-4xl" style={{ backgroundColor: getAvatarColor(user.id) }}>
-                                          {getInitials(user.fullName)}
-                                      </AvatarFallback>
-                                  </Avatar>
-                                   {canEditPhoto && (
-                                     <button 
-                                        onClick={() => setIsUploaderOpen(true)}
-                                        className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                      >
-                                          <Edit className="h-8 w-8 text-white" />
-                                      </button>
-                                  )}
+                    <CardHeader>
+                        <div className="flex flex-col md:flex-row gap-6">
+                            <div className="relative group">
+                              <Avatar className="w-32 h-32 border-4 border-background" style={{ backgroundColor: avatarColorStyle }}>
+                                  <AvatarImage src={user.avatarUrl} alt={user.fullName} />
+                                  <AvatarFallback className="text-4xl">
+                                      {getInitials(user.fullName)}
+                                  </AvatarFallback>
+                              </Avatar>
+                               {canEditPhoto && (
+                                 <button 
+                                    onClick={() => setIsUploaderOpen(true)}
+                                    className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                  >
+                                      <Edit className="h-8 w-8 text-white" />
+                                  </button>
+                              )}
+                            </div>
+                            <div className="flex flex-col justify-center gap-1">
+                                <h2 className="text-3xl font-bold font-display">{user.fullName}</h2>
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                    <Briefcase className="h-5 w-5" />
+                                    <span className="text-lg">{user.occupation || 'Kasbi kiritilmagan'}</span>
                                 </div>
-                                <div className="flex flex-col justify-center gap-1">
-                                    <h2 className="text-3xl font-bold font-display">{user.fullName}</h2>
-                                    <div className="flex items-center gap-2 text-muted-foreground">
-                                        <Briefcase className="h-5 w-5" />
-                                        <span className="text-lg">{user.occupation || 'Kasbi kiritilmagan'}</span>
+                                <div className="flex items-center gap-4 mt-2">
+                                    <div className="flex items-center gap-2">
+                                        <Coins className="h-6 w-6 text-amber-500" />
+                                        <span className="text-2xl font-semibold">{user.coins || 0}</span>
+                                        <span className="text-muted-foreground text-sm">oltin</span>
                                     </div>
-                                    <div className="flex items-center gap-4 mt-2">
-                                        <div className="flex items-center gap-2">
-                                            <Coins className="h-6 w-6 text-amber-500" />
-                                            <span className="text-2xl font-semibold">{user.coins || 0}</span>
-                                            <span className="text-muted-foreground text-sm">oltin</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <Flame className="h-6 w-6 text-slate-500" />
-                                            <span className="text-2xl font-semibold">{user.silverCoins || 0}</span>
-                                            <span className="text-muted-foreground text-sm">kumush</span>
-                                        </div>
+                                    <div className="flex items-center gap-2">
+                                        <Flame className="h-6 w-6 text-slate-500" />
+                                        <span className="text-2xl font-semibold">{user.silverCoins || 0}</span>
+                                        <span className="text-muted-foreground text-sm">kumush</span>
                                     </div>
                                 </div>
                             </div>
-                        </CardHeader>
-                        <CardContent>
-                            <Separator className="my-6" />
-                            <div className="space-y-6">
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <Separator className="my-6" />
+                        <div className="space-y-6">
+                            <div>
+                                <h3 className="text-lg font-semibold">{t('myGoals')}</h3>
+                                <p className="mt-1 text-muted-foreground">{user.goals || 'Foydalanuvchi hali maqsadlarini kiritmagan.'}</p>
+                            </div>
                                 <div>
-                                    <h3 className="text-lg font-semibold">{t('myGoals')}</h3>
-                                    <p className="mt-1 text-muted-foreground">{user.goals || 'Foydalanuvchi hali maqsadlarini kiritmagan.'}</p>
-                                </div>
-                                    <div>
-                                    <h3 className="text-lg font-semibold">{t('myHabits')}</h3>
-                                    <p className="mt-1 text-muted-foreground">{user.habits || 'Foydalanuvchi hali odatlarini kiritmagan.'}</p>
-                                </div>
+                                <h3 className="text-lg font-semibold">{t('myHabits')}</h3>
+                                <p className="mt-1 text-muted-foreground">{user.habits || 'Foydalanuvchi hali odatlarini kiritmagan.'}</p>
                             </div>
-                        </CardContent>
-                    </div>
+                        </div>
+                    </CardContent>
                 </Card>
 
                 {userGroups.length > 0 && (
