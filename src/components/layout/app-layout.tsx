@@ -25,7 +25,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <AppSidebar />
       <div className="flex flex-col sm:gap-4 sm:pl-14 md:pl-64">
         <AppHeader />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 pb-24 sm:pb-6 z-10">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 pb-20 sm:pb-6 z-10">
           {children}
         </main>
         <AppFooter />
