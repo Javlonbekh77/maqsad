@@ -40,7 +40,7 @@ export default function EditGroupTaskPage() {
   const handleEditTask = async (values: GroupTaskFormValues) => {
     startTransition(async () => {
       try {
-        await updateTask(taskId, { ...values, schedule: values.schedule as TaskSchedule });
+        await updateTask(taskId, values);
         toast({
           title: "Vazifa Yangilandi!",
           description: "Vazifa muvaffaqiyatli yangilandi.",

@@ -11,10 +11,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
 import { Coins, Clock, CalendarIcon } from 'lucide-react';
 import type { DayOfWeek, TaskSchedule, Task } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -24,7 +24,6 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { Slider } from '@/components/ui/slider';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '../ui/switch';
 
 const scheduleSchema = z.object({
@@ -34,10 +33,10 @@ const scheduleSchema = z.object({
   endDate: z.string().optional(),
   days: z.array(z.string()).optional(),
 }).refine(data => {
-    if (data.type === 'one-time') return !!data.date;
-    if (data.type === 'date-range') return !!data.startDate && !!data.endDate;
-    if (data.type === 'recurring') return !!data.days && data.days.length > 0;
-    return false;
+    if (data.type === 'one-time' && !data.date) return false;
+    if (data.type === 'date-range' && (!data.startDate || !data.endDate)) return false;
+    if (data.type === 'recurring' && (!data.days || data.days.length === 0)) return false;
+    return true;
 }, {
     message: "Iltimos sana, sanalar oralig'i yoki takrorlanuvchi kunlarni tanlang.",
     path: ['type'], 
@@ -51,8 +50,14 @@ const taskSchema = z.object({
   estimatedTime: z.string().optional(),
   satisfactionRating: z.number().min(1).max(10),
   schedule: scheduleSchema,
-  hasTimer: z.boolean().optional(),
-  timerDuration: z.number().min(1).max(480).optional(), // max 8 hours
+  hasTimer: z.boolean().default(false),
+  timerDuration: z.number().min(1).max(480).optional(),
+}).refine(data => {
+    if(data.hasTimer && !data.timerDuration) return false;
+    return true;
+}, {
+    message: "Taymer vaqtini kiritish majburiy.",
+    path: ['timerDuration']
 });
 
 export type GroupTaskFormValues = z.infer<typeof taskSchema>;
@@ -76,14 +81,24 @@ export default function GroupTaskForm({ onSubmit, isPending, initialData, submit
         coins: initialData.coins,
         estimatedTime: initialData.estimatedTime || "",
         satisfactionRating: initialData.satisfactionRating || 5,
-        schedule: initialData.schedule || { type: 'recurring', days: [] }
+        schedule: {
+            type: initialData.schedule?.type || 'recurring',
+            date: initialData.schedule?.date,
+            startDate: initialData.schedule?.startDate,
+            endDate: initialData.schedule?.endDate,
+            days: initialData.schedule?.days || [],
+        },
+        hasTimer: initialData.hasTimer || false,
+        timerDuration: initialData.timerDuration || 30
     } : {
       title: "",
       description: "",
       coins: 10,
       estimatedTime: "",
       satisfactionRating: 5,
-      schedule: { type: 'recurring', days: [] }
+      schedule: { type: 'recurring', days: [] },
+      hasTimer: false,
+      timerDuration: 30,
     },
   });
 
@@ -163,6 +178,9 @@ export default function GroupTaskForm({ onSubmit, isPending, initialData, submit
                             step={1}
                         />
                     </FormControl>
+                     <FormDescription>
+                        Bu vazifani bajarish siz uchun qanchalik muhim yoki yoqimli?
+                    </FormDescription>
                     <FormMessage />
                 </FormItem>
                 )}
@@ -309,13 +327,13 @@ export default function GroupTaskForm({ onSubmit, isPending, initialData, submit
                         <FormLabel className="text-base">
                             Taymer bilan
                         </FormLabel>
-                        <FormMessage>
-                            Yoqilgan bo'lsa, vazifa uchun taymer ishga tushadi.
-                        </FormMessage>
+                        <FormDescription>
+                            Yoqilgan bo'lsa, foydalanuvchilar vazifa uchun taymer ishga tushirishi mumkin.
+                        </FormDescription>
                     </div>
                     <FormControl>
                         <Switch
-                          checked={field.value || false}
+                          checked={field.value}
                           onCheckedChange={field.onChange}
                         />
                     </FormControl>
@@ -340,9 +358,10 @@ export default function GroupTaskForm({ onSubmit, isPending, initialData, submit
                               onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                           />
                       </FormControl>
-                      <FormMessage>
-                          1-480 daqiqa (1 soat - 8 soat)
-                      </FormMessage>
+                      <FormDescription>
+                          1 dan 480 gacha bo'lgan daqiqalarni kiriting (8 soatgacha).
+                      </FormDescription>
+                      <FormMessage />
                       </FormItem>
                   )}
               />

@@ -24,7 +24,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 import type { User, Group, Task, UserTask, WeeklyMeeting, UserTaskSchedule, ChatMessage, PersonalTask, TaskSchedule, DayOfWeek, UnreadMessageInfo } from './types';
-import { format, isSameDay, startOfDay, isPast, addDays, isWithinInterval, parseISO, isYesterday } from 'date-fns';
+import { format, isSameDay, startOfDay, isPast, addDays, isWithinInterval, parseISO, isYesterday, getDay } from 'date-fns';
 
 const PERSONAL_TASK_COINS = 1; // 1 Silver Coin
 
@@ -98,83 +98,76 @@ export const getUserGroups = async(userId: string): Promise<Group[]> => {
 }
 
 export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> => {
-    const userSchedules: UserTaskSchedule[] = Array.isArray(user.taskSchedules) ? user.taskSchedules : [];
-    const scheduledGroupTaskIds = userSchedules.map(schedule => schedule.taskId);
-    
-    // Fetch personal tasks
+    if (!user) return [];
+
+    // 1. Fetch all personal tasks for the user
     const personalTasksQuery = query(collection(db, 'personal_tasks'), where('userId', '==', user.id));
     const personalTasksPromise = getDocs(personalTasksQuery);
 
-    // Fetch group tasks that the user has specifically scheduled
+    // 2. Fetch all groups the user is a member of
+    const userGroupIds = Array.isArray(user.groups) ? user.groups : [];
     let groupTasksPromise: Promise<Task[]> = Promise.resolve([]);
-    if (scheduledGroupTaskIds.length > 0) {
-        const taskIdsInChunks: string[][] = [];
-        for (let i = 0; i < scheduledGroupTaskIds.length; i += 30) {
-            taskIdsInChunks.push(scheduledGroupTaskIds.slice(i, i + 30));
+
+    if (userGroupIds.length > 0) {
+        // Firestore 'in' query is limited to 30 elements in array.
+        const groupChunks = [];
+        for (let i = 0; i < userGroupIds.length; i += 30) {
+            groupChunks.push(userGroupIds.slice(i, i + 30));
         }
-        
-        const taskPromises = taskIdsInChunks.map(chunk => 
-            getDocs(query(collection(db, 'tasks'), where('__name__', 'in', chunk)))
+
+        const taskPromises = groupChunks.map(chunk => 
+            getDocs(query(collection(db, 'tasks'), where('groupId', 'in', chunk)))
         );
 
         groupTasksPromise = Promise.all(taskPromises).then(snapshots => 
             snapshots.flatMap(snapshot => 
-                snapshot.docs.map(doc => ({ ...doc.data() as Task, id: doc.id, createdAt: doc.data().createdAt || serverTimestamp() }))
+                snapshot.docs.map(doc => ({ ...doc.data() as Task, id: doc.id }))
             )
         );
     }
-
-    const [personalTasksSnapshot, scheduledGroupTasks] = await Promise.all([personalTasksPromise, groupTasksPromise]);
-
-    const personalTasks = personalTasksSnapshot.docs.map(doc => ({ ...doc.data() as PersonalTask, id: doc.id, createdAt: doc.data().createdAt || serverTimestamp() }));
-
-    const allGroupIds = new Set<string>();
-    if(Array.isArray(user.groups)) {
-        user.groups.forEach(gid => allGroupIds.add(gid));
-    }
-    scheduledGroupTasks.forEach(task => allGroupIds.add(task.groupId));
     
-    const groupIdsArray = Array.from(allGroupIds).slice(0, 30);
-
-    const groupMap = new Map<string, string>();
-    if(groupIdsArray.length > 0) {
-        const groupsQuery = query(collection(db, 'groups'), where('__name__', 'in', groupIdsArray));
-        const groupsSnapshot = await getDocs(groupsQuery);
-        groupsSnapshot.docs.forEach(doc => {
-            groupMap.set(doc.id, doc.data().name);
-        });
+    // Fetch group details for names
+    let groupMapPromise: Promise<Map<string, string>> = Promise.resolve(new Map());
+    if (userGroupIds.length > 0) {
+        const groupIds = user.groups.slice(0, 30);
+        groupMapPromise = getDocs(query(collection(db, 'groups'), where('__name__', 'in', groupIds)))
+            .then(snap => new Map(snap.docs.map(d => [d.id, d.data().name])));
     }
+
+    const [personalTasksSnapshot, groupTasks, groupMap] = await Promise.all([
+        personalTasksPromise, 
+        groupTasksPromise,
+        groupMapPromise
+    ]);
 
     const allTasks: UserTask[] = [];
 
     // Process personal tasks
-    personalTasks.forEach(task => {
+    personalTasksSnapshot.docs.forEach(doc => {
+        const task = { ...doc.data(), id: doc.id } as PersonalTask;
         allTasks.push({
             ...task,
-            isCompleted: false, // will be checked on the client
             taskType: 'personal',
-            coins: PERSONAL_TASK_COINS,
+            coins: PERSONAL_TASK_COINS, // Silver coin
             history: user.taskHistory?.filter(h => h.taskId === task.id) || [],
-            createdAt: task.createdAt,
         });
     });
-
-    scheduledGroupTasks.forEach(task => {
-        const userScheduleForTask = userSchedules.find(s => s.taskId === task.id);
+    
+    // Process group tasks
+    const userSchedules = new Map(user.taskSchedules?.map(s => [s.taskId, s.schedule]));
+    groupTasks.forEach(task => {
+        const schedule = userSchedules.get(task.id) || task.schedule;
         allTasks.push({
             ...task,
-            groupName: groupMap.get(task.groupId) || 'Unknown Group',
-            isCompleted: false,
+            groupName: groupMap.get(task.groupId) || 'Noma\'lum guruh',
             taskType: 'group',
-            schedule: userScheduleForTask!.schedule, // User must have a schedule to be in this list
+            schedule: schedule,
             history: user.taskHistory?.filter(h => h.taskId === task.id) || [],
-            createdAt: task.createdAt,
         });
     });
 
-    return allTasks;
+    return allTasks.map(t => ({...t, isCompleted: false}));
 };
-
 
 
 export const getTasksForUserGroups = async (groupIds: string[]): Promise<Task[]> => {
@@ -292,11 +285,12 @@ export const getLeaderboardData = async (): Promise<{ topUsers: User[], topGroup
 };
 
 
-export const getUserProfileData = async (userId: string): Promise<{user: User, userGroups: Group[], allUsers: User[] } | null> => {
+export const getUserProfileData = async (userId: string): Promise<{user: User, userGroups: Group[], publicPersonalTasks: PersonalTask[], allUsers: User[] } | null> => {
      const user = await getUser(userId);
      if (!user) return null;
 
      const allUsersPromise = getAllUsers();
+     const publicTasksPromise = getPersonalTasksForUser(userId, true);
      
      let groupsPromise: Promise<Group[]> = Promise.resolve([]);
       if (user.groups && user.groups.length > 0) {
@@ -305,12 +299,13 @@ export const getUserProfileData = async (userId: string): Promise<{user: User, u
         groupsPromise = getDocs(groupsQuery).then(snap => snap.docs.map(d => ({...d.data() as Group, id: d.id, firebaseId: d.id})));
       }
     
-    const [userGroups, allUsers] = await Promise.all([
+    const [userGroups, allUsers, publicTasks] = await Promise.all([
         groupsPromise,
         allUsersPromise,
+        publicTasksPromise,
     ]);
 
-    return { user, userGroups, allUsers };
+    return { user, userGroups, allUsers, publicPersonalTasks: publicTasks };
 }
 
 export const getGoalMates = async (userId: string): Promise<User[]> => {
@@ -349,7 +344,7 @@ export const getGoalMates = async (userId: string): Promise<User[]> => {
     
     const snapshots = await Promise.all(matesPromises);
     return snapshots.flat();
-}
+};
 
 export async function getUnreadMessageCount(groupId: string, lastRead: Timestamp): Promise<number> {
     const messagesQuery = query(
@@ -388,7 +383,6 @@ export const createTask = async (taskData: Omit<Task, 'id' | 'createdAt'>): Prom
     const newTaskRef = collection(db, 'tasks');
     const dataToSave = { ...taskData, createdAt: serverTimestamp() };
     const docRef = await addDoc(newTaskRef, dataToSave);
-    await updateDoc(docRef, { id: docRef.id });
     return docRef.id;
 };
 
@@ -657,10 +651,10 @@ export const updateChatMessage = async (groupId: string, messageId: string, newT
   });
 };
 
-export const deleteChatMessage = async (userId: string, messageId: string): Promise<void> => {
-  const messageRef = doc(db, `users/${userId}/chat_messages`, messageId);
-  await deleteDoc(messageRef);
-};
+export const deleteChatMessage = async (groupId: string, messageId: string): Promise<void> => {
+    const messageRef = doc(db, `groups/${groupId}/messages`, messageId);
+    await deleteDoc(messageRef);
+  };
 
 
 export const getNotificationsData = async (user: User): Promise<{
@@ -763,26 +757,29 @@ export const getNotificationsData = async (user: User): Promise<{
 };
 
 export function isTaskScheduledForDate(task: UserTask, date: Date): boolean {
-    const taskCreationDate = task.createdAt instanceof Timestamp ? startOfDay(task.createdAt.toDate()) : startOfDay(new Date());
-    if (startOfDay(date) < taskCreationDate) {
-        return false; // Don't schedule tasks for dates before they were created.
-    }
-
     const schedule = task.schedule;
     if (!schedule) return false;
+
+    const taskCreationDate = task.createdAt instanceof Timestamp ? startOfDay(task.createdAt.toDate()) : new Date(0);
+    const checkDate = startOfDay(date);
+
+    if (checkDate < taskCreationDate) {
+        return false;
+    }
     
     switch(schedule.type) {
         case 'one-time':
-            return schedule.date === format(date, 'yyyy-MM-dd');
+            return schedule.date ? isSameDay(parseISO(schedule.date), checkDate) : false;
         case 'date-range':
             if (schedule.startDate && schedule.endDate) {
-                 const start = parseISO(schedule.startDate);
-                 const end = parseISO(schedule.endDate);
-                 return isWithinInterval(date, { start, end }) || isSameDay(date, start) || isSameDay(date, end);
+                 const start = startOfDay(parseISO(schedule.startDate));
+                 const end = startOfDay(parseISO(schedule.endDate));
+                 return isWithinInterval(checkDate, { start, end });
             }
             return false;
         case 'recurring':
-            const dayOfWeek = format(date, 'EEEE') as DayOfWeek;
+            const dayIndex = getDay(checkDate); // Sunday = 0, Monday = 1...
+            const dayOfWeek: DayOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayIndex];
             return schedule.days?.includes(dayOfWeek) ?? false;
         default:
             return false;
