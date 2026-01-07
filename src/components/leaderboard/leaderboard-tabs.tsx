@@ -55,15 +55,21 @@ export default function LeaderboardTabs({ topUsers, topGroups, topSilverCoinUser
 
   return (
     <Tabs defaultValue="users">
-      <TabsList className="grid w-full grid-cols-3 md:w-[480px]">
+      <TabsList className="grid w-full grid-cols-3 md:w-auto">
         <TabsTrigger value="users">
-          <Trophy className="mr-2 h-4 w-4" /> Oltin Tangalar
+          <Trophy className="mr-2 h-4 w-4" /> 
+          <span className="hidden md:inline">Oltin Tangalar</span>
+          <span className="md:hidden">Oltin</span>
         </TabsTrigger>
         <TabsTrigger value="habits">
-          <Flame className="mr-2 h-4 w-4" /> Kumush Tangalar
+          <Flame className="mr-2 h-4 w-4" /> 
+          <span className="hidden md:inline">Kumush Tangalar</span>
+          <span className="md:hidden">Kumush</span>
         </TabsTrigger>
         <TabsTrigger value="groups">
-          <Crown className="mr-2 h-4 w-4" /> {t('topGroups')}
+          <Crown className="mr-2 h-4 w-4" /> 
+           <span className="hidden md:inline">{t('topGroups')}</span>
+           <span className="md:hidden">Guruhlar</span>
         </TabsTrigger>
       </TabsList>
       <div className="overflow-x-auto">

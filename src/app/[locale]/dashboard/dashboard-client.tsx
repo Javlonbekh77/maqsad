@@ -41,13 +41,15 @@ export default function DashboardClient({ user, initialTasks, onTaskCompletion }
                     onTaskCompletion={handleTaskCompletion}
                 />
                  <HabitTracker user={user} />
-                 <QuickAccess />
             </div>
             
             {/* Sidebar Column */}
             <div className="lg:col-span-1 space-y-8">
                  <DashboardStats user={user} tasks={initialTasks} />
             </div>
+        </div>
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <QuickAccess />
         </div>
       </div>
     </AppLayout>

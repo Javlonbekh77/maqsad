@@ -8,13 +8,13 @@ export default function AppFooter() {
     <footer className="bg-background border-t mt-auto">
       <div className="container mx-auto px-6 py-8">
         <div className="flex flex-col items-center text-center">
-          <Logo />
+          <Logo className="text-foreground" />
           <p className="max-w-md mx-auto mt-4 text-sm text-muted-foreground">
             Maqsadlaringiz sari birgalikda harakat qiluvchi hamjamiyat. Unity Team tomonidan ishtiyoq bilan yaratilgan.
           </p>
           <div className="flex items-center mt-6">
             <a 
-              href="https://t.me/unity_team_page"
+              href="https://t.me/Javlonbekhs_Blog"
               target="_blank" 
               rel="noopener noreferrer" 
               className="mx-3 text-muted-foreground hover:text-primary transition-colors"
