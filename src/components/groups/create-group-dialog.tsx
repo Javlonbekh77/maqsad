@@ -146,7 +146,7 @@ export default function CreateGroupDialog({ onGroupCreated }: CreateGroupDialogP
                                     className="object-cover"
                                   />
                                    <div className="absolute inset-0 bg-black/30 flex items-end p-2">
-                                    <p className="text-white text-sm font-semibold">{image.description.replace("Image for '", "").replace("' group", "")}</p>
+                                    <p className="text-white text-sm font-semibold">{image.imageHint}</p>
                                    </div>
                                 </Label>
                               </FormItem>

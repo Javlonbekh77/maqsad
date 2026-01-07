@@ -392,11 +392,9 @@ export const createPersonalTask = async (taskData: Omit<PersonalTask, 'id' | 'cr
     const cleanedSchedule: Partial<TaskSchedule> = { type: schedule.type };
     if (schedule.type === 'one-time' && schedule.date) {
         cleanedSchedule.date = schedule.date;
-    } else if (schedule.type === 'date-range' && schedule.startDate) {
+    } else if (schedule.type === 'date-range' && schedule.startDate && schedule.endDate) {
         cleanedSchedule.startDate = schedule.startDate;
-        if (schedule.endDate) {
-            cleanedSchedule.endDate = schedule.endDate;
-        }
+        cleanedSchedule.endDate = schedule.endDate;
     } else if (schedule.type === 'recurring' && schedule.days) {
         cleanedSchedule.days = schedule.days;
     }
