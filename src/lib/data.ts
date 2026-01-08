@@ -24,7 +24,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 import type { User, Group, Task, UserTask, WeeklyMeeting, UserTaskSchedule, ChatMessage, PersonalTask, TaskSchedule, DayOfWeek, UnreadMessageInfo } from './types';
-import { format, isSameDay, startOfDay, isPast, addDays, isWithinInterval, parseISO, isYesterday, getDay } from 'date-fns';
+import { format, isSameDay, startOfDay, isPast, addDays, isWithinInterval, parseISO, isYesterday, getDay, isBefore } from 'date-fns';
 
 const PERSONAL_TASK_COINS = 1; // 1 Silver Coin
 
@@ -154,15 +154,16 @@ export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> 
     });
     
     // Process group tasks
-    const userSchedules = new Map(user.taskSchedules?.map(s => [s.taskId, s.schedule]));
+    const userSchedules = new Map(user.taskSchedules?.map(s => [s.taskId, s]));
     groupTasks.forEach(task => {
-        // Only include group tasks that the user has specifically scheduled
         if (userSchedules.has(task.id)) {
+            const userSchedule = userSchedules.get(task.id);
             allTasks.push({
                 ...task,
                 groupName: groupMap.get(task.groupId) || 'Noma\'lum guruh',
                 taskType: 'group',
-                schedule: userSchedules.get(task.id)!,
+                schedule: userSchedule?.schedule!,
+                taskAddedAt: userSchedule?.taskAddedAt,
                 history: user.taskHistory?.filter(h => h.taskId === task.id) || [],
             });
         }
@@ -270,20 +271,11 @@ export const getLeaderboardData = async (): Promise<{ topUsers: User[], topGroup
     const topUsers = await Promise.all(topUsersPromises);
     const topSilverCoinUsers = await Promise.all(topSilverCoinUsersPromises);
 
-    // Calculate group scores
+    // Calculate group scores by member count
     const groups = groupsSnapshot.docs.map(d => ({ ...d.data() as Group, id: d.id, firebaseId: d.id }));
-    const allUsersSnapshot = await getDocs(collection(db, 'users'));
-    const allUsers = allUsersSnapshot.docs.map(d => ({ ...d.data() as User, id: d.id, firebaseId: d.id }));
-    const userMap = new Map(allUsers.map(u => [u.id, u]));
-
-    const calculatedTopGroups = groups.map(group => {
-      const groupCoins = group.members.reduce((total, memberId) => {
-        return total + (userMap.get(memberId)?.coins || 0);
-      }, 0);
-      return { ...group, coins: groupCoins };
-    }).sort((a, b) => b.coins - a.coins).slice(0, 10);
+    const topGroupsByMembers = groups.sort((a, b) => (b.members?.length || 0) - (a.members?.length || 0)).slice(0, 10);
     
-    return { topUsers, topGroups: calculatedTopGroups, topSilverCoinUsers };
+    return { topUsers, topGroups: topGroupsByMembers, topSilverCoinUsers };
 };
 
 
@@ -442,7 +434,7 @@ export const deletePersonalTask = async (taskId: string): Promise<void> => {
     // A more complex implementation would involve a Cloud Function to clean this up.
 };
 
-export const addUserToGroup = async (userId: string, groupId: string, taskSchedules: UserTaskSchedule[]): Promise<void> => {
+export const addUserToGroup = async (userId: string, groupId: string, taskSchedules: UserTaskSchedule[], isAlreadyMember: boolean): Promise<void> => {
     const userDocRef = doc(db, "users", userId);
     
     const userData = await getDoc(userDocRef);
@@ -462,8 +454,10 @@ export const addUserToGroup = async (userId: string, groupId: string, taskSchedu
       taskSchedules: finalSchedules
     });
     
-    const groupDocRef = doc(db, "groups", groupId);
-    batch.update(groupDocRef, { members: arrayUnion(userId) });
+    if (!isAlreadyMember) {
+      const groupDocRef = doc(db, "groups", groupId);
+      batch.update(groupDocRef, { members: arrayUnion(userId) });
+    }
 
     await batch.commit();
 };
@@ -538,15 +532,17 @@ export const getGroupTasksForUser = async (user: User): Promise<UserTask[]> => {
     const groupSnapshots = await Promise.all(groupPromises);
     const groupMap = new Map(groupSnapshots.flatMap(snap => snap.docs).map(d => [d.id, d.data().name]));
 
-    const userScheduleMap = new Map(userSchedules.map(s => [s.taskId, s.schedule]));
+    const userScheduleMap = new Map(userSchedules.map(s => [s.taskId, s]));
     
     const grouped = tasks.map(task => {
+        const userSchedule = userScheduleMap.get(task.id);
         return {
             ...task,
             groupName: groupMap.get(task.groupId) || 'Noma\'lum guruh',
             isCompleted: false,
             taskType: 'group' as const,
-            schedule: userScheduleMap.get(task.id) || task.schedule,
+            schedule: userSchedule?.schedule || task.schedule,
+            taskAddedAt: userSchedule?.taskAddedAt,
             history: user.taskHistory?.filter(h => h.taskId === task.id) || [],
         } as UserTask;
     });
@@ -564,7 +560,7 @@ export const updateGroupTaskSchedule = async (userId: string, taskId: string, sc
     if (idx >= 0) {
         existingSchedules[idx].schedule = schedule;
     } else {
-        existingSchedules.push({ taskId, schedule });
+        existingSchedules.push({ taskId, schedule, taskAddedAt: new Date() });
     }
 
     await updateDoc(userRef, { taskSchedules: existingSchedules });
@@ -698,60 +694,25 @@ export const deleteChatMessage = async (groupId: string, messageId: string): Pro
 
 
 export const getNotificationsData = async (user: User): Promise<{
-    todayTasks: UserTask[];
     overdueTasks: UserTask[];
-    todayMeetings: (WeeklyMeeting & { groupName: string })[];
     unreadMessages: UnreadMessageInfo[];
 }> => {
     if (!user) {
-        return { todayTasks: [], overdueTasks: [], todayMeetings: [], unreadMessages: [] };
+        return { overdueTasks: [], unreadMessages: [] };
     }
 
     const lastChecked = user.notificationsLastCheckedAt || new Timestamp(0, 0);
     const lastCheckedDate = lastChecked.toDate();
 
-    const today = startOfDay(new Date());
-    const yesterday = startOfDay(addDays(today, -1));
-    const todayDayOfWeek = format(today, 'EEEE') as DayOfWeek;
+    const yesterday = startOfDay(addDays(new Date(), -1));
 
-    // 1. Get Today's Meetings
-    let todayMeetings: (WeeklyMeeting & { groupName: string })[] = [];
-    if (user.groups && user.groups.length > 0) {
-        const groupIds = user.groups.slice(0, 30);
-        const meetingsQuery = query(
-            collection(db, 'meetings'), 
-            where('groupId', 'in', groupIds), 
-            where('day', '==', todayDayOfWeek)
-        );
-        const groupsQuery = query(collection(db, 'groups'), where('__name__', 'in', groupIds));
-
-        const [meetingsSnapshot, groupsSnapshot] = await Promise.all([getDocs(meetingsQuery), getDocs(groupsQuery)]);
-        
-        const groupMap = new Map(groupsSnapshot.docs.map(doc => [doc.id, doc.data().name]));
-
-        todayMeetings = meetingsSnapshot.docs
-            .map(doc => {
-                const meeting = doc.data() as WeeklyMeeting;
-                return {
-                    ...meeting,
-                    id: doc.id,
-                    groupName: groupMap.get(meeting.groupId) || 'Noma\'lum guruh'
-                };
-            })
-            .filter(meeting => {
-                const createdAt = (meeting.createdAt as Timestamp)?.toDate();
-                return createdAt ? createdAt > lastCheckedDate : true;
-            });
-    }
-    
-    // 2. Get unread messages
+    // 1. Get unread messages
     let unreadMessages: UnreadMessageInfo[] = [];
      if (user.groups && user.groups.length > 0) {
         const groupDetails = await getUserGroups(user.id);
         const unreadCounts = await Promise.all(
             groupDetails.map(async (group) => {
                 const lastRead = user.lastRead?.[group.id] || new Timestamp(0, 0);
-                // Only consider messages that are newer than the last time notifications were checked
                 if (lastRead.toDate() > lastCheckedDate) { 
                      const count = await getUnreadMessageCount(group.id, lastRead);
                      if (count > 0) {
@@ -765,51 +726,38 @@ export const getNotificationsData = async (user: User): Promise<{
     }
 
 
-    // 3. Get All Scheduled Tasks (to find today's and overdue)
+    // 2. Get All Scheduled Tasks (to find overdue)
     const allScheduledTasks = await getScheduledTasksForUser(user);
     
-    const todayIncompletedTasks: UserTask[] = [];
     const overdueTasks: UserTask[] = [];
 
     allScheduledTasks.forEach(task => {
-        const taskCreatedAt = (task.createdAt as Timestamp)?.toDate();
-        if (!taskCreatedAt) return;
-
-        // Check only for yesterday's overdue tasks, and only if the task is "new" since last check
-        if (isTaskScheduledForDate(task, yesterday) && taskCreatedAt < yesterday && taskCreatedAt > lastCheckedDate) {
+        // A task is "newly overdue" if it was scheduled for yesterday, wasn't completed,
+        // and the user added it before yesterday.
+        if (isTaskScheduledForDate(task, yesterday)) {
              const isCompletedYesterday = user.taskHistory.some(h => h.taskId === task.id && h.date === format(yesterday, 'yyyy-MM-dd'));
-             if (!isCompletedYesterday) {
+             const taskAddedAt = (task.taskAddedAt as Timestamp)?.toDate() || (task.createdAt as Timestamp)?.toDate();
+             if (!isCompletedYesterday && taskAddedAt && isBefore(taskAddedAt, yesterday)) {
                 overdueTasks.push(task);
              }
         }
-        
-        // Check for today's tasks, and only if the task is "new" since last check
-        if (isTaskScheduledForDate(task, today) && taskCreatedAt > lastCheckedDate) {
-            const isCompletedToday = user.taskHistory.some(h => h.taskId === task.id && h.date === format(today, 'yyyy-MM-dd'));
-            if (!isCompletedToday) {
-                todayIncompletedTasks.push(task);
-            }
-        }
     });
 
-
-    return { todayTasks: todayIncompletedTasks, overdueTasks, todayMeetings, unreadMessages };
+    return { overdueTasks, unreadMessages };
 };
 
 export function isTaskScheduledForDate(task: UserTask, date: Date): boolean {
     const schedule = task.schedule;
     if (!schedule) return false;
 
-    // This is the crucial fix: For group tasks, the 'createdAt' comes from the task itself.
-    // For personal tasks, it's also on the task. But for checking against the schedule,
-    // we need to know when the USER added the task. For personal tasks, it's the creation date.
-    // For group tasks, it should be the date they joined the group or added the task.
-    // Since we don't store that explicitly, we'll use the task's creation date as a proxy.
-    // A more robust solution would be to store `taskAddedAt` in the `UserTaskSchedule`.
-    const taskCreationDate = task.createdAt instanceof Timestamp ? startOfDay(task.createdAt.toDate()) : new Date(0);
+    // Use taskAddedAt for group tasks, createdAt for personal tasks as the start date.
+    const taskStartDate = (task as any).taskAddedAt instanceof Timestamp 
+        ? startOfDay(((task as any).taskAddedAt as Timestamp).toDate()) 
+        : startOfDay((task.createdAt as Timestamp).toDate());
+        
     const checkDate = startOfDay(date);
 
-    if (checkDate < taskCreationDate) {
+    if (isBefore(checkDate, taskStartDate)) {
         return false;
     }
     

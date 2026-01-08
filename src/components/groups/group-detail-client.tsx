@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/table";
 import { Link, useRouter } from '@/navigation';
 import GoBackButton from '@/components/go-back-button';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import JoinGroupDialog from '@/components/groups/join-group-dialog';
 import { useTranslations } from 'next-intl';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -53,6 +53,16 @@ export default function GroupDetailClient() {
   const [viewingTask, setViewingTask] = useState<UserTask | null>(null);
   const [loadingData, setLoadingData] = useState(true);
 
+  const isMember = useMemo(() => !!currentUser?.id && !!group?.members.includes(currentUser.id), [currentUser, group]);
+  const isAdmin = useMemo(() => group?.adminId === currentUser?.id, [group, currentUser]);
+
+  const tasksUserHasNotAdded = useMemo(() => {
+    if (!isMember || !currentUser?.taskSchedules) return tasks;
+    const scheduledTaskIds = new Set(currentUser.taskSchedules.map(s => s.taskId));
+    return tasks.filter(task => !scheduledTaskIds.has(task.id));
+  }, [tasks, currentUser, isMember]);
+
+
   const fetchGroupData = useCallback(async (groupId: string) => {
     if (!groupId) return;
     setLoadingData(true);
@@ -84,21 +94,22 @@ export default function GroupDetailClient() {
     }
   }, [id, authLoading, currentUser, router, fetchGroupData]);
 
-  const handleJoinGroup = useCallback(async (schedules: UserTaskSchedule[]) => {
+  const handleJoinOrAddTasks = useCallback(async (schedules: UserTaskSchedule[]) => {
     if (!currentUser || !group) return;
     try {
-      await addUserToGroup(currentUser.id, group.id, schedules);
+      await addUserToGroup(currentUser.id, group.id, schedules, isMember); // Pass isMember status
       setJoinDialogOpen(false);
-      // Re-fetch all data to show user and update dashboard
-      await fetchGroupData(id as string);
+      await fetchGroupData(id as string); 
       if (refreshAuth) {
         await refreshAuth();
       }
-      router.push('/dashboard');
+      if (!isMember) { // Only redirect to dashboard if they were not a member before
+        router.push('/dashboard');
+      }
     } catch(error) {
-      console.error("Failed to join group:", error);
+      console.error("Failed to join group or add tasks:", error);
     }
-  }, [currentUser, group, id, fetchGroupData, refreshAuth, router]);
+  }, [currentUser, group, id, fetchGroupData, refreshAuth, router, isMember]);
   
   const handleViewTask = (task: Task) => {
     setViewingTask({
@@ -110,8 +121,6 @@ export default function GroupDetailClient() {
   };
 
   const isLoading = authLoading || loadingData;
-  const isMember = !!currentUser?.id && !!group?.members.includes(currentUser.id);
-  const isAdmin = group?.adminId === currentUser?.id;
   const latestMeeting = meetings.length > 0 ? meetings[0] : null;
 
 
@@ -183,6 +192,12 @@ export default function GroupDetailClient() {
                   {t('joinGroup')}
                 </Button>
               )}
+               {isMember && tasksUserHasNotAdded.length > 0 && (
+                 <Button onClick={() => setJoinDialogOpen(true)}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Yangi Vazifa Qo'shish
+                 </Button>
+               )}
               {isAdmin && (
                 <Button variant="secondary" onClick={() => setSettingsOpen(true)}>
                   <Settings className="mr-2 h-4 w-4" />
@@ -325,9 +340,10 @@ export default function GroupDetailClient() {
       <JoinGroupDialog
         isOpen={isJoinDialogOpen}
         onClose={() => setJoinDialogOpen(false)}
-        onConfirm={handleJoinGroup}
+        onConfirm={handleJoinOrAddTasks}
         groupName={group.name}
-        tasks={tasks}
+        tasks={isMember ? tasksUserHasNotAdded : tasks}
+        isAddingTasks={isMember}
       />
       {isAdmin && (
          <GroupSettingsDialog

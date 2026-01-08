@@ -12,7 +12,7 @@ import {
   DropdownMenuFooter,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Bell, AlertCircle, CalendarClock, ListTodo, History, CheckCheck, MessageSquare } from 'lucide-react';
+import { Bell, AlertCircle, History, CheckCheck, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import type { UserTask, User, WeeklyMeeting, UnreadMessageInfo } from '@/lib/types';
 import { getNotificationsData, updateUserProfile } from '@/lib/data';
@@ -22,15 +22,12 @@ import { Skeleton } from '../ui/skeleton';
 import { Timestamp } from 'firebase/firestore';
 
 type NotificationData = {
-    todayTasks: UserTask[];
     overdueTasks: UserTask[];
-    todayMeetings: (WeeklyMeeting & { groupName: string })[];
     unreadMessages: UnreadMessageInfo[];
 };
 
-
 const fetcher = ([, user]: [string, User | null]): Promise<NotificationData> => {
-    if (!user) return Promise.resolve({ todayTasks: [], overdueTasks: [], todayMeetings: [], unreadMessages: [] });
+    if (!user) return Promise.resolve({ overdueTasks: [], unreadMessages: [] });
     return getNotificationsData(user);
 };
 
@@ -52,10 +49,8 @@ export default function NotificationsDropdown() {
 
   useEffect(() => {
     if (isOpen && user) {
-      // When dropdown is opened, update the last checked time
       const now = Timestamp.now();
       updateUserProfile(user.id, { notificationsLastCheckedAt: now }).then(() => {
-         // Optimistically update the user object in auth context
          if (refreshAuth) refreshAuth();
       });
     }
@@ -66,9 +61,7 @@ export default function NotificationsDropdown() {
     e.preventDefault();
     e.stopPropagation();
     if (user) {
-        // Optimistically clear notifications on the client
-        mutate(['notifications', user], { todayTasks: [], overdueTasks: [], todayMeetings: [], unreadMessages: [] }, false);
-        // And update the timestamp on the backend
+        mutate(['notifications', user], { overdueTasks: [], unreadMessages: [] }, false);
         await updateUserProfile(user.id, { notificationsLastCheckedAt: Timestamp.now() });
         if (refreshAuth) await refreshAuth();
     }
@@ -79,7 +72,7 @@ export default function NotificationsDropdown() {
     setIsOpen(false);
   };
 
-  const totalNotifications = data ? (data.todayTasks.length + data.overdueTasks.length + data.todayMeetings.length + data.unreadMessages.length) : 0;
+  const totalNotifications = data ? (data.overdueTasks.length + data.unreadMessages.length) : 0;
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
@@ -108,36 +101,9 @@ export default function NotificationsDropdown() {
                     <>
                          <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground flex items-center gap-2"><MessageSquare className='h-4 w-4' /> Yangi Xabarlar</DropdownMenuLabel>
                         {data.unreadMessages.map(msgInfo => (
-                             <DropdownMenuItem key={msgInfo.groupId} onClick={() => handleNavigation(`/groups/${msgInfo.groupId}`, { tab: 'chat' })} className="cursor-pointer flex justify-between items-center w-full">
+                             <DropdownMenuItem key={msgInfo.groupId} onSelect={() => handleNavigation(`/groups/${msgInfo.groupId}`, { tab: 'chat' })} className="cursor-pointer flex justify-between items-center w-full">
                                 <p className="font-medium">{msgInfo.groupName}</p>
                                 <Badge variant="destructive">{msgInfo.count}</Badge>
-                            </DropdownMenuItem>
-                        ))}
-                         <DropdownMenuSeparator />
-                    </>
-                )}
-                {data.todayMeetings.length > 0 && (
-                    <>
-                        <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground flex items-center gap-2"><CalendarClock className='h-4 w-4' /> Bugungi uchrashuvlar</DropdownMenuLabel>
-                        {data.todayMeetings.map(meeting => (
-                            <DropdownMenuItem key={meeting.id} onClick={() => handleNavigation(`/groups/${meeting.groupId}`, { tab: 'meetings' })} className="cursor-pointer flex justify-between items-center w-full">
-                                <p className="font-medium">{meeting.title}</p>
-                                <Badge variant="secondary">{meeting.groupName}</Badge>
-                            </DropdownMenuItem>
-                        ))}
-                         <DropdownMenuSeparator />
-                    </>
-                )}
-                 {data.todayTasks.length > 0 && (
-                    <>
-                        <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground flex items-center gap-2"><ListTodo className='h-4 w-4' /> Bugungi vazifalar</DropdownMenuLabel>
-                        {data.todayTasks.map(task => (
-                             <DropdownMenuItem key={task.id} onClick={() => handleNavigation('/dashboard')} className="cursor-pointer flex justify-between items-center w-full">
-                                <div>
-                                    <p className="font-medium">{task.title}</p>
-                                    {task.groupName && <p className="text-xs text-muted-foreground">{task.groupName}</p>}
-                                </div>
-                                <Badge variant="outline">{task.taskType === 'group' ? `${task.coins} oltin` : '1 kumush'}</Badge>
                             </DropdownMenuItem>
                         ))}
                          <DropdownMenuSeparator />
@@ -147,7 +113,7 @@ export default function NotificationsDropdown() {
                     <>
                         <DropdownMenuLabel className="text-xs font-semibold text-destructive flex items-center gap-2"><History className='h-4 w-4' /> Vaqti o'tgan vazifalar</DropdownMenuLabel>
                         {data.overdueTasks.map(task => (
-                             <DropdownMenuItem key={task.id} onClick={() => handleNavigation('/dashboard')} className="cursor-pointer flex justify-between items-center w-full">
+                             <DropdownMenuItem key={task.id} onSelect={() => handleNavigation('/dashboard')} className="cursor-pointer flex justify-between items-center w-full">
                                  <div>
                                     <p className="font-medium">{task.title}</p>
                                     {task.groupName && <p className="text-xs text-muted-foreground">{task.groupName}</p>}

@@ -25,6 +25,7 @@ interface JoinGroupDialogProps {
   onConfirm: (schedules: UserTaskSchedule[]) => void;
   groupName: string;
   tasks: Task[];
+  isAddingTasks?: boolean;
 }
 
 const daysOfWeek: DayOfWeek[] = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -44,6 +45,7 @@ export default function JoinGroupDialog({
   onConfirm,
   groupName,
   tasks,
+  isAddingTasks = false
 }: JoinGroupDialogProps) {
   const t = useTranslations('actions');
   const [schedules, setSchedules] = useState<Record<string, DayOfWeek[]>>({});
@@ -68,7 +70,8 @@ export default function JoinGroupDialog({
       schedule: {
           type: 'recurring',
           days,
-      }
+      },
+      taskAddedAt: new Date(), // Add the date when the user commits to the task
     }));
     onConfirm(finalSchedules);
     setSchedules({}); // Reset for next time
@@ -84,13 +87,19 @@ export default function JoinGroupDialog({
     });
   }, [tasks, schedules]);
 
+  const dialogTitle = isAddingTasks ? `Add Tasks from "${groupName}"` : `Join "${groupName}"`;
+  const dialogDescription = isAddingTasks 
+    ? "Select new tasks you want to add to your schedule."
+    : "Select tasks and schedule the days you plan to work on them.";
+  const confirmButtonText = isAddingTasks ? "Add Selected Tasks" : "Join & Commit to Tasks";
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Join &quot;{groupName}&quot;</DialogTitle>
+          <DialogTitle>{dialogTitle}</DialogTitle>
           <DialogDescription>
-            Select tasks and schedule the days you plan to work on them.
+            {dialogDescription}
           </DialogDescription>
         </DialogHeader>
         
@@ -153,7 +162,7 @@ export default function JoinGroupDialog({
                     </div>
                 </div>
             )}) : (
-              <p className="text-muted-foreground text-center py-4">This group has no tasks yet.</p>
+              <p className="text-muted-foreground text-center py-4">This group has no more available tasks to add.</p>
             )}
             </div>
         </ScrollArea>
@@ -163,7 +172,7 @@ export default function JoinGroupDialog({
             {t('cancel')}
           </Button>
           <Button onClick={handleConfirm} disabled={Object.keys(schedules).length === 0}>
-            Join & Commit to Tasks
+            {confirmButtonText}
           </Button>
         </DialogFooter>
       </DialogContent>

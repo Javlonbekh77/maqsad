@@ -28,13 +28,6 @@ const getWeekDates = (start: Date): Date[] => {
   return dates;
 };
 
-const toDate = (timestamp: Timestamp | Date): Date => {
-    if (timestamp instanceof Date) {
-        return timestamp;
-    }
-    return timestamp.toDate();
-}
-
 export default function HabitTracker({ user, isCurrentUserProfile = true }: HabitTrackerProps) {
   const [weekStartDate, setWeekStartDate] = useState(startOfWeek(new Date()));
   const [allTasks, setAllTasks] = useState<UserTask[]>([]);
@@ -59,7 +52,7 @@ export default function HabitTracker({ user, isCurrentUserProfile = true }: Habi
       setAllTasks(combinedTasks.map(task => {
           if (task.taskType === 'group') {
               const userSchedule = user.taskSchedules?.find(s => s.taskId === task.id);
-              return { ...task, schedule: userSchedule ? userSchedule.schedule : task.schedule };
+              return { ...task, schedule: userSchedule ? userSchedule.schedule : task.schedule, taskAddedAt: userSchedule?.taskAddedAt };
           }
           return task;
       }));
@@ -81,7 +74,6 @@ export default function HabitTracker({ user, isCurrentUserProfile = true }: Habi
   
   const tasksToDisplay = useMemo(() => {
     return allTasks.filter(task => {
-      // Check if the task is scheduled for any day in the current visible week
       return dates.some(date => isTaskScheduledForDate(task, date));
     });
   }, [allTasks, dates]);
@@ -130,7 +122,6 @@ export default function HabitTracker({ user, isCurrentUserProfile = true }: Habi
               </TableHeader>
               <TableBody>
                  {tasksToDisplay.map(task => {
-                    const taskCreationDate = task.createdAt instanceof Timestamp ? startOfDay(task.createdAt.toDate()) : startOfDay(new Date(0));
                     return (
                         <TableRow key={task.id}>
                             <TableCell 
@@ -148,11 +139,6 @@ export default function HabitTracker({ user, isCurrentUserProfile = true }: Habi
                             {dates.map(date => {
                                 const currentDate = startOfDay(date);
                                 const isScheduled = isTaskScheduledForDate(task, currentDate);
-                                
-                                // Check if the current date is before the task was even created
-                                if (isBefore(currentDate, taskCreationDate)) {
-                                  return <TableCell key={date.toISOString()} className="text-center p-2"></TableCell>;
-                                }
                                 
                                 if (!isScheduled) {
                                   return <TableCell key={date.toISOString()} className="text-center p-2"></TableCell>
