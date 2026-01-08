@@ -4,7 +4,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { User, DayOfWeek, PersonalTask, Task, UserTask, TaskSchedule } from "@/lib/types";
-import { format, add, startOfWeek, isSameDay, isToday, startOfDay, isWithinInterval, parseISO } from 'date-fns';
+import { format, add, startOfWeek, isSameDay, isToday, startOfDay, isWithinInterval, parseISO, isBefore } from 'date-fns';
 import { Check, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useEffect, useState, useCallback } from "react";
 import { getTasksForUserGroups, getPersonalTasksForUser, isTaskScheduledForDate, getGroupTasksForUser } from "@/lib/data";
@@ -130,6 +130,7 @@ export default function HabitTracker({ user, isCurrentUserProfile = true }: Habi
               </TableHeader>
               <TableBody>
                  {tasksToDisplay.map(task => {
+                    const taskCreationDate = task.createdAt instanceof Timestamp ? startOfDay(task.createdAt.toDate()) : startOfDay(new Date(0));
                     return (
                         <TableRow key={task.id}>
                             <TableCell 
@@ -147,6 +148,11 @@ export default function HabitTracker({ user, isCurrentUserProfile = true }: Habi
                             {dates.map(date => {
                                 const currentDate = startOfDay(date);
                                 const isScheduled = isTaskScheduledForDate(task, currentDate);
+                                
+                                // Check if the current date is before the task was even created
+                                if (isBefore(currentDate, taskCreationDate)) {
+                                  return <TableCell key={date.toISOString()} className="text-center p-2"></TableCell>;
+                                }
                                 
                                 if (!isScheduled) {
                                   return <TableCell key={date.toISOString()} className="text-center p-2"></TableCell>

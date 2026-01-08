@@ -16,7 +16,7 @@ import { Bell, AlertCircle, CalendarClock, ListTodo, History, CheckCheck, Messag
 import { useAuth } from '@/context/auth-context';
 import type { UserTask, User, WeeklyMeeting, UnreadMessageInfo } from '@/lib/types';
 import { getNotificationsData, updateUserProfile } from '@/lib/data';
-import { Link } from '@/navigation';
+import { useRouter } from '@/navigation';
 import { Badge } from '../ui/badge';
 import { Skeleton } from '../ui/skeleton';
 import { Timestamp } from 'firebase/firestore';
@@ -37,6 +37,7 @@ const fetcher = ([, user]: [string, User | null]): Promise<NotificationData> => 
 
 export default function NotificationsDropdown() {
   const { user, refreshAuth } = useAuth();
+  const router = useRouter();
   const { mutate } = useSWRConfig();
   const [isOpen, setIsOpen] = useState(false);
   
@@ -73,6 +74,11 @@ export default function NotificationsDropdown() {
     }
   };
 
+  const handleNavigation = (path: string, query?: any) => {
+    router.push({ pathname: path, query });
+    setIsOpen(false);
+  };
+
   const totalNotifications = data ? (data.todayTasks.length + data.overdueTasks.length + data.todayMeetings.length + data.unreadMessages.length) : 0;
 
   return (
@@ -102,11 +108,9 @@ export default function NotificationsDropdown() {
                     <>
                          <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground flex items-center gap-2"><MessageSquare className='h-4 w-4' /> Yangi Xabarlar</DropdownMenuLabel>
                         {data.unreadMessages.map(msgInfo => (
-                             <DropdownMenuItem key={msgInfo.groupId} asChild className="cursor-pointer">
-                                <Link href={{pathname: '/groups/[id]', query: { tab: 'chat' }, params: {id: msgInfo.groupId}}} className="flex justify-between items-center w-full">
-                                     <p className="font-medium">{msgInfo.groupName}</p>
-                                     <Badge variant="destructive">{msgInfo.count}</Badge>
-                                </Link>
+                             <DropdownMenuItem key={msgInfo.groupId} onClick={() => handleNavigation(`/groups/${msgInfo.groupId}`, { tab: 'chat' })} className="cursor-pointer flex justify-between items-center w-full">
+                                <p className="font-medium">{msgInfo.groupName}</p>
+                                <Badge variant="destructive">{msgInfo.count}</Badge>
                             </DropdownMenuItem>
                         ))}
                          <DropdownMenuSeparator />
@@ -116,11 +120,9 @@ export default function NotificationsDropdown() {
                     <>
                         <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground flex items-center gap-2"><CalendarClock className='h-4 w-4' /> Bugungi uchrashuvlar</DropdownMenuLabel>
                         {data.todayMeetings.map(meeting => (
-                            <DropdownMenuItem key={meeting.id} asChild className="cursor-pointer">
-                                <Link href={{pathname: '/groups/[id]', query: { tab: 'meetings' }, params: {id: meeting.groupId}}} className="flex justify-between items-center w-full">
-                                    <p className="font-medium">{meeting.title}</p>
-                                    <Badge variant="secondary">{meeting.groupName}</Badge>
-                                </Link>
+                            <DropdownMenuItem key={meeting.id} onClick={() => handleNavigation(`/groups/${meeting.groupId}`, { tab: 'meetings' })} className="cursor-pointer flex justify-between items-center w-full">
+                                <p className="font-medium">{meeting.title}</p>
+                                <Badge variant="secondary">{meeting.groupName}</Badge>
                             </DropdownMenuItem>
                         ))}
                          <DropdownMenuSeparator />
@@ -130,14 +132,12 @@ export default function NotificationsDropdown() {
                     <>
                         <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground flex items-center gap-2"><ListTodo className='h-4 w-4' /> Bugungi vazifalar</DropdownMenuLabel>
                         {data.todayTasks.map(task => (
-                             <DropdownMenuItem key={task.id} asChild className="cursor-pointer">
-                                <Link href="/dashboard" className="flex justify-between items-center w-full">
-                                    <div>
-                                        <p className="font-medium">{task.title}</p>
-                                        {task.groupName && <p className="text-xs text-muted-foreground">{task.groupName}</p>}
-                                    </div>
-                                    <Badge variant="outline">{task.taskType === 'group' ? `${task.coins} oltin` : '1 kumush'}</Badge>
-                                </Link>
+                             <DropdownMenuItem key={task.id} onClick={() => handleNavigation('/dashboard')} className="cursor-pointer flex justify-between items-center w-full">
+                                <div>
+                                    <p className="font-medium">{task.title}</p>
+                                    {task.groupName && <p className="text-xs text-muted-foreground">{task.groupName}</p>}
+                                </div>
+                                <Badge variant="outline">{task.taskType === 'group' ? `${task.coins} oltin` : '1 kumush'}</Badge>
                             </DropdownMenuItem>
                         ))}
                          <DropdownMenuSeparator />
@@ -147,13 +147,11 @@ export default function NotificationsDropdown() {
                     <>
                         <DropdownMenuLabel className="text-xs font-semibold text-destructive flex items-center gap-2"><History className='h-4 w-4' /> Vaqti o'tgan vazifalar</DropdownMenuLabel>
                         {data.overdueTasks.map(task => (
-                             <DropdownMenuItem key={task.id} asChild className="cursor-pointer">
-                                <Link href="/dashboard" className="flex justify-between items-center w-full">
-                                     <div>
-                                        <p className="font-medium">{task.title}</p>
-                                        {task.groupName && <p className="text-xs text-muted-foreground">{task.groupName}</p>}
-                                    </div>
-                                </Link>
+                             <DropdownMenuItem key={task.id} onClick={() => handleNavigation('/dashboard')} className="cursor-pointer flex justify-between items-center w-full">
+                                 <div>
+                                    <p className="font-medium">{task.title}</p>
+                                    {task.groupName && <p className="text-xs text-muted-foreground">{task.groupName}</p>}
+                                </div>
                             </DropdownMenuItem>
                         ))}
                     </>
