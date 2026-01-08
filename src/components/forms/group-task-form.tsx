@@ -46,7 +46,7 @@ const scheduleSchema = z.object({
 const taskSchema = z.object({
   title: z.string().min(3, { message: "Sarlavha kamida 3 belgidan iborat bo'lishi kerak." }),
   description: z.string().min(10, { message: "Tavsif kamida 10 belgidan iborat bo'lishi kerak." }),
-  coins: z.coerce.number().min(1, { message: "Coins must be at least 1." }),
+  coins: z.coerce.number().min(1, { message: "Tangalar soni kamida 1 bo'lishi kerak." }).max(50, { message: "Tangalar soni 50 dan oshmasligi kerak." }),
   estimatedTime: z.string().optional(),
   satisfactionRating: z.number().min(1).max(10),
   schedule: scheduleSchema,

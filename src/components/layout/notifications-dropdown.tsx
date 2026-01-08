@@ -103,7 +103,7 @@ export default function NotificationsDropdown() {
                          <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground flex items-center gap-2"><MessageSquare className='h-4 w-4' /> Yangi Xabarlar</DropdownMenuLabel>
                         {data.unreadMessages.map(msgInfo => (
                              <DropdownMenuItem key={msgInfo.groupId} asChild className="cursor-pointer">
-                                <Link href={`/groups/${msgInfo.groupId}?tab=chat`} className="flex justify-between items-center w-full">
+                                <Link href={{pathname: '/groups/[id]', query: { tab: 'chat' }, params: {id: msgInfo.groupId}}} className="flex justify-between items-center w-full">
                                      <p className="font-medium">{msgInfo.groupName}</p>
                                      <Badge variant="destructive">{msgInfo.count}</Badge>
                                 </Link>
@@ -117,7 +117,7 @@ export default function NotificationsDropdown() {
                         <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground flex items-center gap-2"><CalendarClock className='h-4 w-4' /> Bugungi uchrashuvlar</DropdownMenuLabel>
                         {data.todayMeetings.map(meeting => (
                             <DropdownMenuItem key={meeting.id} asChild className="cursor-pointer">
-                                <Link href={`/groups/${meeting.groupId}?tab=meetings`} className="flex justify-between items-center w-full">
+                                <Link href={{pathname: '/groups/[id]', query: { tab: 'meetings' }, params: {id: meeting.groupId}}} className="flex justify-between items-center w-full">
                                     <p className="font-medium">{meeting.title}</p>
                                     <Badge variant="secondary">{meeting.groupName}</Badge>
                                 </Link>

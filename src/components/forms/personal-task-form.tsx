@@ -48,7 +48,7 @@ const personalTaskSchema = z.object({
   title: z.string().min(3, { message: "Sarlavha kamida 3 belgidan iborat bo'lishi kerak." }),
   description: z.string().min(10, { message: "Tavsif kamida 10 belgidan iborat bo'lishi kerak." }),
   estimatedTime: z.string().optional(),
-  satisfactionRating: z.number().min(1).max(10),
+  satisfactionRating: z.number().min(1).max(10, "Reyting 10 dan oshmasligi kerak."),
   schedule: scheduleSchema,
   visibility: z.enum(['public', 'private']),
   hasTimer: z.boolean().default(false),
