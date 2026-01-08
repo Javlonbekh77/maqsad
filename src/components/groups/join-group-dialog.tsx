@@ -87,11 +87,11 @@ export default function JoinGroupDialog({
     });
   }, [tasks, schedules]);
 
-  const dialogTitle = isAddingTasks ? `Add Tasks from "${groupName}"` : `Join "${groupName}"`;
+  const dialogTitle = isAddingTasks ? `"${groupName}" guruhidan yangi vazifa qo'shish` : `"${groupName}" guruhiga qo'shilish`;
   const dialogDescription = isAddingTasks 
-    ? "Select new tasks you want to add to your schedule."
-    : "Select tasks and schedule the days you plan to work on them.";
-  const confirmButtonText = isAddingTasks ? "Add Selected Tasks" : "Join & Commit to Tasks";
+    ? "O'z jadvalingizga qo'shmoqchi bo'lgan yangi vazifalarni tanlang."
+    : "Vazifalarni tanlang va ularni bajarishni rejalashtirgan kunlaringizni belgilang.";
+  const confirmButtonText = isAddingTasks ? "Tanlangan vazifalarni qo'shish" : "Guruhga qo'shilish";
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

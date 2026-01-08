@@ -345,8 +345,8 @@ export async function getUnreadMessageCount(groupId: string, lastRead: Timestamp
         collection(db, 'groups', groupId, 'messages'),
         where('createdAt', '>', lastRead)
     );
-    const snapshot = await getDocs(messagesQuery);
-    return snapshot.size;
+    const snapshot = await getCountFromServer(messagesQuery);
+    return snapshot.data().count;
 }
 
 
@@ -702,9 +702,6 @@ export const getNotificationsData = async (user: User): Promise<{
     }
 
     const lastChecked = user.notificationsLastCheckedAt || new Timestamp(0, 0);
-    const lastCheckedDate = lastChecked.toDate();
-
-    const yesterday = startOfDay(addDays(new Date(), -1));
 
     // 1. Get unread messages
     let unreadMessages: UnreadMessageInfo[] = [];
@@ -713,11 +710,9 @@ export const getNotificationsData = async (user: User): Promise<{
         const unreadCounts = await Promise.all(
             groupDetails.map(async (group) => {
                 const lastRead = user.lastRead?.[group.id] || new Timestamp(0, 0);
-                if (lastRead.toDate() > lastCheckedDate) { 
-                     const count = await getUnreadMessageCount(group.id, lastRead);
-                     if (count > 0) {
-                        return { groupId: group.id, groupName: group.name, count };
-                     }
+                const count = await getUnreadMessageCount(group.id, lastRead);
+                if (count > 0) {
+                    return { groupId: group.id, groupName: group.name, count };
                 }
                 return null;
             })
@@ -728,16 +723,13 @@ export const getNotificationsData = async (user: User): Promise<{
 
     // 2. Get All Scheduled Tasks (to find overdue)
     const allScheduledTasks = await getScheduledTasksForUser(user);
-    
+    const yesterday = startOfDay(addDays(new Date(), -1));
     const overdueTasks: UserTask[] = [];
 
     allScheduledTasks.forEach(task => {
-        // A task is "newly overdue" if it was scheduled for yesterday, wasn't completed,
-        // and the user added it before yesterday.
         if (isTaskScheduledForDate(task, yesterday)) {
              const isCompletedYesterday = user.taskHistory.some(h => h.taskId === task.id && h.date === format(yesterday, 'yyyy-MM-dd'));
-             const taskAddedAt = (task.taskAddedAt as Timestamp)?.toDate() || (task.createdAt as Timestamp)?.toDate();
-             if (!isCompletedYesterday && taskAddedAt && isBefore(taskAddedAt, yesterday)) {
+             if (!isCompletedYesterday) {
                 overdueTasks.push(task);
              }
         }
@@ -751,9 +743,13 @@ export function isTaskScheduledForDate(task: UserTask, date: Date): boolean {
     if (!schedule) return false;
 
     // Use taskAddedAt for group tasks, createdAt for personal tasks as the start date.
-    const taskStartDate = (task as any).taskAddedAt instanceof Timestamp 
-        ? startOfDay(((task as any).taskAddedAt as Timestamp).toDate()) 
-        : startOfDay((task.createdAt as Timestamp).toDate());
+    let taskStartDate: Date;
+
+    if(task.taskType === 'group' && task.taskAddedAt){
+       taskStartDate = startOfDay((task.taskAddedAt as Timestamp).toDate());
+    } else {
+        taskStartDate = startOfDay((task.createdAt as Timestamp).toDate());
+    }
         
     const checkDate = startOfDay(date);
 

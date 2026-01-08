@@ -40,7 +40,7 @@ export default function DashboardClient({ user, initialTasks, onTaskCompletion }
                     userId={user.id}
                     onTaskCompletion={handleTaskCompletion}
                 />
-                 <HabitTracker user={user} />
+                 <HabitTracker user={user} isCurrentUserProfile={true} />
             </div>
             
             {/* Sidebar Column */}
