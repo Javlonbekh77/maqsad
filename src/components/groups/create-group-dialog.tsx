@@ -135,7 +135,7 @@ export default function CreateGroupDialog({ onGroupCreated }: CreateGroupDialogP
                                 <Label
                                   htmlFor={image.id}
                                   className={cn(
-                                    "cursor-pointer rounded-lg overflow-hidden w-full h-32 border-4 border-transparent transition-all relative",
+                                    "cursor-pointer rounded-lg overflow-hidden w-full h-32 border-4 border-transparent transition-all relative group",
                                     field.value === image.imageUrl && "ring-4 ring-primary ring-offset-2 border-primary"
                                   )}
                                 >
@@ -145,7 +145,7 @@ export default function CreateGroupDialog({ onGroupCreated }: CreateGroupDialogP
                                     fill
                                     className="object-cover"
                                   />
-                                   <div className="absolute inset-0 bg-black/30 flex items-end p-2">
+                                   <div className="absolute inset-0 bg-black/30 flex items-end p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <p className="text-white text-sm font-semibold">{image.imageHint}</p>
                                    </div>
                                 </Label>

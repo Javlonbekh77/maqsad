@@ -53,7 +53,8 @@ export default function HabitTracker({ user, isCurrentUserProfile = true }: Habi
               const userSchedule = user.taskSchedules?.find(s => s.taskId === task.id);
               return { ...task, schedule: userSchedule ? userSchedule.schedule : task.schedule, taskAddedAt: userSchedule?.taskAddedAt };
           }
-          return task;
+          // For personal tasks, 'createdAt' acts as the 'taskAddedAt'
+          return {...task, taskAddedAt: task.createdAt};
       }));
 
       setLoading(false);

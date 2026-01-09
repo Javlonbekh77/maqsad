@@ -14,6 +14,8 @@ import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getInitials, getAvatarColor } from '@/lib/utils';
 import { Coins, Flame, Crown, Medal } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 
 const RankIcon = ({ rank }: { rank: number }) => {
   if (rank === 1) return <Medal className="h-5 w-5 text-yellow-500" />;
@@ -28,7 +30,7 @@ function LandingLeaderboard() {
 
     if (isLoading) {
         return (
-            <div className="mx-auto grid max-w-7xl items-start gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mx-auto grid max-w-7xl items-start gap-8 sm:grid-cols-1 lg:grid-cols-3">
                  {Array.from({length: 3}).map((_, i) => <Skeleton key={i} className="h-72 w-full" />)}
             </div>
         )
@@ -41,8 +43,14 @@ function LandingLeaderboard() {
     const { topUsers, topSilverCoinUsers, topGroups } = data;
 
     return (
-        <div className="mx-auto grid max-w-7xl items-start gap-8 sm:grid-cols-1 lg:grid-cols-3">
-            <Card>
+       <Tabs defaultValue="gold" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mx-auto max-w-md">
+            <TabsTrigger value="gold"><Coins className="mr-2 h-4 w-4 text-amber-500" /> Oltin</TabsTrigger>
+            <TabsTrigger value="silver"><Flame className="mr-2 h-4 w-4 text-slate-500" /> Kumush</TabsTrigger>
+            <TabsTrigger value="groups"><Crown className="mr-2 h-4 w-4 text-primary" /> Guruhlar</TabsTrigger>
+          </TabsList>
+          <TabsContent value="gold" className="mt-6">
+             <Card>
                 <CardHeader className="flex flex-row items-center gap-2">
                     <Coins className="h-6 w-6 text-amber-500" />
                     <CardTitle>Eng Ko'p Oltin Tanga</CardTitle>
@@ -63,7 +71,8 @@ function LandingLeaderboard() {
                     ))}
                 </CardContent>
             </Card>
-
+          </TabsContent>
+           <TabsContent value="silver" className="mt-6">
             <Card>
                 <CardHeader className="flex flex-row items-center gap-2">
                     <Flame className="h-6 w-6 text-slate-500" />
@@ -85,8 +94,9 @@ function LandingLeaderboard() {
                     ))}
                 </CardContent>
             </Card>
-
-            <Card>
+          </TabsContent>
+          <TabsContent value="groups" className="mt-6">
+             <Card>
                 <CardHeader className="flex flex-row items-center gap-2">
                     <Crown className="h-6 w-6 text-primary" />
                     <CardTitle>Eng Ommabop Guruhlar</CardTitle>
@@ -106,7 +116,8 @@ function LandingLeaderboard() {
                     ))}
                 </CardContent>
             </Card>
-        </div>
+          </TabsContent>
+        </Tabs>
     )
 }
 
@@ -129,6 +140,21 @@ export default function LandingPage() {
       icon: <Trophy className="h-8 w-8 text-primary" />,
       title: t('feature3Title'),
       description: t('feature3Desc'),
+    },
+     {
+      icon: <Bot className="h-8 w-8 text-primary" />,
+      title: 'Aqlli Yordamchi (AI)',
+      description: "Maqsadlaringizni aniqlashtirish, ularni kichik, boshqariladigan vazifalarga bo'lish va samarali reja tuzishda sun'iy intellektdan yordam oling.",
+    },
+     {
+      icon: <BookOpen className="h-8 w-8 text-primary" />,
+      title: 'Kundalik Yuritish',
+      description: "Har kungi fikrlaringizni, yutuqlaringizni va mulohazalaringizni yozib boring. Har bir yozuv uchun kumush tanga ishlab oling va o'z-o'zingizni tahlil qiling.",
+    },
+     {
+      icon: <Clock className="h-8 w-8 text-primary" />,
+      title: 'Fokus Taymer',
+      description: "Pomodoro texnikasidan foydalanib, ish vaqtingizni intervallarga bo'ling. Diqqatingizni jamlang, samaradorligingizni oshiring va chalg'ishlardan saqlaning.",
     },
   ];
 
@@ -173,18 +199,6 @@ export default function LandingPage() {
           </div>
         </section>
 
-         <section id="leaderboard" className="w-full py-12 md:py-24 lg:py-32">
-          <div className="container px-4 md:px-6">
-            <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl font-display">Peshqadamlar Ro'yxati</h2>
-              <p className="max-w-[900px] text-foreground/80 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                Jamiyatimizdagi eng faol ishtirokchilar va eng ommabop guruhlar bilan tanishing.
-              </p>
-            </div>
-            <LandingLeaderboard />
-          </div>
-        </section>
-
         <section id="features" className="w-full py-12 md:py-24 lg:py-32 bg-secondary/50">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
@@ -206,38 +220,21 @@ export default function LandingPage() {
                 </Card>
               ))}
             </div>
-
-            <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-2 md:gap-12 lg:max-w-none lg:grid-cols-3 mt-12">
-               <Card className="bg-background border-border/50 hover:border-primary/50 transition-all hover:shadow-lg hover:-translate-y-1">
-                  <CardHeader className="flex flex-col items-center text-center gap-4">
-                    <Bot className="h-8 w-8 text-primary" />
-                    <CardTitle className="font-display">Aqlli Yordamchi (AI)</CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-center text-foreground/80">
-                    Maqsadlaringizni aniqlashtirish, ularni kichik, boshqariladigan vazifalarga bo'lish va samarali reja tuzishda sun'iy intellektdan yordam oling.
-                  </CardContent>
-                </Card>
-                 <Card className="bg-background border-border/50 hover:border-primary/50 transition-all hover:shadow-lg hover:-translate-y-1">
-                  <CardHeader className="flex flex-col items-center text-center gap-4">
-                    <BookOpen className="h-8 w-8 text-primary" />
-                    <CardTitle className="font-display">Kundalik Yuritish</CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-center text-foreground/80">
-                    Har kungi fikrlaringizni, yutuqlaringizni va mulohazalaringizni yozib boring. Har bir yozuv uchun kumush tanga ishlab oling va o'z-o'zingizni tahlil qiling.
-                  </CardContent>
-                </Card>
-                 <Card className="bg-background border-border/50 hover:border-primary/50 transition-all hover:shadow-lg hover:-translate-y-1">
-                  <CardHeader className="flex flex-col items-center text-center gap-4">
-                    <Clock className="h-8 w-8 text-primary" />
-                    <CardTitle className="font-display">Fokus Taymer</CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-center text-foreground/80">
-                    Pomodoro texnikasidan foydalanib, ish vaqtingizni intervallarga bo'ling. Diqqatingizni jamlang, samaradorligingizni oshiring va chalg'ishlardan saqlaning.
-                  </CardContent>
-                </Card>
-            </div>
           </div>
         </section>
+        
+        <section id="leaderboard" className="w-full py-12 md:py-24 lg:py-32">
+          <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl font-display">Peshqadamlar Ro'yxati</h2>
+              <p className="max-w-[900px] text-foreground/80 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                Jamiyatimizdagi eng faol ishtirokchilar va eng ommabop guruhlar bilan tanishing.
+              </p>
+            </div>
+            <LandingLeaderboard />
+          </div>
+        </section>
+
       </main>
       <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t bg-background">
         <p className="text-xs text-foreground/60">{t('footerRights')}</p>

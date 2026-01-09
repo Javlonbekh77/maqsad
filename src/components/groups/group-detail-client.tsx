@@ -99,17 +99,28 @@ export default function GroupDetailClient() {
     try {
       await addUserToGroup(currentUser.id, group.id, schedules, isMember); // Pass isMember status
       setJoinDialogOpen(false);
-      await fetchGroupData(id as string); 
-      if (refreshAuth) {
-        await refreshAuth();
+      // await fetchGroupData(id as string); // Re-fetch all data
+       if (refreshAuth) {
+        await refreshAuth(); // This will re-fetch user data, including new schedules
       }
-      if (!isMember) { // Only redirect to dashboard if they were not a member before
-        router.push('/dashboard');
+      if (!isMember) { // Only show toast if they were not a member before
+         toast({
+            title: "Guruhga qo'shildingiz!",
+            description: `"${group.name}" guruhining a'zosiga aylandingiz.`
+         });
+      } else {
+         toast({
+            title: "Vazifalar qo'shildi!",
+            description: `Tanlangan vazifalar sizning rejangizga qo'shildi.`
+         });
       }
+      // Re-fetch group data to show updated member list, but user data is more important for UI
+      fetchGroupData(id as string);
+
     } catch(error) {
       console.error("Failed to join group or add tasks:", error);
     }
-  }, [currentUser, group, id, fetchGroupData, refreshAuth, router, isMember]);
+  }, [currentUser, group, id, fetchGroupData, refreshAuth, router, isMember, toast]);
   
   const handleViewTask = (task: Task) => {
     setViewingTask({

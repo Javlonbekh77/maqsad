@@ -108,6 +108,7 @@ export type Group = {
   imageUrl: string;
   imageHint: string;
   members: string[]; // array of user IDs
+  membersCount: number; // For sorting
   adminId: string;
   createdAt: FieldValue;
 };
