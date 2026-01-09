@@ -7,6 +7,109 @@ import Logo from '@/components/logo';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/navigation';
 import ThemeSwitcher from '@/components/theme-switcher';
+import { getLeaderboardData } from '@/lib/data';
+import useSWR from 'swr';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import Image from 'next/image';
+import { Skeleton } from '@/components/ui/skeleton';
+import { getInitials, getAvatarColor } from '@/lib/utils';
+import { Coins, Flame, Crown, Medal } from 'lucide-react';
+
+const RankIcon = ({ rank }: { rank: number }) => {
+  if (rank === 1) return <Medal className="h-5 w-5 text-yellow-500" />;
+  if (rank === 2) return <Medal className="h-5 w-5 text-slate-400" />;
+  if (rank === 3) return <Medal className="h-5 w-5 text-amber-700" />;
+  return <span className="text-sm font-bold w-5 text-center">{rank}</span>;
+};
+
+
+function LandingLeaderboard() {
+    const { data, error, isLoading } = useSWR('landingLeaderboard', getLeaderboardData, { revalidateOnFocus: false });
+
+    if (isLoading) {
+        return (
+            <div className="mx-auto grid max-w-7xl items-start gap-8 sm:grid-cols-2 lg:grid-cols-3">
+                 {Array.from({length: 3}).map((_, i) => <Skeleton key={i} className="h-72 w-full" />)}
+            </div>
+        )
+    }
+
+    if (error || !data) {
+        return null; // Don't render if there's an error
+    }
+
+    const { topUsers, topSilverCoinUsers, topGroups } = data;
+
+    return (
+        <div className="mx-auto grid max-w-7xl items-start gap-8 sm:grid-cols-1 lg:grid-cols-3">
+            <Card>
+                <CardHeader className="flex flex-row items-center gap-2">
+                    <Coins className="h-6 w-6 text-amber-500" />
+                    <CardTitle>Eng Ko'p Oltin Tanga</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {topUsers.slice(0,3).map((user, index) => (
+                         <div key={user.id} className="flex items-center gap-3">
+                            <RankIcon rank={index + 1} />
+                            <Avatar className="h-9 w-9" style={{ backgroundColor: getAvatarColor(user.id) }}>
+                                <AvatarImage src={user.avatarUrl} alt={user.fullName} />
+                                <AvatarFallback>{getInitials(user.fullName)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                               <p className="font-semibold truncate">{user.fullName}</p>
+                               <p className="text-xs text-muted-foreground">{user.coins} tanga</p>
+                            </div>
+                        </div>
+                    ))}
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader className="flex flex-row items-center gap-2">
+                    <Flame className="h-6 w-6 text-slate-500" />
+                    <CardTitle>Eng Ko'p Kumush Tanga</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {topSilverCoinUsers.slice(0,3).map((user, index) => (
+                         <div key={user.id} className="flex items-center gap-3">
+                            <RankIcon rank={index + 1} />
+                            <Avatar className="h-9 w-9" style={{ backgroundColor: getAvatarColor(user.id) }}>
+                                <AvatarImage src={user.avatarUrl} alt={user.fullName} />
+                                <AvatarFallback>{getInitials(user.fullName)}</AvatarFallback>
+                            </Avatar>
+                             <div className="flex-1">
+                               <p className="font-semibold truncate">{user.fullName}</p>
+                               <p className="text-xs text-muted-foreground">{user.silverCoins} tanga</p>
+                            </div>
+                        </div>
+                    ))}
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader className="flex flex-row items-center gap-2">
+                    <Crown className="h-6 w-6 text-primary" />
+                    <CardTitle>Eng Ommabop Guruhlar</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {topGroups.slice(0,3).map((group, index) => (
+                         <div key={group.id} className="flex items-center gap-3">
+                            <RankIcon rank={index + 1} />
+                            <div className="h-9 w-9 relative rounded-md overflow-hidden shrink-0">
+                                <Image src={group.imageUrl} alt={group.name} fill className="object-cover" />
+                            </div>
+                             <div className="flex-1">
+                               <p className="font-semibold truncate">{group.name}</p>
+                               <p className="text-xs text-muted-foreground">{group.members.length} a'zo</p>
+                            </div>
+                        </div>
+                    ))}
+                </CardContent>
+            </Card>
+        </div>
+    )
+}
+
 
 export default function LandingPage() {
   const t = useTranslations('landing');
@@ -67,6 +170,18 @@ export default function LandingPage() {
                 </Button>
               </div>
             </div>
+          </div>
+        </section>
+
+         <section id="leaderboard" className="w-full py-12 md:py-24 lg:py-32">
+          <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl font-display">Peshqadamlar Ro'yxati</h2>
+              <p className="max-w-[900px] text-foreground/80 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                Jamiyatimizdagi eng faol ishtirokchilar va eng ommabop guruhlar bilan tanishing.
+              </p>
+            </div>
+            <LandingLeaderboard />
           </div>
         </section>
 

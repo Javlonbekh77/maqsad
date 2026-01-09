@@ -68,7 +68,7 @@ export default function NotificationsDropdown() {
   };
 
   const handleNavigation = (path: string, query?: any) => {
-    router.push({ pathname: path, query });
+    router.push(path, query);
     setIsOpen(false);
   };
 
@@ -101,7 +101,7 @@ export default function NotificationsDropdown() {
                     <>
                          <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground flex items-center gap-2"><MessageSquare className='h-4 w-4' /> Yangi Xabarlar</DropdownMenuLabel>
                         {data.unreadMessages.map(msgInfo => (
-                             <DropdownMenuItem key={msgInfo.groupId} onSelect={() => handleNavigation(`/groups/${msgInfo.groupId}`, { tab: 'chat' })} className="cursor-pointer flex justify-between items-center w-full">
+                             <DropdownMenuItem key={msgInfo.groupId} onSelect={() => handleNavigation(`/groups/${msgInfo.groupId}`, { query: { tab: 'chat' } })} className="cursor-pointer flex justify-between items-center w-full">
                                 <p className="font-medium">{msgInfo.groupName}</p>
                                 <Badge variant="destructive">{msgInfo.count}</Badge>
                             </DropdownMenuItem>

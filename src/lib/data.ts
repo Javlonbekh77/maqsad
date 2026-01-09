@@ -244,38 +244,19 @@ export const getGroupAndDetails = async (groupId: string): Promise<{ group: Grou
 export const getLeaderboardData = async (): Promise<{ topUsers: User[], topGroups: (Group & { coins: number })[], topSilverCoinUsers: User[] }> => {
     const usersQuery = query(collection(db, 'users'), orderBy('coins', 'desc'), limit(10));
     const silverUsersQuery = query(collection(db, 'users'), orderBy('silverCoins', 'desc'), limit(10));
+    const groupsQuery = query(collection(db, 'groups'), orderBy('members.length', 'desc'), limit(10));
     
-    const groupsPromise = getDocs(collection(db, 'groups'));
-
     const [usersSnapshot, silverUsersSnapshot, groupsSnapshot] = await Promise.all([
         getDocs(usersQuery),
         getDocs(silverUsersQuery),
-        groupsPromise
+        getDocs(groupsQuery)
     ]);
     
-    // Fetch journal entry counts for top users
-    const topUsersPromises = usersSnapshot.docs.map(async (d) => {
-        const user = { ...d.data(), id: d.id, firebaseId: d.id } as User;
-        const journalSnapshot = await getCountFromServer(collection(db, 'users', user.id, 'journal_entries'));
-        user.journalEntriesCount = journalSnapshot.data().count;
-        return user;
-    });
-
-    const topSilverCoinUsersPromises = silverUsersSnapshot.docs.map(async (d) => {
-        const user = { ...d.data(), id: d.id, firebaseId: d.id } as User;
-        const journalSnapshot = await getCountFromServer(collection(db, 'users', user.id, 'journal_entries'));
-        user.journalEntriesCount = journalSnapshot.data().count;
-        return user;
-    });
-
-    const topUsers = await Promise.all(topUsersPromises);
-    const topSilverCoinUsers = await Promise.all(topSilverCoinUsersPromises);
-
-    // Calculate group scores by member count
-    const groups = groupsSnapshot.docs.map(d => ({ ...d.data() as Group, id: d.id, firebaseId: d.id }));
-    const topGroupsByMembers = groups.sort((a, b) => (b.members?.length || 0) - (a.members?.length || 0)).slice(0, 10);
+    const topUsers = usersSnapshot.docs.map(d => ({ ...d.data(), id: d.id, firebaseId: d.id } as User));
+    const topSilverCoinUsers = silverUsersSnapshot.docs.map(d => ({ ...d.data(), id: d.id, firebaseId: d.id } as User));
+    const topGroups = groupsSnapshot.docs.map(d => ({ ...d.data(), id: d.id } as Group & { coins: number })); // `coins` here is a placeholder
     
-    return { topUsers, topGroups: topGroupsByMembers, topSilverCoinUsers };
+    return { topUsers, topGroups, topSilverCoinUsers };
 };
 
 
