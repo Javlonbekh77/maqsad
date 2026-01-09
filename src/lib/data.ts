@@ -425,7 +425,6 @@ export const addUserToGroup = async (userId: string, groupId: string, taskSchedu
     const scheduleMap = new Map(existingSchedules.map((s: UserTaskSchedule) => [s.taskId, s]));
     
     taskSchedules.forEach(newSchedule => {
-        // Add current timestamp for when user added this task
         scheduleMap.set(newSchedule.taskId, {...newSchedule, taskAddedAt: serverTimestamp()});
     });
 
@@ -738,9 +737,9 @@ export function isTaskScheduledForDate(task: UserTask, date: Date): boolean {
 
     // This is the key change: use taskAddedAt for the start date boundary
     let taskStartDate: Date;
-    const addedAt = task.taskAddedAt;
+    const addedAt = task.taskAddedAt; // This can be a Date, Timestamp, or FieldValue
      if (addedAt) {
-       taskStartDate = startOfDay((addedAt as Timestamp).toDate());
+       taskStartDate = startOfDay(addedAt instanceof Date ? addedAt : (addedAt as Timestamp).toDate());
     } else {
        // Fallback for older data or personal tasks where createdAt is the effective start
        taskStartDate = startOfDay((task.createdAt as Timestamp).toDate());
@@ -825,6 +824,12 @@ export const getChatHistory = async (userId: string): Promise<ChatHistoryMessage
         return [];
     }
 };
+
+export const deleteChatMessageFromDB = async (groupId: string, messageId: string): Promise<void> => {
+    const messageRef = doc(db, `groups/${groupId}/messages`, messageId);
+    await deleteDoc(messageRef);
+};
+
 
 // --- Journal Functions ---
 

@@ -30,7 +30,7 @@ function LandingLeaderboard() {
 
     if (isLoading) {
         return (
-            <div className="mx-auto grid max-w-7xl items-start gap-8 sm:grid-cols-1 lg:grid-cols-3">
+             <div className="grid sm:grid-cols-1 lg:grid-cols-3 gap-8 w-full max-w-5xl">
                  {Array.from({length: 3}).map((_, i) => <Skeleton key={i} className="h-72 w-full" />)}
             </div>
         )
@@ -43,80 +43,82 @@ function LandingLeaderboard() {
     const { topUsers, topSilverCoinUsers, topGroups } = data;
 
     return (
-       <Tabs defaultValue="gold" className="w-full">
+       <Tabs defaultValue="gold" className="w-full max-w-5xl">
           <TabsList className="grid w-full grid-cols-3 mx-auto max-w-md">
             <TabsTrigger value="gold"><Coins className="mr-2 h-4 w-4 text-amber-500" /> Oltin</TabsTrigger>
             <TabsTrigger value="silver"><Flame className="mr-2 h-4 w-4 text-slate-500" /> Kumush</TabsTrigger>
             <TabsTrigger value="groups"><Crown className="mr-2 h-4 w-4 text-primary" /> Guruhlar</TabsTrigger>
           </TabsList>
-          <TabsContent value="gold" className="mt-6">
-             <Card>
-                <CardHeader className="flex flex-row items-center gap-2">
-                    <Coins className="h-6 w-6 text-amber-500" />
-                    <CardTitle>Eng Ko'p Oltin Tanga</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    {topUsers.slice(0,3).map((user, index) => (
-                         <div key={user.id} className="flex items-center gap-3">
-                            <RankIcon rank={index + 1} />
-                            <Avatar className="h-9 w-9" style={{ backgroundColor: getAvatarColor(user.id) }}>
-                                <AvatarImage src={user.avatarUrl} alt={user.fullName} />
-                                <AvatarFallback>{getInitials(user.fullName)}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                               <p className="font-semibold truncate">{user.fullName}</p>
-                               <p className="text-xs text-muted-foreground">{user.coins} tanga</p>
-                            </div>
-                        </div>
-                    ))}
-                </CardContent>
-            </Card>
-          </TabsContent>
-           <TabsContent value="silver" className="mt-6">
-            <Card>
-                <CardHeader className="flex flex-row items-center gap-2">
-                    <Flame className="h-6 w-6 text-slate-500" />
-                    <CardTitle>Eng Ko'p Kumush Tanga</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    {topSilverCoinUsers.slice(0,3).map((user, index) => (
-                         <div key={user.id} className="flex items-center gap-3">
-                            <RankIcon rank={index + 1} />
-                            <Avatar className="h-9 w-9" style={{ backgroundColor: getAvatarColor(user.id) }}>
-                                <AvatarImage src={user.avatarUrl} alt={user.fullName} />
-                                <AvatarFallback>{getInitials(user.fullName)}</AvatarFallback>
-                            </Avatar>
-                             <div className="flex-1">
-                               <p className="font-semibold truncate">{user.fullName}</p>
-                               <p className="text-xs text-muted-foreground">{user.silverCoins} tanga</p>
-                            </div>
-                        </div>
-                    ))}
-                </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="groups" className="mt-6">
-             <Card>
-                <CardHeader className="flex flex-row items-center gap-2">
-                    <Crown className="h-6 w-6 text-primary" />
-                    <CardTitle>Eng Ommabop Guruhlar</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    {topGroups.slice(0,3).map((group, index) => (
-                         <div key={group.id} className="flex items-center gap-3">
-                            <RankIcon rank={index + 1} />
-                            <div className="h-9 w-9 relative rounded-md overflow-hidden shrink-0">
-                                <Image src={group.imageUrl} alt={group.name} fill className="object-cover" />
-                            </div>
-                             <div className="flex-1">
-                               <p className="font-semibold truncate">{group.name}</p>
-                               <p className="text-xs text-muted-foreground">{group.members.length} a'zo</p>
-                            </div>
-                        </div>
-                    ))}
-                </CardContent>
-            </Card>
-          </TabsContent>
+          <div className="grid sm:grid-cols-1 lg:grid-cols-3 gap-8 w-full mt-6">
+            <TabsContent value="gold" className="mt-0">
+              <Card>
+                  <CardHeader className="flex flex-row items-center gap-2">
+                      <Coins className="h-6 w-6 text-amber-500" />
+                      <CardTitle>Eng Ko'p Oltin Tanga</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                      {topUsers.slice(0,3).map((user, index) => (
+                          <div key={user.id} className="flex items-center gap-3">
+                              <RankIcon rank={index + 1} />
+                              <Avatar className="h-9 w-9" style={{ backgroundColor: getAvatarColor(user.id) }}>
+                                  <AvatarImage src={user.avatarUrl} alt={user.fullName} />
+                                  <AvatarFallback>{getInitials(user.fullName)}</AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1">
+                                <p className="font-semibold truncate">{user.fullName}</p>
+                                <p className="text-xs text-muted-foreground">{user.coins} tanga</p>
+                              </div>
+                          </div>
+                      ))}
+                  </CardContent>
+              </Card>
+            </TabsContent>
+            <TabsContent value="silver" className="mt-0">
+              <Card>
+                  <CardHeader className="flex flex-row items-center gap-2">
+                      <Flame className="h-6 w-6 text-slate-500" />
+                      <CardTitle>Eng Ko'p Kumush Tanga</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                      {topSilverCoinUsers.slice(0,3).map((user, index) => (
+                          <div key={user.id} className="flex items-center gap-3">
+                              <RankIcon rank={index + 1} />
+                              <Avatar className="h-9 w-9" style={{ backgroundColor: getAvatarColor(user.id) }}>
+                                  <AvatarImage src={user.avatarUrl} alt={user.fullName} />
+                                  <AvatarFallback>{getInitials(user.fullName)}</AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1">
+                                <p className="font-semibold truncate">{user.fullName}</p>
+                                <p className="text-xs text-muted-foreground">{user.silverCoins} tanga</p>
+                              </div>
+                          </div>
+                      ))}
+                  </CardContent>
+              </Card>
+            </TabsContent>
+            <TabsContent value="groups" className="mt-0">
+              <Card>
+                  <CardHeader className="flex flex-row items-center gap-2">
+                      <Crown className="h-6 w-6 text-primary" />
+                      <CardTitle>Eng Ommabop Guruhlar</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                      {topGroups.slice(0,3).map((group, index) => (
+                          <div key={group.id} className="flex items-center gap-3">
+                              <RankIcon rank={index + 1} />
+                              <div className="h-9 w-9 relative rounded-md overflow-hidden shrink-0">
+                                  <Image src={group.imageUrl} alt={group.name} fill className="object-cover" />
+                              </div>
+                              <div className="flex-1">
+                                <p className="font-semibold truncate">{group.name}</p>
+                                <p className="text-xs text-muted-foreground">{group.members.length} a'zo</p>
+                              </div>
+                          </div>
+                      ))}
+                  </CardContent>
+              </Card>
+            </TabsContent>
+          </div>
         </Tabs>
     )
 }
@@ -224,7 +226,7 @@ export default function LandingPage() {
         </section>
         
         <section id="leaderboard" className="w-full py-12 md:py-24 lg:py-32">
-          <div className="container px-4 md:px-6">
+          <div className="container px-4 md:px-6 flex flex-col items-center">
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
               <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl font-display">Peshqadamlar Ro'yxati</h2>
               <p className="max-w-[900px] text-foreground/80 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">

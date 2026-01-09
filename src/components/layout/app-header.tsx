@@ -15,7 +15,6 @@ import { Link, useRouter } from '@/navigation';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/context/auth-context';
 import GlobalSearch from './global-search';
-import NotificationsDropdown from './notifications-dropdown';
 import ThemeSwitcher from '../theme-switcher';
 import { getInitials, getAvatarColor } from '@/lib/utils';
 
@@ -43,7 +42,6 @@ export default function AppHeader() {
 
       <div className="flex items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
         <ThemeSwitcher />
-        <NotificationsDropdown />
 
         <div className="flex items-center gap-2 text-sm font-semibold text-amber-500">
             <Coins className="h-5 w-5"/>
@@ -58,6 +56,7 @@ export default function AppHeader() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full">
               <Avatar className="h-8 w-8" style={{ backgroundColor: getAvatarColor(user?.id || '') }}>
+                 <AvatarImage src={user?.avatarUrl} alt={user?.fullName || ''} />
                 <AvatarFallback>{getInitials(user?.fullName || '')}</AvatarFallback>
               </Avatar>
             </Button>

@@ -10,15 +10,6 @@ import AppFooter from "./app-footer";
 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  // Request notification permission on mount
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      if (Notification.permission === 'default') {
-        Notification.requestPermission();
-      }
-    }
-  }, []);
-
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40 relative">
       <SnowEffect />

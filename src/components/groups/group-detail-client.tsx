@@ -31,6 +31,7 @@ import GroupSettingsDialog from '@/components/groups/group-settings-dialog';
 import GroupChat from '@/components/groups/group-chat';
 import TaskDetailDialog from '@/components/tasks/task-detail-dialog';
 import { getInitials, getAvatarColor } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 
 export default function GroupDetailClient() {
@@ -38,6 +39,7 @@ export default function GroupDetailClient() {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { toast } = useToast();
 
   const id = params.id as string;
   const initialTab = searchParams.get('tab') || 'tasks';
@@ -99,7 +101,6 @@ export default function GroupDetailClient() {
     try {
       await addUserToGroup(currentUser.id, group.id, schedules, isMember); // Pass isMember status
       setJoinDialogOpen(false);
-      // await fetchGroupData(id as string); // Re-fetch all data
        if (refreshAuth) {
         await refreshAuth(); // This will re-fetch user data, including new schedules
       }
@@ -119,6 +120,11 @@ export default function GroupDetailClient() {
 
     } catch(error) {
       console.error("Failed to join group or add tasks:", error);
+       toast({
+          title: "Xatolik",
+          description: "Vazifalarni qo'shishda xatolik yuz berdi.",
+          variant: "destructive"
+       });
     }
   }, [currentUser, group, id, fetchGroupData, refreshAuth, router, isMember, toast]);
   
