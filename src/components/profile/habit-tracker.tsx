@@ -64,7 +64,7 @@ export default function HabitTracker({ user, allTasks, onDataNeedsRefresh }: Hab
   
   const tasksToDisplay = useMemo(() => {
     // Only show tasks that have some schedule within the user's context
-    return allTasks.filter(task => {
+    return (allTasks || []).filter(task => {
         if (task.taskType === 'group') {
             return userSchedules.some(s => s.taskId === task.id);
         }
