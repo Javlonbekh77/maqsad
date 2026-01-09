@@ -4,7 +4,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { User, DayOfWeek, PersonalTask, Task, UserTask, TaskSchedule } from "@/lib/types";
-import { format, add, startOfWeek, isSameDay, startOfDay } from 'date-fns';
+import { format, add, startOfWeek, isSameDay, startOfDay, isToday } from 'date-fns';
 import { Check, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useEffect, useState, useCallback } from "react";
 import { getTasksForUserGroups, getPersonalTasksForUser, isTaskScheduledForDate } from "@/lib/data";
