@@ -8,7 +8,7 @@ import { getPersonalTasksForUser, deletePersonalTask, getGroupTasksForUser, remo
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Edit, Trash2, PlusCircle, Eye, EyeOff, Clock, Calendar } from 'lucide-react';
+import { Edit, Trash2, PlusCircle, Eye, EyeOff, Clock, Calendar, LogOut } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   AlertDialog,
@@ -80,15 +80,21 @@ export default function MyTasksPage() {
     const fetchTasks = useCallback(async (userId: string) => {
         setLoadingTasks(true);
         try {
-            const userTasks = await getPersonalTasksForUser(userId);
-            setTasks(userTasks);
-            
-            // Fetch group tasks
             const userDoc = await getUser(userId);
-            if (userDoc) {
-                const userGroupTasks = await getGroupTasksForUser(userDoc as any);
-                setGroupTasks(userGroupTasks);
+            if (!userDoc) {
+                setTasks([]);
+                setGroupTasks([]);
+                return;
             }
+
+            const [personal, groups] = await Promise.all([
+                getPersonalTasksForUser(userId),
+                getGroupTasksForUser(userDoc)
+            ]);
+            
+            setTasks(personal);
+            setGroupTasks(groups);
+
         } catch (error) {
             console.error("Failed to fetch tasks", error);
         } finally {
@@ -177,12 +183,12 @@ export default function MyTasksPage() {
         });
     };
     
-    const handleViewTask = (task: PersonalTask) => {
+    const handleViewTask = (task: PersonalTask | UserTask) => {
         setViewingTask({
             ...task,
-            taskType: 'personal',
+            taskType: (task as UserTask).taskType || 'personal',
             isCompleted: false, // Not relevant for detail view from this page
-            coins: 1 // Silver coin
+            coins: (task as UserTask).coins || 1 // Silver coin
         });
     };
 
@@ -367,7 +373,7 @@ export default function MyTasksPage() {
                                                 <TableCell>
                                                     <div 
                                                         className="flex flex-col cursor-pointer hover:underline"
-                                                        onClick={() => setViewingTask(task)}
+                                                        onClick={() => handleViewTask(task)}
                                                     >
                                                         <span>{task.title}</span>
                                                         <span className="text-xs text-muted-foreground line-clamp-1">{task.description}</span>
@@ -410,9 +416,30 @@ export default function MyTasksPage() {
                                                             </AlertDialogFooter>
                                                         </AlertDialogContent>
                                                     </AlertDialog>
-                                                    <Button variant="ghost" size="icon" onClick={() => handleLeaveGroup(task)}>
-                                                        Chiqish
-                                                    </Button>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <Button variant="ghost" size="icon">
+                                                                <LogOut className="h-4 w-4" />
+                                                            </Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                          <AlertDialogHeader>
+                                                            <AlertDialogTitle>Guruhni tark etish</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                "{leaveGroupName}" guruhini tark etmoqchimisiz? Guruh vazifalarini ham o'chirmoqchimisiz?
+                                                            </AlertDialogDescription>
+                                                          </AlertDialogHeader>
+                                                          <AlertDialogFooter className='items-center gap-4'>
+                                                            <AlertDialogCancel onClick={() => setShowLeaveDialog(false)}>Bekor qilish</AlertDialogCancel>
+                                                            <Button onClick={() => handleConfirmLeave(false)} disabled={isLeaving} variant="outline">
+                                                                Tark etish (vazifalarni saqlash)
+                                                            </Button>
+                                                            <AlertDialogAction onClick={() => handleConfirmLeave(true)} disabled={isLeaving} className='bg-destructive hover:bg-destructive/80'>
+                                                                {isLeaving ? 'Jarayonda...' : 'Tark etish va vazifalarni o\'chirish'}
+                                                            </AlertDialogAction>
+                                                          </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
                                                 </TableCell>
                                             </TableRow>
                                         ))}
@@ -434,28 +461,6 @@ export default function MyTasksPage() {
                     onClose={() => setViewingTask(null)}
                 />
             )}
-
-            {/* Leave Group Dialog */}
-            <AlertDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Guruhni tark etish</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Siz "{leaveGroupName}" guruhini tark etmoqchisiz. Guruh vazifalarini ham o'chirmoqchimisiz?
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <div className="flex gap-2">
-                            <button onClick={() => handleConfirmLeave(false)} disabled={isLeaving} className="px-3 py-2 rounded-md border">
-                                Guruhni tark etish (vazifalarni saqlash)
-                            </button>
-                            <button onClick={() => handleConfirmLeave(true)} disabled={isLeaving} className="px-3 py-2 rounded-md bg-destructive text-white">
-                                {isLeaving ? 'Jarayonda...' : 'Tark etish va vazifalarni o\'chirish'}
-                            </button>
-                        </div>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
 
             {/* Schedule Edit Dialog */}
             <Dialog open={showScheduleEditDialog} onOpenChange={setShowScheduleEditDialog}>

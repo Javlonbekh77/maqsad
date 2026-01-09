@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/auth-context";
 import { useRouter } from "@/navigation";
 import { getAllGroups, getAllUsers } from "@/lib/data";
+import { Separator } from "@/components/ui/separator";
 
 export default function GroupsClient() {
   const t = useTranslations('groups');
@@ -51,9 +52,12 @@ export default function GroupsClient() {
 
   const userMap = useMemo(() => new Map(users.map(u => [u.id, u])), [users]);
 
-  const filteredGroups = useMemo(() => {
-    return groups.filter(group => group.name.toLowerCase().includes(searchTerm.toLowerCase()));
-  }, [groups, searchTerm]);
+  const { myGroups, otherGroups } = useMemo(() => {
+    const filtered = groups.filter(group => group.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    const my = authUser ? filtered.filter(g => g.members.includes(authUser.id)) : [];
+    const others = authUser ? filtered.filter(g => !g.members.includes(authUser.id)) : filtered;
+    return { myGroups: my, otherGroups: others };
+  }, [groups, searchTerm, authUser]);
 
   const isLoading = authLoading || loadingData;
 
@@ -101,23 +105,43 @@ export default function GroupsClient() {
             </div>
         </div>
         
-        {filteredGroups.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredGroups.map((group) => {
-              const memberDetails = group.members
-                .map(memberId => userMap.get(memberId))
-                .filter(Boolean) as User[];
-              return <GroupCard key={group.id} group={group} members={memberDetails} />;
-            })}
-          </div>
-        ) : (
-          <div className="text-center py-16">
-            <h3 className="text-xl font-semibold">No Groups Found</h3>
-            <p className="text-muted-foreground mt-2">
-              {searchTerm ? `No groups match your search for "${searchTerm}".` : "There are no groups to display yet. Why not create one?"}
-            </p>
+        {/* My Groups Section */}
+        {myGroups.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold font-display">Mening guruhlarim</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {myGroups.map((group) => {
+                const memberDetails = group.members
+                  .map(memberId => userMap.get(memberId))
+                  .filter(Boolean) as User[];
+                return <GroupCard key={group.id} group={group} members={memberDetails} />;
+              })}
+            </div>
+            <Separator className="my-8" />
           </div>
         )}
+
+        {/* All Groups Section */}
+        <div className="space-y-4">
+           <h2 className="text-2xl font-bold font-display">Barcha guruhlar</h2>
+            {otherGroups.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {otherGroups.map((group) => {
+                  const memberDetails = group.members
+                    .map(memberId => userMap.get(memberId))
+                    .filter(Boolean) as User[];
+                  return <GroupCard key={group.id} group={group} members={memberDetails} />;
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <h3 className="text-xl font-semibold">Guruhlar Topilmadi</h3>
+                <p className="text-muted-foreground mt-2">
+                  {searchTerm ? `"${searchTerm}" qidiruvingiz bo'yicha hech qanday guruh topilmadi.` : "Hozircha boshqa guruhlar yo'q."}
+                </p>
+              </div>
+            )}
+        </div>
 
       </div>
     </AppLayout>

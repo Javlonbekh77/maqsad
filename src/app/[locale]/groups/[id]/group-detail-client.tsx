@@ -24,7 +24,7 @@ import JoinGroupDialog from '@/components/groups/join-group-dialog';
 import { useTranslations } from 'next-intl';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import WeeklyMeetings from '@/components/groups/weekly-meetings';
-import type { Group, Task, User, WeeklyMeeting, UserTaskSchedule, UserTask } from '@/lib/types';
+import type { Group, Task, User, WeeklyMeeting, UserTaskSchedule, UserTask, TaskSchedule } from '@/lib/types';
 import { useAuth } from '@/context/auth-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import GroupSettingsDialog from '@/components/groups/group-settings-dialog';
@@ -262,7 +262,7 @@ export default function GroupDetailClient() {
                                   <Coins className="w-4 h-4" />
                                   <span>{task.coins}</span>
                                 </div>
-                                {isMember && !isTaskInSchedule(task.id) && (
+                                {isMember && !isAdmin && !isTaskInSchedule(task.id) && (
                                   <Button 
                                     variant="outline" 
                                     size="sm"
@@ -360,7 +360,7 @@ export default function GroupDetailClient() {
         onClose={() => setJoinDialogOpen(false)}
         onConfirm={handleJoinGroup}
         groupName={group.name}
-        tasks={tasks}
+        tasks={tasks.filter(t => !isTaskInSchedule(t.id))}
       />
       {isAdmin && (
          <GroupSettingsDialog
