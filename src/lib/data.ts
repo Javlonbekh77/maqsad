@@ -498,8 +498,20 @@ export const getGroupTasksForUser = async (user: User): Promise<UserTask[]> => {
 
     let groupMap = new Map<string, string>();
     if (groupIds.size > 0) {
-        const allGroupsSnapshot = await getDocs(query(collection(db, 'groups'), where('__name__', 'in', Array.from(groupIds))));
-        groupMap = new Map(allGroupsSnapshot.docs.map(doc => [doc.id, doc.data().name]));
+        const groupIdsArray = Array.from(groupIds);
+        const groupChunks: string[][] = [];
+        for (let i=0; i<groupIdsArray.length; i+=30) {
+            groupChunks.push(groupIdsArray.slice(i, i+30));
+        }
+
+        const groupPromises = groupChunks.map(chunk => getDocs(query(collection(db, 'groups'), where('__name__', 'in', chunk))));
+        const groupSnapshots = await Promise.all(groupPromises);
+
+        groupSnapshots.forEach(snapshot => {
+             snapshot.docs.forEach(doc => {
+                groupMap.set(doc.id, doc.data().name);
+            });
+        })
     }
 
     const userTasks = tasks.map(task => {
@@ -676,9 +688,7 @@ export const getNotificationsData = async (user: User): Promise<{
     }
 
     const lastChecked = user.notificationsLastCheckedAt || new Timestamp(0, 0);
-    const lastCheckedDate = lastChecked.toDate();
-    const yesterday = startOfDay(addDays(new Date(), -1));
-
+    
     let unreadMessages: UnreadMessageInfo[] = [];
      if (user.groups && user.groups.length > 0) {
         const groupDetails = await getUserGroups(user.id);
@@ -695,6 +705,7 @@ export const getNotificationsData = async (user: User): Promise<{
     }
 
     const allScheduledTasks = await getScheduledTasksForUser(user);
+    const yesterday = startOfDay(addDays(new Date(), -1));
     
     const overdueTasks: UserTask[] = [];
 
@@ -714,15 +725,19 @@ export function isTaskScheduledForDate(task: UserTask, date: Date): boolean {
     const schedule = task.schedule;
     if (!schedule) return false;
 
+    // Determine the reference date. For group tasks, it's when the user added it.
+    // For personal tasks, it's when the task was created.
     let referenceDate: Date;
     if (task.taskType === 'group') {
         const addedAtTimestamp = task.addedAt as Timestamp | undefined;
-        referenceDate = addedAtTimestamp ? startOfDay(addedAtTimestamp.toDate()) : startOfDay(new Date(0));
+        // If addedAt is missing for some reason, default to a very old date to not block scheduling.
+        referenceDate = addedAtTimestamp ? startOfDay(addedAtTimestamp.toDate()) : new Date(0); 
     } else {
         const createdAtTimestamp = task.createdAt as Timestamp;
-        referenceDate = createdAtTimestamp ? startOfDay(createdAtTimestamp.toDate()) : startOfDay(new Date(0));
+        referenceDate = createdAtTimestamp ? startOfDay(createdAtTimestamp.toDate()) : new Date(0);
     }
-
+    
+    // If the date we are checking is before the reference date, it's not scheduled.
     if (startOfDay(date) < referenceDate) {
         return false;
     }

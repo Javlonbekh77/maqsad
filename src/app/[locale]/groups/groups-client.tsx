@@ -12,7 +12,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/auth-context";
 import { useRouter } from "@/navigation";
 import { getAllGroups, getAllUsers } from "@/lib/data";
-import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Users, Globe } from "lucide-react";
 
 export default function GroupsClient() {
   const t = useTranslations('groups');
@@ -105,44 +106,54 @@ export default function GroupsClient() {
             </div>
         </div>
         
-        {/* My Groups Section */}
-        {myGroups.length > 0 && (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold font-display">Mening guruhlarim</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {myGroups.map((group) => {
-                const memberDetails = group.members
-                  .map(memberId => userMap.get(memberId))
-                  .filter(Boolean) as User[];
-                return <GroupCard key={group.id} group={group} members={memberDetails} />;
-              })}
-            </div>
-            <Separator className="my-8" />
-          </div>
-        )}
-
-        {/* All Groups Section */}
-        <div className="space-y-4">
-           <h2 className="text-2xl font-bold font-display">Barcha guruhlar</h2>
-            {otherGroups.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {otherGroups.map((group) => {
-                  const memberDetails = group.members
-                    .map(memberId => userMap.get(memberId))
-                    .filter(Boolean) as User[];
-                  return <GroupCard key={group.id} group={group} members={memberDetails} />;
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-16">
-                <h3 className="text-xl font-semibold">Guruhlar Topilmadi</h3>
-                <p className="text-muted-foreground mt-2">
-                  {searchTerm ? `"${searchTerm}" qidiruvingiz bo'yicha hech qanday guruh topilmadi.` : "Hozircha boshqa guruhlar yo'q."}
-                </p>
-              </div>
-            )}
-        </div>
-
+        <Tabs defaultValue="all">
+          <TabsList className="grid w-full grid-cols-2 md:w-96">
+            <TabsTrigger value="all">
+              <Globe className="mr-2 h-4 w-4" /> Barcha Guruhlar
+            </TabsTrigger>
+            <TabsTrigger value="my">
+              <Users className="mr-2 h-4 w-4" /> Mening Guruhlarim
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="all" className="mt-6">
+             {otherGroups.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {otherGroups.map((group) => {
+                    const memberDetails = group.members
+                      .map(memberId => userMap.get(memberId))
+                      .filter(Boolean) as User[];
+                    return <GroupCard key={group.id} group={group} members={memberDetails} />;
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-16">
+                  <h3 className="text-xl font-semibold">Guruhlar Topilmadi</h3>
+                  <p className="text-muted-foreground mt-2">
+                    {searchTerm ? `"${searchTerm}" qidiruvingiz bo'yicha hech qanday guruh topilmadi.` : "Hozircha boshqa guruhlar yo'q."}
+                  </p>
+                </div>
+              )}
+          </TabsContent>
+          <TabsContent value="my" className="mt-6">
+            {myGroups.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {myGroups.map((group) => {
+                    const memberDetails = group.members
+                      .map(memberId => userMap.get(memberId))
+                      .filter(Boolean) as User[];
+                    return <GroupCard key={group.id} group={group} members={memberDetails} />;
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-16">
+                  <h3 className="text-xl font-semibold">Siz hali guruhlarga a'zo emassiz</h3>
+                  <p className="text-muted-foreground mt-2">
+                    Boshqa guruhlarni ko'rib chiqing va hamjamiyatga qo'shiling!
+                  </p>
+                </div>
+              )}
+          </TabsContent>
+        </Tabs>
       </div>
     </AppLayout>
   );

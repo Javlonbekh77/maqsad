@@ -73,7 +73,7 @@ export default function MyTasksPage() {
     const [leaveGroupId, setLeaveGroupId] = useState<string | null>(null);
     const [leaveGroupName, setLeaveGroupName] = useState<string | null>(null);
     const [isLeaving, setIsLeaving] = useState(false);
-    const [newScheduleType, setNewScheduleType] = useState<'one-time' | 'recurring' | 'date-range'>('one-time');
+    const [newScheduleType, setNewScheduleType] = useState<'one-time' | 'date-range' | 'recurring'>('one-time');
     const [newScheduleDate, setNewScheduleDate] = useState<string>('');
     const [newScheduleDays, setNewScheduleDays] = useState<string[]>([]);
 
@@ -385,7 +385,9 @@ export default function MyTasksPage() {
                                                         size="icon"
                                                         onClick={() => {
                                                             setEditingScheduleTaskId(task.id);
-                                                            setNewScheduleType('one-time');
+                                                            setNewScheduleType(task.schedule.type);
+                                                            setNewScheduleDate(task.schedule.date || task.schedule.startDate || '');
+                                                            setNewScheduleDays(task.schedule.days || []);
                                                             setShowScheduleEditDialog(true);
                                                         }}
                                                     >
@@ -418,7 +420,7 @@ export default function MyTasksPage() {
                                                     </AlertDialog>
                                                     <AlertDialog>
                                                         <AlertDialogTrigger asChild>
-                                                            <Button variant="ghost" size="icon">
+                                                            <Button variant="ghost" size="icon" onClick={() => handleLeaveGroup(task)}>
                                                                 <LogOut className="h-4 w-4" />
                                                             </Button>
                                                         </AlertDialogTrigger>
