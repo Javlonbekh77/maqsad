@@ -2,19 +2,15 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import type { User, DayOfWeek, PersonalTask, Task, UserTask, TaskSchedule } from "@/lib/types";
+import type { User, DayOfWeek, UserTask } from "@/lib/types";
 import { format, add, startOfWeek, isSameDay, startOfDay, isToday, isBefore } from 'date-fns';
 import { Check, X, ChevronLeft, ChevronRight } from "lucide-react";
-import { useMemo, useEffect, useState, useCallback } from "react";
-import { getTasksForUserGroups, getPersonalTasksForUser, isTaskScheduledForDate } from "@/lib/data";
+import { useMemo, useEffect, useState } from "react";
+import { isTaskScheduledForDate } from "@/lib/data";
 import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
-import { Skeleton } from "../ui/skeleton";
 import { Badge } from "../ui/badge";
-import { Timestamp } from "firebase/firestore";
 import TaskDetailDialog from "../tasks/task-detail-dialog";
-import useSWR from 'swr';
-
 
 interface HabitTrackerProps {
   user: User;
@@ -30,37 +26,28 @@ const getWeekDates = (start: Date): Date[] => {
   return dates;
 };
 
-const toDate = (timestamp: Timestamp | Date): Date => {
-    if (timestamp instanceof Date) {
-        return timestamp;
-    }
-    return timestamp.toDate();
-}
-
-
-
 export default function HabitTracker({ user, allTasks, onDataNeedsRefresh }: HabitTrackerProps) {
   const [weekStartDate, setWeekStartDate] = useState(startOfWeek(new Date()));
   const [viewingTask, setViewingTask] = useState<UserTask | null>(null);
   
   const dates = useMemo(() => getWeekDates(weekStartDate), [weekStartDate]);
-  const userSchedules = useMemo(() => user.taskSchedules || [], [user.taskSchedules]);
-
+  
   useEffect(() => {
     if(onDataNeedsRefresh){
         onDataNeedsRefresh();
     }
   }, [user, onDataNeedsRefresh]);
 
-
   const tasksToDisplay = useMemo(() => {
-    return (allTasks || []).filter(task => {
-        if (task.taskType === 'group') {
-            return userSchedules.some(s => s.taskId === task.id);
-        }
-        return true; // Personal tasks are always relevant
-    });
-  }, [allTasks, userSchedules]);
+    // Return an empty array if allTasks is not yet available to prevent errors.
+    if (!allTasks) {
+      return [];
+    }
+    // Filter tasks to show only those scheduled at least once in the current view week.
+    return allTasks.filter(task => 
+      dates.some(date => isTaskScheduledForDate(task, date))
+    );
+  }, [allTasks, dates]);
 
   return (
     <>
@@ -120,6 +107,7 @@ export default function HabitTracker({ user, allTasks, onDataNeedsRefresh }: Hab
                             {dates.map(date => {
                                 const isScheduled = isTaskScheduledForDate(task, date);
                                 
+                                // If not scheduled for this day, render a blank cell
                                 if (!isScheduled) {
                                   return <TableCell key={date.toISOString()} className="text-center p-2 bg-muted/30">
                                      <span className="text-muted-foreground text-lg">-</span>
@@ -127,17 +115,18 @@ export default function HabitTracker({ user, allTasks, onDataNeedsRefresh }: Hab
                                 }
 
                                 const completed = user.taskHistory.some(historyItem => 
-                                historyItem.taskId === task.id && isSameDay(new Date(historyItem.date), date)
+                                  historyItem.taskId === task.id && isSameDay(new Date(historyItem.date), date)
                                 );
                                 
-                                const isPastDate = isBefore(startOfDay(date), startOfDay(new Date()));
+                                // Show 'X' only if the date is in the past and it was scheduled but not completed.
+                                const isPastAndNotCompleted = isBefore(startOfDay(date), startOfDay(new Date())) && !completed;
 
                                 return (
                                 <TableCell key={date.toISOString()} className="text-center p-2">
                                     {completed ? (
                                       <Check className="h-5 w-5 text-green-500 mx-auto" />
                                     ) : (
-                                     isPastDate ? <X className="h-5 w-5 text-red-500 mx-auto" /> : <div className="h-5 w-5 mx-auto" />
+                                     isPastAndNotCompleted ? <X className="h-5 w-5 text-red-500 mx-auto" /> : <div className="h-5 w-5 mx-auto" />
                                     )}
                                 </TableCell>
                                 );

@@ -63,7 +63,7 @@ export default function TodaySchedule({ tasks, userId, onTaskCompletion }: Today
     const displayDateStr = format(displayDate, 'yyyy-MM-dd');
 
     const tasksForDay = tasks.filter(task => {
-      // Check if task is scheduled for this display date
+      // Use the new, robust scheduling logic
       return isTaskScheduledForDate(task, displayDate);
     });
 

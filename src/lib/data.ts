@@ -17,11 +17,12 @@ import {
   deleteDoc,
   Timestamp,
   arrayRemove,
+  type FieldValue,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
-import type { User, Group, Task, UserTask, WeeklyMeeting, UserTaskSchedule, ChatMessage, PersonalTask, TaskSchedule, DayOfWeek, UnreadMessageInfo } from './types';
-import { format, isSameDay, startOfDay, isPast, addDays, isWithinInterval, parseISO, isBefore } from 'date-fns';
+import type { User, Group, Task, UserTask, WeeklyMeeting, UserTaskSchedule, ChatMessage, PersonalTask, TaskSchedule, DayOfWeek, UnreadMessageInfo, JournalEntry } from './types';
+import { format, isSameDay, startOfDay, isPast, addDays, isWithinInterval, parseISO, isBefore, isAfter } from 'date-fns';
 
 const PERSONAL_TASK_COINS = 1; // 1 Silver Coin
 
@@ -156,7 +157,7 @@ export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> 
                 schedule: userScheduleForTask.schedule,
                 history: user.taskHistory?.filter(h => h.taskId === task.id) || [],
                 createdAt: task.createdAt,
-                addedAt: userScheduleForTask.addedAt, // Crucial for scheduling logic
+                addedAt: userScheduleForTask.addedAt, // CRITICAL: Date user added the task
             });
         }
     });
@@ -683,36 +684,55 @@ export const deleteChatMessage = async (groupId: string, messageId: string): Pro
   await deleteDoc(messageRef);
 };
 
+/**
+ * Checks if a task is scheduled for a specific date, considering when the user added it.
+ * This is the core logic for displaying tasks in schedules and habit trackers.
+ */
 export function isTaskScheduledForDate(task: UserTask, date: Date): boolean {
     const schedule = task.schedule;
     if (!schedule) return false;
 
-    // Convert Firestore Timestamp to JS Date if needed
-    const toJsDate = (ts: FieldValue | Timestamp | undefined): Date | null => {
-        if (ts instanceof Timestamp) return ts.toDate();
-        return null;
-    };
-    
-    const addedAtDate = toJsDate(task.addedAt);
-
-    // CRITICAL: If the date being checked is before the user added the task, it's not scheduled for them.
-    if (addedAtDate && isBefore(startOfDay(date), startOfDay(addedAtDate))) {
-        return false;
+    // --- CRITICAL CHECK 1: Check if the user has added the task by this date ---
+    const addedAtTimestamp = task.addedAt as Timestamp;
+    if (addedAtTimestamp) {
+        const addedAtDate = addedAtTimestamp.toDate();
+        // If the date we are checking is before the day the user added the task, it's not scheduled for them.
+        if (isBefore(startOfDay(date), startOfDay(addedAtDate))) {
+            return false;
+        }
+    } else {
+        // Fallback for older data that might not have `addedAt`.
+        // We assume it was added when the task was created.
+        const createdAtTimestamp = task.createdAt as Timestamp;
+        if (createdAtTimestamp) {
+            const createdAtDate = createdAtTimestamp.toDate();
+            if (isBefore(startOfDay(date), startOfDay(createdAtDate))) {
+                return false;
+            }
+        }
     }
     
+    // --- CRITICAL CHECK 2: Check if the task's own schedule matches the date ---
     switch(schedule.type) {
         case 'one-time':
+            // Check if the date is the same as the one-time date.
             return schedule.date === format(date, 'yyyy-MM-dd');
+            
         case 'date-range':
+            // Check if the date falls within the start and end dates of the range.
             if (schedule.startDate && schedule.endDate) {
                  const start = parseISO(schedule.startDate);
                  const end = parseISO(schedule.endDate);
+                 // isWithinInterval is exclusive of the end date, so we check isSameDay as well.
                  return isWithinInterval(date, { start, end }) || isSameDay(date, start) || isSameDay(date, end);
             }
             return false;
+            
         case 'recurring':
+            // Check if the day of the week matches one of the recurring days.
             const dayOfWeek = format(date, 'EEEE') as DayOfWeek;
             return schedule.days?.includes(dayOfWeek) ?? false;
+            
         default:
             return false;
     }
@@ -809,7 +829,7 @@ export const saveJournalEntry = async (userId: string, date: string, content: st
     const todayStr = format(new Date(), 'yyyy-MM-dd');
     if (date === todayStr && user?.lastJournalRewardDate !== todayStr) {
         await updateDoc(userRef, {
-            silverCoins: (user.silverCoins || 0) + 2, // Changed to 2 coins
+            silverCoins: (user.silverCoins || 0) + 1,
             lastJournalRewardDate: todayStr,
         });
     }
