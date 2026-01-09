@@ -188,7 +188,8 @@ export default function MyTasksPage() {
             ...task,
             taskType: (task as UserTask).taskType || 'personal',
             isCompleted: false, // Not relevant for detail view from this page
-            coins: (task as UserTask).coins || 1 // Silver coin
+            coins: (task as UserTask).coins || 1, // Silver coin
+            addedAt: (task as UserTask).addedAt || (task as PersonalTask).createdAt,
         });
     };
 

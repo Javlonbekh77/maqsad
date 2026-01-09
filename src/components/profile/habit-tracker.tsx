@@ -1,10 +1,9 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { User, DayOfWeek, PersonalTask, Task, UserTask, TaskSchedule } from "@/lib/types";
-import { format, add, startOfWeek, isSameDay, startOfDay, isToday } from 'date-fns';
+import { format, add, startOfWeek, isSameDay, startOfDay, isToday, isBefore } from 'date-fns';
 import { Check, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useEffect, useState, useCallback } from "react";
 import { getTasksForUserGroups, getPersonalTasksForUser, isTaskScheduledForDate } from "@/lib/data";
@@ -19,7 +18,7 @@ import useSWR from 'swr';
 
 interface HabitTrackerProps {
   user: User;
-  allTasks?: UserTask[]; // Made optional to prevent crashes
+  allTasks: UserTask[];
   onDataNeedsRefresh: () => void;
 }
 
@@ -48,24 +47,13 @@ export default function HabitTracker({ user, allTasks, onDataNeedsRefresh }: Hab
   const userSchedules = useMemo(() => user.taskSchedules || [], [user.taskSchedules]);
 
   useEffect(() => {
-    // When the user data changes (e.g., after joining a group), we might need to refresh SWR data in parent.
-    // This can be done via a callback.
     if(onDataNeedsRefresh){
         onDataNeedsRefresh();
     }
   }, [user, onDataNeedsRefresh]);
 
 
-  const goToPreviousWeek = () => {
-    setWeekStartDate(add(weekStartDate, { weeks: -1 }));
-  };
-
-  const goToNextWeek = () => {
-    setWeekStartDate(add(weekStartDate, { weeks: 1 }));
-  };
-  
   const tasksToDisplay = useMemo(() => {
-    // Only show tasks that have some schedule within the user's context
     return (allTasks || []).filter(task => {
         if (task.taskType === 'group') {
             return userSchedules.some(s => s.taskId === task.id);
@@ -84,13 +72,13 @@ export default function HabitTracker({ user, allTasks, onDataNeedsRefresh }: Hab
                 <CardDescription>Tanlangan hafta uchun vazifalardagi yutuqlaringiz.</CardDescription>
             </div>
              <div className="flex items-center gap-2 mt-4 sm:mt-0">
-                <Button variant="outline" size="icon" onClick={goToPreviousWeek}>
+                <Button variant="outline" size="icon" onClick={() => setWeekStartDate(add(weekStartDate, { weeks: -1 }))}>
                     <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <div className="text-sm font-medium text-center w-32">
                     {format(weekStartDate, 'MMM d')} - {format(add(weekStartDate, { days: 6 }), 'MMM d')}
                 </div>
-                <Button variant="outline" size="icon" onClick={goToNextWeek}>
+                <Button variant="outline" size="icon" onClick={() => setWeekStartDate(add(weekStartDate, { weeks: 1 }))}>
                     <ChevronRight className="h-4 w-4" />
                 </Button>
             </div>
@@ -124,14 +112,13 @@ export default function HabitTracker({ user, allTasks, onDataNeedsRefresh }: Hab
                                 <div className="flex flex-col">
                                     <span>{task.title}</span>
                                     {task.taskType === 'group' ? 
-                                        <Badge variant="outline" className="w-fit mt-1">Guruh</Badge> : 
+                                        <Badge variant="outline" className="w-fit mt-1">{task.groupName}</Badge> : 
                                         <Badge variant="secondary" className="w-fit mt-1">Shaxsiy</Badge>
                                     }
                                 </div>
                             </TableCell>
                             {dates.map(date => {
-                                const currentDate = startOfDay(date);
-                                const isScheduled = isTaskScheduledForDate(task, currentDate);
+                                const isScheduled = isTaskScheduledForDate(task, date);
                                 
                                 if (!isScheduled) {
                                   return <TableCell key={date.toISOString()} className="text-center p-2 bg-muted/30">
@@ -142,12 +129,15 @@ export default function HabitTracker({ user, allTasks, onDataNeedsRefresh }: Hab
                                 const completed = user.taskHistory.some(historyItem => 
                                 historyItem.taskId === task.id && isSameDay(new Date(historyItem.date), date)
                                 );
+                                
+                                const isPastDate = isBefore(startOfDay(date), startOfDay(new Date()));
+
                                 return (
                                 <TableCell key={date.toISOString()} className="text-center p-2">
                                     {completed ? (
                                       <Check className="h-5 w-5 text-green-500 mx-auto" />
                                     ) : (
-                                     currentDate < startOfDay(new Date()) ? <X className="h-5 w-5 text-red-500 mx-auto" /> : <div className="h-5 w-5 mx-auto" />
+                                     isPastDate ? <X className="h-5 w-5 text-red-500 mx-auto" /> : <div className="h-5 w-5 mx-auto" />
                                     )}
                                 </TableCell>
                                 );

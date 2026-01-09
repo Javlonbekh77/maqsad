@@ -21,7 +21,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 import type { User, Group, Task, UserTask, WeeklyMeeting, UserTaskSchedule, ChatMessage, PersonalTask, TaskSchedule, DayOfWeek, UnreadMessageInfo } from './types';
-import { format, isSameDay, startOfDay, isPast, addDays, isWithinInterval, parseISO, isYesterday } from 'date-fns';
+import { format, isSameDay, startOfDay, isPast, addDays, isWithinInterval, parseISO, isBefore } from 'date-fns';
 
 const PERSONAL_TASK_COINS = 1; // 1 Silver Coin
 
@@ -140,21 +140,23 @@ export const getScheduledTasksForUser = async (user: User): Promise<UserTask[]> 
             coins: PERSONAL_TASK_COINS,
             history: user.taskHistory?.filter(h => h.taskId === task.id) || [],
             createdAt: task.createdAt,
+            addedAt: task.createdAt, // For personal tasks, addedAt is the same as createdAt
         });
     });
 
+    // Process group tasks
     groupTasks.forEach(task => {
         const userScheduleForTask = userSchedules.find(s => s.taskId === task.id);
         if (userScheduleForTask) {
             allTasks.push({
                 ...task,
-                groupName: groupMap.get(task.groupId) || 'Unknown Group',
-                isCompleted: false,
+                groupName: groupMap.get(task.groupId) || 'Noma\'lum Guruh',
+                isCompleted: false, // will be checked on the client
                 taskType: 'group',
                 schedule: userScheduleForTask.schedule,
                 history: user.taskHistory?.filter(h => h.taskId === task.id) || [],
                 createdAt: task.createdAt,
-                addedAt: userScheduleForTask.addedAt,
+                addedAt: userScheduleForTask.addedAt, // Crucial for scheduling logic
             });
         }
     });
@@ -238,7 +240,10 @@ export const getLeaderboardData = async (): Promise<{ topUsers: User[], topGroup
     const topUsers = usersSnapshot.docs.map(d => ({ ...d.data() as User, id: d.id, firebaseId: d.id }));
     const topSilverCoinUsers = silverUsersSnapshot.docs.map(d => ({ ...d.data() as User, id: d.id, firebaseId: d.id }));
     
-    return { topUsers, topGroups: allGroups as (Group & { coins: number })[], topSilverCoinUsers };
+    // Sort groups by member count for the main page leaderboard
+    const topGroupsByMembers = [...allGroups].sort((a, b) => (b.members?.length || 0) - (a.members?.length || 0));
+
+    return { topUsers, topGroups: topGroupsByMembers as (Group & { coins: number })[], topSilverCoinUsers };
 };
 
 
@@ -399,7 +404,7 @@ export const addUserToGroup = async (userId: string, groupId: string, taskSchedu
     const newSchedules = taskSchedules.map(ts => ({ 
         taskId: ts.taskId, 
         schedule: ts.schedule,
-        addedAt: serverTimestamp() 
+        addedAt: serverTimestamp() // CRITICAL: Set the addedAt timestamp here
     }));
 
     batch.update(userDocRef, { 
@@ -678,6 +683,41 @@ export const deleteChatMessage = async (groupId: string, messageId: string): Pro
   await deleteDoc(messageRef);
 };
 
+export function isTaskScheduledForDate(task: UserTask, date: Date): boolean {
+    const schedule = task.schedule;
+    if (!schedule) return false;
+
+    // Convert Firestore Timestamp to JS Date if needed
+    const toJsDate = (ts: FieldValue | Timestamp | undefined): Date | null => {
+        if (ts instanceof Timestamp) return ts.toDate();
+        return null;
+    };
+    
+    const addedAtDate = toJsDate(task.addedAt);
+
+    // CRITICAL: If the date being checked is before the user added the task, it's not scheduled for them.
+    if (addedAtDate && isBefore(startOfDay(date), startOfDay(addedAtDate))) {
+        return false;
+    }
+    
+    switch(schedule.type) {
+        case 'one-time':
+            return schedule.date === format(date, 'yyyy-MM-dd');
+        case 'date-range':
+            if (schedule.startDate && schedule.endDate) {
+                 const start = parseISO(schedule.startDate);
+                 const end = parseISO(schedule.endDate);
+                 return isWithinInterval(date, { start, end }) || isSameDay(date, start) || isSameDay(date, end);
+            }
+            return false;
+        case 'recurring':
+            const dayOfWeek = format(date, 'EEEE') as DayOfWeek;
+            return schedule.days?.includes(dayOfWeek) ?? false;
+        default:
+            return false;
+    }
+}
+
 
 export const getNotificationsData = async (user: User): Promise<{
     overdueTasks: UserTask[];
@@ -721,44 +761,6 @@ export const getNotificationsData = async (user: User): Promise<{
     return { overdueTasks, unreadMessages };
 };
 
-export function isTaskScheduledForDate(task: UserTask, date: Date): boolean {
-    const schedule = task.schedule;
-    if (!schedule) return false;
-
-    // Determine the reference date. For group tasks, it's when the user added it.
-    // For personal tasks, it's when the task was created.
-    let referenceDate: Date;
-    if (task.taskType === 'group') {
-        const addedAtTimestamp = task.addedAt as Timestamp | undefined;
-        // If addedAt is missing for some reason, default to a very old date to not block scheduling.
-        referenceDate = addedAtTimestamp ? startOfDay(addedAtTimestamp.toDate()) : new Date(0); 
-    } else {
-        const createdAtTimestamp = task.createdAt as Timestamp;
-        referenceDate = createdAtTimestamp ? startOfDay(createdAtTimestamp.toDate()) : new Date(0);
-    }
-    
-    // If the date we are checking is before the reference date, it's not scheduled.
-    if (startOfDay(date) < referenceDate) {
-        return false;
-    }
-    
-    switch(schedule.type) {
-        case 'one-time':
-            return schedule.date === format(date, 'yyyy-MM-dd');
-        case 'date-range':
-            if (schedule.startDate && schedule.endDate) {
-                 const start = parseISO(schedule.startDate);
-                 const end = parseISO(schedule.endDate);
-                 return isWithinInterval(date, { start, end }) || isSameDay(date, start) || isSameDay(date, end);
-            }
-            return false;
-        case 'recurring':
-            const dayOfWeek = format(date, 'EEEE') as DayOfWeek;
-            return schedule.days?.includes(dayOfWeek) ?? false;
-        default:
-            return false;
-    }
-}
 
 export const updateUserLastRead = async (userId: string, groupId: string) => {
     const userRef = doc(db, 'users', userId);
@@ -766,3 +768,49 @@ export const updateUserLastRead = async (userId: string, groupId: string) => {
         [`lastRead.${groupId}`]: Timestamp.now()
     });
 };
+
+
+export const getJournalEntry = async (userId: string, date: string): Promise<JournalEntry | null> => {
+    const entryRef = doc(db, `users/${userId}/journal/${date}`);
+    const docSnap = await getDoc(entryRef);
+    if (docSnap.exists()) {
+        return { ...docSnap.data(), id: docSnap.id } as JournalEntry;
+    }
+    return null;
+}
+
+export const getAllJournalEntries = async (userId: string): Promise<JournalEntry[]> => {
+    const entriesQuery = query(collection(db, `users/${userId}/journal`), orderBy('date', 'desc'));
+    const snapshot = await getDocs(entriesQuery);
+    return snapshot.docs.map(doc => ({ ...doc.data() as JournalEntry, id: doc.id }));
+}
+
+export const saveJournalEntry = async (userId: string, date: string, content: string): Promise<void> => {
+    const entryRef = doc(db, `users/${userId}/journal/${date}`);
+    const userRef = doc(db, 'users', userId);
+    const user = await getUser(userId);
+
+    const data = {
+        userId,
+        date,
+        content,
+        updatedAt: serverTimestamp(),
+    };
+
+    const docSnap = await getDoc(entryRef);
+
+    if (docSnap.exists()) {
+        await updateDoc(entryRef, data);
+    } else {
+        await setDoc(entryRef, { ...data, createdAt: serverTimestamp() });
+    }
+
+    // Award silver coin if it's a new entry for today and not already awarded
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    if (date === todayStr && user?.lastJournalRewardDate !== todayStr) {
+        await updateDoc(userRef, {
+            silverCoins: (user.silverCoins || 0) + 2, // Changed to 2 coins
+            lastJournalRewardDate: todayStr,
+        });
+    }
+}

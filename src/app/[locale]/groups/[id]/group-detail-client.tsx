@@ -90,10 +90,7 @@ export default function GroupDetailClient() {
     try {
       await addUserToGroup(currentUser.id, group.id, schedules);
       setJoinDialogOpen(false);
-      // Refresh auth context to get new user data (groups, taskSchedules)
-      // This is the key to triggering the SWR refetch on the dashboard.
       await refreshAuth();
-      // Re-fetch group data to show the user as a new member immediately
       await fetchGroupData(id as string); 
     } catch(error) {
       console.error("Failed to join group:", error);
@@ -106,6 +103,7 @@ export default function GroupDetailClient() {
         taskType: 'group',
         groupName: group?.name,
         isCompleted: false, // Not relevant for this view
+        addedAt: new Date(), // Placeholder
     });
   };
 
@@ -115,7 +113,6 @@ export default function GroupDetailClient() {
       await addTaskToUserSchedule(currentUser.id, addingTask.id, schedule);
       setAddingTask(null);
       await refreshAuth();
-      // Optionally show a success message
     } catch(error) {
       console.error("Failed to add task to schedule:", error);
     }
@@ -126,7 +123,6 @@ export default function GroupDetailClient() {
   const isAdmin = group?.adminId === currentUser?.id;
   const latestMeeting = meetings.length > 0 ? meetings[0] : null;
   
-  // Check which tasks user has already added to their schedule
   const userTaskIds = currentUser?.taskSchedules?.map(s => s.taskId) || [];
   const isTaskInSchedule = (taskId: string) => userTaskIds.includes(taskId);
 
