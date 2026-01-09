@@ -4,10 +4,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { User, DayOfWeek, PersonalTask, Task, UserTask, TaskSchedule } from "@/lib/types";
-import { format, add, startOfWeek, isSameDay, isToday, startOfDay, isWithinInterval, parseISO } from 'date-fns';
+import { format, add, startOfWeek, isSameDay, startOfDay } from 'date-fns';
 import { Check, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useEffect, useState, useCallback } from "react";
-import { getTasksForUserGroups, getPersonalTasksForUser } from "@/lib/data";
+import { getTasksForUserGroups, getPersonalTasksForUser, isTaskScheduledForDate } from "@/lib/data";
 import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "../ui/skeleton";
@@ -39,32 +39,6 @@ const toDate = (timestamp: Timestamp | Date): Date => {
 }
 
 
-function isTaskScheduledForDate(task: UserTask, date: Date): boolean {
-    const taskCreationDate = task.createdAt instanceof Timestamp ? startOfDay(task.createdAt.toDate()) : startOfDay(new Date());
-    if (startOfDay(date) < taskCreationDate) {
-        return false; // Don't schedule tasks for dates before they were created.
-    }
-
-    const schedule = task.schedule;
-    if (!schedule) return false;
-    
-    switch(schedule.type) {
-        case 'one-time':
-            return schedule.date === format(date, 'yyyy-MM-dd');
-        case 'date-range':
-            if (schedule.startDate && schedule.endDate) {
-                 const start = parseISO(schedule.startDate);
-                 const end = parseISO(schedule.endDate);
-                 return isWithinInterval(date, { start, end }) || isSameDay(date, start) || isSameDay(date, end);
-            }
-            return false;
-        case 'recurring':
-            const dayOfWeek = format(date, 'EEEE') as DayOfWeek;
-            return schedule.days?.includes(dayOfWeek) ?? false;
-        default:
-            return false;
-    }
-}
 
 export default function HabitTracker({ user, allTasks, onDataNeedsRefresh }: HabitTrackerProps) {
   const [weekStartDate, setWeekStartDate] = useState(startOfWeek(new Date()));

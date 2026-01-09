@@ -3,12 +3,12 @@
 import Image from 'next/image';
 import { useParams, useSearchParams } from 'next/navigation';
 import AppLayout from '@/components/layout/app-layout';
-import { addUserToGroup, getGroupAndDetails } from '@/lib/data';
+import { addUserToGroup, getGroupAndDetails, addTaskToUserSchedule } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Coins, Crown, UserPlus, Settings, MessageSquare, Edit, PlusCircle } from 'lucide-react';
+import { Coins, Crown, UserPlus, Settings, MessageSquare, Edit, PlusCircle, Plus } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -30,6 +30,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import GroupSettingsDialog from '@/components/groups/group-settings-dialog';
 import GroupChat from '@/components/groups/group-chat';
 import TaskDetailDialog from '@/components/tasks/task-detail-dialog';
+import AddTaskDialog from '@/components/groups/add-task-dialog';
 
 
 export default function GroupDetailClient() {
@@ -51,6 +52,7 @@ export default function GroupDetailClient() {
   const [isSettingsOpen, setSettingsOpen] = useState(false);
   const [viewingTask, setViewingTask] = useState<UserTask | null>(null);
   const [loadingData, setLoadingData] = useState(true);
+  const [addingTask, setAddingTask] = useState<Task | null>(null);
 
   const fetchGroupData = useCallback(async (groupId: string) => {
     if (!groupId) return;
@@ -107,10 +109,26 @@ export default function GroupDetailClient() {
     });
   };
 
+  const handleAddTaskToSchedule = useCallback(async (schedule: TaskSchedule) => {
+    if (!currentUser || !addingTask) return;
+    try {
+      await addTaskToUserSchedule(currentUser.id, addingTask.id, schedule);
+      setAddingTask(null);
+      await refreshAuth();
+      // Optionally show a success message
+    } catch(error) {
+      console.error("Failed to add task to schedule:", error);
+    }
+  }, [currentUser, addingTask, refreshAuth]);
+
   const isLoading = authLoading || loadingData;
   const isMember = !!currentUser?.id && !!group?.members.includes(currentUser.id);
   const isAdmin = group?.adminId === currentUser?.id;
   const latestMeeting = meetings.length > 0 ? meetings[0] : null;
+  
+  // Check which tasks user has already added to their schedule
+  const userTaskIds = currentUser?.taskSchedules?.map(s => s.taskId) || [];
+  const isTaskInSchedule = (taskId: string) => userTaskIds.includes(taskId);
 
 
   if (isLoading || !currentUser) {
@@ -239,9 +257,26 @@ export default function GroupDetailClient() {
                               <div className="text-sm text-muted-foreground hidden md:block">{task.description}</div>
                             </TableCell>
                             <TableCell className="text-right">
-                              <div className="flex items-center justify-end gap-1 font-semibold text-amber-500">
-                                <Coins className="w-4 h-4" />
-                                <span>{task.coins}</span>
+                              <div className="flex items-center justify-end gap-2">
+                                <div className="flex items-center gap-1 font-semibold text-amber-500">
+                                  <Coins className="w-4 h-4" />
+                                  <span>{task.coins}</span>
+                                </div>
+                                {isMember && !isTaskInSchedule(task.id) && (
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => setAddingTask(task)}
+                                  >
+                                    <Plus className="w-4 h-4 mr-1" />
+                                    Qo'shish
+                                  </Button>
+                                )}
+                                {isMember && isTaskInSchedule(task.id) && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    Rejada
+                                  </Badge>
+                                )}
                               </div>
                             </TableCell>
                              {isAdmin && (
@@ -340,6 +375,14 @@ export default function GroupDetailClient() {
             task={viewingTask}
             isOpen={!!viewingTask}
             onClose={() => setViewingTask(null)}
+        />
+      )}
+      {addingTask && (
+        <AddTaskDialog
+          isOpen={!!addingTask}
+          onClose={() => setAddingTask(null)}
+          onConfirm={handleAddTaskToSchedule}
+          task={addingTask}
         />
       )}
     </AppLayout>

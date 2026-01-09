@@ -55,6 +55,7 @@ export type TaskHistory = {
 export type UserTaskSchedule = {
   taskId: string;
   schedule: TaskSchedule;
+  addedAt?: FieldValue | Timestamp; // When user added this task to their schedule
 };
 
 export type LastRead = {
@@ -117,6 +118,7 @@ export type UserTask = (Task | PersonalTask) & {
   schedule: TaskSchedule; // Now unified
   history?: TaskHistory[];
   createdAt: FieldValue | Timestamp;
+  addedAt?: FieldValue | Timestamp; // When user added this task (for group tasks only)
 };
 
 
