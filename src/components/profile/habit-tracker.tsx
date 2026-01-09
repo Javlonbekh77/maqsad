@@ -19,7 +19,7 @@ import useSWR from 'swr';
 
 interface HabitTrackerProps {
   user: User;
-  allTasks: UserTask[];
+  allTasks?: UserTask[]; // Made optional to prevent crashes
   onDataNeedsRefresh: () => void;
 }
 
@@ -50,7 +50,9 @@ export default function HabitTracker({ user, allTasks, onDataNeedsRefresh }: Hab
   useEffect(() => {
     // When the user data changes (e.g., after joining a group), we might need to refresh SWR data in parent.
     // This can be done via a callback.
-    onDataNeedsRefresh();
+    if(onDataNeedsRefresh){
+        onDataNeedsRefresh();
+    }
   }, [user, onDataNeedsRefresh]);
 
 

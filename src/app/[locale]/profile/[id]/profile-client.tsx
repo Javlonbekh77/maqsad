@@ -5,9 +5,9 @@ import AppLayout from "@/components/layout/app-layout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Coins, Briefcase, Settings, Flame, Eye } from "lucide-react";
+import { Coins, Briefcase, Settings, Flame, Eye, EyeOff } from "lucide-react";
 import HabitTracker from '@/components/profile/habit-tracker';
-import type { User, Group, PersonalTask, UserTask } from "@/lib/types";
+import type { User, Group, PersonalTask, UserTask, UserTaskSchedule } from "@/lib/types";
 import { Separator } from '@/components/ui/separator';
 import GoBackButton from '@/components/go-back-button';
 import GoalMates from '@/components/profile/goal-mates';
@@ -17,7 +17,7 @@ import GroupCard from '@/components/groups/group-card';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from '@/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getUserProfileData } from '@/lib/data';
+import { getUserProfileData, getScheduledTasksForUser } from '@/lib/data';
 import TaskDetailDialog from '@/components/tasks/task-detail-dialog';
 
 export default function ProfileClient() {
@@ -32,6 +32,7 @@ export default function ProfileClient() {
   const [userGroups, setUserGroups] = useState<Group[]>([]);
   const [publicTasks, setPublicTasks] = useState<PersonalTask[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [allScheduledTasks, setAllScheduledTasks] = useState<UserTask[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [viewingTask, setViewingTask] = useState<UserTask | null>(null);
 
@@ -45,6 +46,11 @@ export default function ProfileClient() {
         setUserGroups(profileData.userGroups);
         setAllUsers(profileData.allUsers);
         setPublicTasks(profileData.publicPersonalTasks);
+        
+        // Fetch scheduled tasks for the displayed user
+        const scheduledTasks = await getScheduledTasksForUser(profileData.user);
+        setAllScheduledTasks(scheduledTasks);
+
       } else {
         setUser(null);
       }
@@ -218,7 +224,7 @@ export default function ProfileClient() {
           </Card>
         )}
         
-        <HabitTracker user={user} />
+        <HabitTracker user={user} allTasks={allScheduledTasks} onDataNeedsRefresh={() => fetchData(userId)} />
 
         <GoalMates userId={user.id} />
 
