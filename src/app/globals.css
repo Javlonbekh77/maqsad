@@ -103,11 +103,8 @@
   .snowflake {
     position: absolute;
     top: -10vh; /* Start above the screen */
-    width: 8px;
-    height: 8px;
     background: white;
     border-radius: 50%;
-    opacity: 0.8;
     animation: fall linear infinite;
   }
 
@@ -124,83 +121,67 @@
   }
 
   /* Dynamically generate random values for each snowflake */
-  /* This is a simple way to get variance without JS */
-  .snowflake:nth-child(13n) {
+  .snowflake:nth-child(7n) {
+    width: 6px;
+    height: 6px;
     left: 10%;
-    animation-duration: 12s;
+    animation-duration: 15s;
     animation-delay: -3s;
     --fall-h: 10vw;
+    opacity: 0.8;
   }
-  .snowflake:nth-child(13n + 1) {
-    left: 20%;
-    animation-duration: 15s;
+  .snowflake:nth-child(7n + 1) {
+    width: 8px;
+    height: 8px;
+    left: 25%;
+    animation-duration: 12s;
     animation-delay: -5s;
     --fall-h: -15vw;
+    opacity: 1;
   }
-  .snowflake:nth-child(13n + 2) {
-    left: 30%;
-    animation-duration: 10s;
+  .snowflake:nth-child(7n + 2) {
+    width: 4px;
+    height: 4px;
+    left: 40%;
+    animation-duration: 20s;
     animation-delay: 0s;
     --fall-h: 12vw;
+    opacity: 0.6;
   }
-  .snowflake:nth-child(13n + 3) {
-    left: 40%;
+  .snowflake:nth-child(7n + 3) {
+    width: 7px;
+    height: 7px;
+    left: 55%;
     animation-duration: 18s;
     animation-delay: -9s;
     --fall-h: -10vw;
+    opacity: 0.9;
   }
-  .snowflake:nth-child(13n + 4) {
-    left: 50%;
+  .snowflake:nth-child(7n + 4) {
+    width: 3px;
+    height: 3px;
+    left: 70%;
     animation-duration: 14s;
     animation-delay: -1s;
     --fall-h: 20vw;
+    opacity: 0.5;
   }
-  .snowflake:nth-child(13n + 5) {
-    left: 60%;
+  .snowflake:nth-child(7n + 5) {
+    width: 5px;
+    height: 5px;
+    left: 85%;
     animation-duration: 16s;
     animation-delay: -7s;
     --fall-h: -18vw;
+    opacity: 0.7;
   }
-  .snowflake:nth-child(13n + 6) {
-    left: 70%;
+  .snowflake:nth-child(7n + 6) {
+    width: 9px;
+    height: 9px;
+    left: 95%;
     animation-duration: 11s;
     animation-delay: -2s;
     --fall-h: 14vw;
-  }
-    .snowflake:nth-child(13n + 7) {
-    left: 80%;
-    animation-duration: 20s;
-    animation-delay: -4s;
-    --fall-h: -22vw;
-  }
-    .snowflake:nth-child(13n + 8) {
-    left: 90%;
-    animation-duration: 13s;
-    animation-delay: -8s;
-    --fall-h: 18vw;
-  }
-  .snowflake:nth-child(13n + 9) {
-    left: 25%;
-    animation-duration: 17s;
-    animation-delay: -6s;
-    --fall-h: -12vw;
-  }
-  .snowflake:nth-child(13n + 10) {
-    left: 55%;
-    animation-duration: 19s;
-    animation-delay: -10s;
-    --fall-h: 25vw;
-  }
-   .snowflake:nth-child(13n + 11) {
-    left: 75%;
-    animation-duration: 9s;
-    animation-delay: -1.5s;
-    --fall-h: -8vw;
-  }
-   .snowflake:nth-child(13n + 12) {
-    left: 5%;
-    animation-duration: 22s;
-    animation-delay: -11s;
-    --fall-h: 15vw;
+    opacity: 1;
   }
 }
