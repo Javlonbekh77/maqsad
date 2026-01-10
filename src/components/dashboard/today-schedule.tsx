@@ -94,7 +94,7 @@ export default function TodaySchedule({ tasks, userId, onTaskCompletion }: Today
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>{dateTitle}</CardTitle>
+              <CardTitle className="font-display">{dateTitle}</CardTitle>
               <CardDescription>Sizning rejalashtirgan vazifalaringiz.</CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -132,7 +132,7 @@ export default function TodaySchedule({ tasks, userId, onTaskCompletion }: Today
                     </TableCell>
                     <TableCell>
                         {task.taskType === 'group' ? 
-                            <Badge variant="outline">{task.groupName}</Badge> : 
+                            <Badge variant="outline">Guruh</Badge> : 
                             <Badge variant="secondary">Shaxsiy</Badge>
                         }
                     </TableCell>

@@ -5,7 +5,7 @@ import { Send } from 'lucide-react';
 
 export default function AppFooter() {
     return (
-        <footer className="mt-auto border-t bg-background">
+        <footer className="mt-auto border-t bg-background/50">
             <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 px-4 py-8 sm:px-6 lg:px-8">
                 <div>
                     <Logo className="mb-4" />
@@ -32,7 +32,7 @@ export default function AppFooter() {
                      </a>
                 </div>
             </div>
-             <div className="border-t py-4">
+             <div className="border-t border-border/50 py-4">
                 <p className="text-center text-xs text-muted-foreground">
                     © 2024 MaqsadM. Barcha huquqlar himoyalangan.
                 </p>
