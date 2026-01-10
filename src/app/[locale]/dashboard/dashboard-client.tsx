@@ -96,7 +96,7 @@ export default function DashboardClient() {
           <p className="text-muted-foreground mt-1">{t('welcomeSubtitle')}</p>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
             <div className="lg:col-span-2 space-y-8">
                  <TodaySchedule
                     tasks={allTasks}

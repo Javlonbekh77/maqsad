@@ -102,6 +102,7 @@
   }
   .snowflake {
     position: absolute;
+    top: -10vh; /* Start above the screen */
     width: 8px;
     height: 8px;
     background: white;
@@ -112,64 +113,94 @@
 
   @keyframes fall {
     0% {
-      transform: translateY(-10vh) translateX(0);
+      transform: translateY(0) translateX(0);
       opacity: 1;
     }
     100% {
+      /* Fall to the bottom and slightly sway horizontally */
       transform: translateY(110vh) translateX(var(--fall-h, 0));
       opacity: 0;
     }
   }
 
-  /* Assign random animation properties using nth-child */
-  .snowflake:nth-child(7n) {
-    width: 5px; height: 5px;
-    animation-duration: calc(var(--base-duration, 10s) * 1.2);
-    animation-delay: calc(var(--base-delay, -1s) * 1.5);
-    --fall-h: 20vw;
-  }
-  .snowflake:nth-child(7n + 1) {
-     width: 10px; height: 10px;
-    animation-duration: calc(var(--base-duration, 10s) * 1.5);
-    animation-delay: calc(var(--base-delay, -1s) * 2.1);
-    --fall-h: -25vw;
-  }
-  .snowflake:nth-child(7n + 2) {
-     width: 6px; height: 6px;
-    animation-duration: calc(var(--base-duration, 10s) * 0.8);
-    animation-delay: calc(var(--base-delay, -1s) * 3.2);
-    --fall-h: 15vw;
-  }
-  .snowflake:nth-child(7n + 3) {
-    animation-duration: calc(var(--base-duration, 10s) * 2);
-    animation-delay: calc(var(--base-delay, -1s) * 1.1);
-    --fall-h: -10vw;
-  }
-  .snowflake:nth-child(7n + 4) {
-    width: 7px; height: 7px;
-    animation-duration: calc(var(--base-duration, 10s) * 1.3);
-    animation-delay: calc(var(--base-delay, -1s) * 4);
-    --fall-h: 30vw;
-  }
-   .snowflake:nth-child(7n + 5) {
-     width: 9px; height: 9px;
-    animation-duration: calc(var(--base-duration, 10s) * 1.8);
-    animation-delay: calc(var(--base-delay, -1s) * 2.5);
-    --fall-h: -20vw;
-  }
-   .snowflake:nth-child(7n + 6) {
-    animation-duration: calc(var(--base-duration, 10s) * 1.1);
-    animation-delay: calc(var(--base-delay, -1s) * 0.5);
-    --fall-h: 5vw;
-  }
-
-  /* Add more variations */
+  /* Dynamically generate random values for each snowflake */
+  /* This is a simple way to get variance without JS */
   .snowflake:nth-child(13n) {
-    animation-delay: calc(var(--base-delay, -1s) * -1.5);
-    --fall-h: -35vw;
+    left: 10%;
+    animation-duration: 12s;
+    animation-delay: -3s;
+    --fall-h: 10vw;
   }
   .snowflake:nth-child(13n + 1) {
-    animation-delay: calc(var(--base-delay, -1s) * -2.5);
-    --fall-h: 40vw;
+    left: 20%;
+    animation-duration: 15s;
+    animation-delay: -5s;
+    --fall-h: -15vw;
+  }
+  .snowflake:nth-child(13n + 2) {
+    left: 30%;
+    animation-duration: 10s;
+    animation-delay: 0s;
+    --fall-h: 12vw;
+  }
+  .snowflake:nth-child(13n + 3) {
+    left: 40%;
+    animation-duration: 18s;
+    animation-delay: -9s;
+    --fall-h: -10vw;
+  }
+  .snowflake:nth-child(13n + 4) {
+    left: 50%;
+    animation-duration: 14s;
+    animation-delay: -1s;
+    --fall-h: 20vw;
+  }
+  .snowflake:nth-child(13n + 5) {
+    left: 60%;
+    animation-duration: 16s;
+    animation-delay: -7s;
+    --fall-h: -18vw;
+  }
+  .snowflake:nth-child(13n + 6) {
+    left: 70%;
+    animation-duration: 11s;
+    animation-delay: -2s;
+    --fall-h: 14vw;
+  }
+    .snowflake:nth-child(13n + 7) {
+    left: 80%;
+    animation-duration: 20s;
+    animation-delay: -4s;
+    --fall-h: -22vw;
+  }
+    .snowflake:nth-child(13n + 8) {
+    left: 90%;
+    animation-duration: 13s;
+    animation-delay: -8s;
+    --fall-h: 18vw;
+  }
+  .snowflake:nth-child(13n + 9) {
+    left: 25%;
+    animation-duration: 17s;
+    animation-delay: -6s;
+    --fall-h: -12vw;
+  }
+  .snowflake:nth-child(13n + 10) {
+    left: 55%;
+    animation-duration: 19s;
+    animation-delay: -10s;
+    --fall-h: 25vw;
+  }
+   .snowflake:nth-child(13n + 11) {
+    left: 75%;
+    animation-duration: 9s;
+    animation-delay: -1.5s;
+    --fall-h: -8vw;
+  }
+   .snowflake:nth-child(13n + 12) {
+    left: 5%;
+    animation-duration: 22s;
+    animation-delay: -11s;
+    --fall-h: 15vw;
   }
 }
