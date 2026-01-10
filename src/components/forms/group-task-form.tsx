@@ -76,7 +76,13 @@ export default function GroupTaskForm({ onSubmit, isPending, initialData, submit
         coins: initialData.coins,
         estimatedTime: initialData.estimatedTime || "",
         satisfactionRating: initialData.satisfactionRating || 5,
-        schedule: initialData.schedule || { type: 'recurring', days: [] },
+        schedule: {
+            type: initialData.schedule?.type || 'recurring',
+            date: initialData.schedule?.date,
+            startDate: initialData.schedule?.startDate,
+            endDate: initialData.schedule?.endDate,
+            days: initialData.schedule?.days || [],
+        },
         hasTimer: initialData.hasTimer || false,
         timerDuration: initialData.timerDuration || 30,
     } : {
@@ -93,9 +99,35 @@ export default function GroupTaskForm({ onSubmit, isPending, initialData, submit
 
   const scheduleType = form.watch('schedule.type');
 
+  const handleFormSubmit = async (data: GroupTaskFormValues) => {
+    // Create a clean schedule object based on the selected type
+    const cleanedSchedule: Partial<TaskSchedule> = { type: data.schedule.type };
+    
+    switch (data.schedule.type) {
+      case 'one-time':
+        cleanedSchedule.date = data.schedule.date;
+        break;
+      case 'date-range':
+        cleanedSchedule.startDate = data.schedule.startDate;
+        cleanedSchedule.endDate = data.schedule.endDate;
+        break;
+      case 'recurring':
+        cleanedSchedule.days = data.schedule.days;
+        break;
+    }
+    
+    // Create the final data object to be submitted
+    const finalData: GroupTaskFormValues = {
+      ...data,
+      schedule: cleanedSchedule as TaskSchedule,
+    };
+    
+    await onSubmit(finalData);
+  };
+
   return (
     <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-8">
             <FormField
                 control={form.control}
                 name="title"
