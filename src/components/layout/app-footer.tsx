@@ -5,7 +5,7 @@ import { Send } from 'lucide-react';
 
 export default function AppFooter() {
     return (
-        <footer className="mt-auto w-full bg-black text-white flex flex-col items-center justify-center text-center gap-4 py-12 px-4">
+        <footer className="w-full bg-black text-white flex flex-col items-center justify-center text-center gap-4 py-12 px-4">
             <Logo className="mb-2 text-white" />
             <p className="text-sm text-white/70 max-w-md">
                 Maqsadlaringiz sari birgalikda harakat qiluvchi hamjamiyat. Unity Team tomonidan ishtiyoq bilan yaratilgan.
