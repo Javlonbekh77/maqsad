@@ -12,26 +12,22 @@ import {
   DropdownMenuFooter,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Bell, AlertCircle, History, CheckCheck, MessageSquare } from 'lucide-react';
+import { Bell, AlertCircle, History, CheckCheck } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
-import type { User, UnreadMessageInfo, UserTask } from '@/lib/types';
+import type { User, UserTask } from '@/lib/types';
 import { getNotificationsData, updateUserProfile } from '@/lib/data';
 import { useRouter } from '@/navigation';
-import { Badge } from '../ui/badge';
 import { Skeleton } from '../ui/skeleton';
 import { Timestamp } from 'firebase/firestore';
 
 type NotificationData = {
     overdueTasks: UserTask[];
-    unreadMessages: UnreadMessageInfo[];
 };
-
 
 const fetcher = ([, user]: [string, User | null]): Promise<NotificationData> => {
-    if (!user) return Promise.resolve({ overdueTasks: [], unreadMessages: [] });
+    if (!user) return Promise.resolve({ overdueTasks: [] });
     return getNotificationsData(user);
 };
-
 
 export default function NotificationsDropdown() {
   const { user, refreshAuth } = useAuth();
@@ -65,7 +61,7 @@ export default function NotificationsDropdown() {
     e.stopPropagation();
     if (user) {
         // Optimistically clear notifications on the client
-        mutate(['notifications', user], { overdueTasks: [], unreadMessages: [] }, false);
+        mutate(['notifications', user], { overdueTasks: [] }, false);
         // And update the timestamp on the backend
         await updateUserProfile(user.id, { notificationsLastCheckedAt: Timestamp.now() });
         await refreshAuth();
@@ -78,7 +74,7 @@ export default function NotificationsDropdown() {
       setIsOpen(false);
   }
 
-  const totalNotifications = data ? (data.overdueTasks?.length || 0) + (data.unreadMessages?.length || 0) : 0;
+  const totalNotifications = data?.overdueTasks?.length || 0;
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
@@ -103,18 +99,6 @@ export default function NotificationsDropdown() {
           </div>
         ) : totalNotifications > 0 && data ? (
             <>
-                {data.unreadMessages && data.unreadMessages.length > 0 && (
-                    <>
-                         <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground flex items-center gap-2"><MessageSquare className='h-4 w-4' /> Yangi Xabarlar</DropdownMenuLabel>
-                        {data.unreadMessages.map(msgInfo => (
-                            <DropdownMenuItem key={msgInfo.groupId} onClick={(e) => handleItemClick(e, `/groups/${msgInfo.groupId}?tab=chat`)} className="flex justify-between items-center cursor-pointer">
-                                 <p className="font-medium">{msgInfo.groupName}</p>
-                                 <Badge variant="destructive">{msgInfo.count}</Badge>
-                            </DropdownMenuItem>
-                        ))}
-                         <DropdownMenuSeparator />
-                    </>
-                )}
                  {data.overdueTasks && data.overdueTasks.length > 0 && (
                     <>
                         <DropdownMenuLabel className="text-xs font-semibold text-destructive flex items-center gap-2"><History className='h-4 w-4' /> Vaqti o'tgan vazifalar</DropdownMenuLabel>

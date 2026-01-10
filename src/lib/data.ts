@@ -248,7 +248,7 @@ export const getLeaderboardData = async (): Promise<{ topUsers: User[], topGroup
 };
 
 
-export const getUserProfileData = async (userId: string): Promise<{user: User, userGroups: Group[], allUsers: User[], publicPersonalTasks: PersonalTask[]} | null> => {
+export const getUserProfileData = async (userId: string): Promise<{user: User, userGroups: Group[], allUsers: User[]} | null> => {
      const user = await getUser(userId);
      if (!user) return null;
 
@@ -260,19 +260,13 @@ export const getUserProfileData = async (userId: string): Promise<{user: User, u
         const groupsQuery = query(collection(db, 'groups'), where('__name__', 'in', groupIds));
         groupsPromise = getDocs(groupsQuery).then(snap => snap.docs.map(d => ({...d.data() as Group, id: d.id, firebaseId: d.id})));
       }
-    
-    const publicTasksQuery = query(collection(db, 'personal_tasks'), where('userId', '==', userId), where('visibility', '==', 'public'));
-    const publicTasksPromise = getDocs(publicTasksQuery);
       
-    const [userGroups, allUsers, publicTasksSnapshot] = await Promise.all([
+    const [userGroups, allUsers] = await Promise.all([
         groupsPromise,
         allUsersPromise,
-        publicTasksPromise
     ]);
     
-    const publicPersonalTasks = publicTasksSnapshot.docs.map(doc => ({ ...doc.data() as PersonalTask, id: doc.id }));
-
-    return { user, userGroups, allUsers, publicPersonalTasks };
+    return { user, userGroups, allUsers };
 }
 
 export const getGoalMates = async (userId: string): Promise<User[]> => {
@@ -406,28 +400,28 @@ export const addUserToGroup = async (userId: string, groupId: string, taskSchedu
     }
     const userData = userSnap.data();
 
-    // 1. Prepare new schedules with a concrete timestamp
+    // Prepare new schedules with a concrete timestamp
     const newSchedules = taskSchedules.map(ts => ({ 
         taskId: ts.taskId, 
         schedule: ts.schedule,
-        addedAt: Timestamp.now() // Use a concrete timestamp
+        addedAt: Timestamp.now()
     }));
 
-    // 2. Combine with existing schedules
+    // Combine with existing schedules
     const existingSchedules = userData.taskSchedules || [];
     const allSchedules = [...existingSchedules, ...newSchedules];
 
-    // 3. Combine with existing groups
+    // Combine with existing groups, ensuring no duplicates
     const existingGroups = userData.groups || [];
-    const allGroups = [...existingGroups, groupId];
+    const allGroups = [...new Set([...existingGroups, groupId])];
 
-    // 4. Update user document with the new combined arrays
+    // Update user document with the new combined arrays
     await updateDoc(userDocRef, { 
       groups: allGroups,
       taskSchedules: allSchedules
     });
     
-    // 5. Update group document
+    // Update group document
     const groupDocRef = doc(db, "groups", groupId);
     await updateDoc(groupDocRef, { members: arrayUnion(userId) });
 };
@@ -762,29 +756,11 @@ export function isTaskScheduledForDate(task: UserTask, date: Date): boolean {
 
 export const getNotificationsData = async (user: User): Promise<{
     overdueTasks: UserTask[];
-    unreadMessages: UnreadMessageInfo[];
 }> => {
     if (!user) {
-        return { overdueTasks: [], unreadMessages: [] };
+        return { overdueTasks: [] };
     }
-
-    const lastChecked = user.notificationsLastCheckedAt || new Timestamp(0, 0);
     
-    let unreadMessages: UnreadMessageInfo[] = [];
-     if (user.groups && user.groups.length > 0) {
-        const groupDetails = await getUserGroups(user.id);
-        const unreadCounts = await Promise.all(
-            groupDetails.map(async (group) => {
-                const count = await getUnreadMessageCount(group.id, lastChecked);
-                if (count > 0) {
-                   return { groupId: group.id, groupName: group.name, count };
-                }
-                return null;
-            })
-        );
-        unreadMessages = unreadCounts.filter(Boolean) as UnreadMessageInfo[];
-    }
-
     const allScheduledTasks = await getScheduledTasksForUser(user);
     const yesterday = startOfDay(addDays(new Date(), -1));
     
@@ -799,7 +775,7 @@ export const getNotificationsData = async (user: User): Promise<{
         }
     });
 
-    return { overdueTasks, unreadMessages };
+    return { overdueTasks };
 };
 
 
