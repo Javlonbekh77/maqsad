@@ -81,6 +81,8 @@ export default function PersonalTaskForm({ onSubmit, isPending, initialData, sub
         days: [],
       },
       visibility: 'private',
+      hasTimer: false,
+      timerDuration: 30,
     },
   });
 
@@ -322,7 +324,7 @@ export default function PersonalTaskForm({ onSubmit, isPending, initialData, sub
                     </div>
                     <FormControl>
                         <Switch
-                        checked={field.value || false}
+                        checked={field.value}
                         onCheckedChange={field.onChange}
                         />
                     </FormControl>

@@ -24,7 +24,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { Slider } from '@/components/ui/slider';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '@/components/ui/switch';
+
 
 const scheduleSchema = z.object({
   type: z.enum(['one-time', 'date-range', 'recurring']),
@@ -75,14 +76,18 @@ export default function GroupTaskForm({ onSubmit, isPending, initialData, submit
         coins: initialData.coins,
         estimatedTime: initialData.estimatedTime || "",
         satisfactionRating: initialData.satisfactionRating || 5,
-        schedule: initialData.schedule || { type: 'recurring', days: [] }
+        schedule: initialData.schedule || { type: 'recurring', days: [] },
+        hasTimer: initialData.hasTimer || false,
+        timerDuration: initialData.timerDuration || 30,
     } : {
       title: "",
       description: "",
       coins: 10,
       estimatedTime: "",
       satisfactionRating: 5,
-      schedule: { type: 'recurring', days: [] }
+      schedule: { type: 'recurring', days: [] },
+      hasTimer: false,
+      timerDuration: 30,
     },
   });
 
@@ -313,11 +318,9 @@ export default function GroupTaskForm({ onSubmit, isPending, initialData, submit
                         </FormMessage>
                     </div>
                     <FormControl>
-                        <input 
-                          type="checkbox" 
-                          checked={field.value || false}
-                          onChange={field.onChange}
-                          className="h-4 w-4"
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
                         />
                     </FormControl>
                     </FormItem>
