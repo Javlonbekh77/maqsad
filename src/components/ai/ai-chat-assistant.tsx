@@ -34,6 +34,17 @@ export default function AiChatAssistant() {
     role: 'model',
     content: "Salom! Men MaqsadM yordamchisiman. Bugun qanday vazifalarni rejalashtirishimiz mumkin?",
   };
+  
+  const scrollToBottom = () => {
+    if (scrollAreaRef.current) {
+        setTimeout(() => {
+            if (scrollAreaRef.current) {
+              scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+            }
+        }, 0);
+    }
+  };
+
 
   // Load chat history from local storage and Firebase on sheet open
   useEffect(() => {
@@ -53,6 +64,7 @@ export default function AiChatAssistant() {
           if (Array.isArray(parsed) && parsed.length > 0) {
             setMessages(parsed);
             setLoadingHistory(false);
+            scrollToBottom();
             return;
           }
         } catch (e) {
@@ -72,6 +84,7 @@ export default function AiChatAssistant() {
           // Save to local storage for next time
           localStorage.setItem(CHAT_LOCAL_STORAGE_KEY, JSON.stringify(converted));
           setLoadingHistory(false);
+          scrollToBottom();
           return;
         }
       }
@@ -83,14 +96,13 @@ export default function AiChatAssistant() {
       setMessages([initialMessage]);
     } finally {
       setLoadingHistory(false);
+      scrollToBottom();
     }
   };
 
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-    }
-  }, [messages]);
+    scrollToBottom();
+  }, [messages, loadingHistory]);
 
   const saveChatMessageToStorage = async (message: ChatMessage) => {
     // 1. Save to local storage
