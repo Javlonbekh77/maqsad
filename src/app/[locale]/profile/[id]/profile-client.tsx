@@ -12,13 +12,18 @@ import { Separator } from '@/components/ui/separator';
 import GoBackButton from '@/components/go-back-button';
 import GoalMates from '@/components/profile/goal-mates';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import GroupCard from '@/components/groups/group-card';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from '@/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getUserProfileData, getScheduledTasksForUser } from '@/lib/data';
 import TaskDetailDialog from '@/components/tasks/task-detail-dialog';
+import useSWR from 'swr';
+
+
+const profileDataFetcher = (userId: string) => getUserProfileData(userId);
+const scheduledTasksFetcher = (user: User) => getScheduledTasksForUser(user);
 
 export default function ProfileClient() {
   const t = useTranslations('profile');
@@ -27,52 +32,24 @@ export default function ProfileClient() {
   const router = useRouter();
   
   const { user: currentUser, loading: authLoading } = useAuth();
+
+  // Fetch profile data based on userId from URL
+  const { data: profileData, error: profileError, isLoading: loadingProfile } = useSWR(userId ? ['profile', userId] : null, () => profileDataFetcher(userId));
+
+  // Fetch scheduled tasks only after the user for the profile has been loaded
+  const { data: allScheduledTasks, mutate: mutateScheduledTasks } = useSWR(profileData?.user ? ['scheduledTasks', profileData.user] : null, () => scheduledTasksFetcher(profileData!.user));
   
-  const [user, setUser] = useState<User | null>(null);
-  const [userGroups, setUserGroups] = useState<Group[]>([]);
-  const [publicTasks, setPublicTasks] = useState<PersonalTask[]>([]);
-  const [allUsers, setAllUsers] = useState<User[]>([]);
-  const [allScheduledTasks, setAllScheduledTasks] = useState<UserTask[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
   const [viewingTask, setViewingTask] = useState<UserTask | null>(null);
 
-  const fetchData = useCallback(async (uid: string) => {
-    if (!uid) {
-      setLoadingData(false);
-      setUser(null);
-      return;
-    }
-    setLoadingData(true);
-    try {
-      const profileData = await getUserProfileData(uid);
-      if (profileData) {
-        setUser(profileData.user);
-        setUserGroups(profileData.userGroups);
-        setAllUsers(profileData.allUsers);
-        setPublicTasks(profileData.publicPersonalTasks);
-        
-        // Fetch scheduled tasks for the displayed user
-        const scheduledTasks = await getScheduledTasksForUser(profileData.user);
-        setAllScheduledTasks(scheduledTasks);
+  const { user, userGroups, allUsers, publicTasks } = useMemo(() => {
+    return {
+      user: profileData?.user ?? null,
+      userGroups: profileData?.userGroups ?? [],
+      allUsers: profileData?.allUsers ?? [],
+      publicTasks: profileData?.publicPersonalTasks ?? [],
+    };
+  }, [profileData]);
 
-      } else {
-        setUser(null);
-      }
-    } catch (error) {
-      console.error("Failed to fetch profile data:", error);
-      setUser(null);
-    } finally {
-      setLoadingData(false);
-    }
-  }, []);
-
-  // Fetch data as soon as userId is available from the URL.
-  useEffect(() => {
-     if (userId) {
-       fetchData(userId);
-     }
-  }, [userId, fetchData]);
-  
   const handleViewTask = (task: PersonalTask) => {
     setViewingTask({
         ...task,
@@ -84,8 +61,7 @@ export default function ProfileClient() {
 
   const userMap = useMemo(() => new Map(allUsers.map(u => [u.id, u])), [allUsers]);
 
-  // Loading state should primarily depend on the data being fetched for the profile page.
-  const isLoading = loadingData;
+  const isLoading = loadingProfile;
   const isCurrentUserProfile = !authLoading && userId === currentUser?.id;
 
   if (isLoading) {
@@ -119,7 +95,7 @@ export default function ProfileClient() {
     );
   }
 
-  if (!user) {
+  if (!user || profileError) {
       return (
         <AppLayout>
             <div className="text-center py-10">
@@ -226,7 +202,7 @@ export default function ProfileClient() {
           </Card>
         )}
         
-        <HabitTracker user={user} allTasks={allScheduledTasks} onDataNeedsRefresh={() => fetchData(userId)} />
+        <HabitTracker user={user} allTasks={allScheduledTasks || []} onDataNeedsRefresh={mutateScheduledTasks} />
 
         <GoalMates userId={user.id} />
 
