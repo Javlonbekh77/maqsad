@@ -22,8 +22,8 @@ import TaskDetailDialog from '@/components/tasks/task-detail-dialog';
 import useSWR from 'swr';
 
 
-const profileDataFetcher = (userId: string) => getUserProfileData(userId);
-const scheduledTasksFetcher = (user: User) => getScheduledTasksForUser(user);
+const profileDataFetcher = ([key, userId]: [string, string]) => getUserProfileData(userId);
+const scheduledTasksFetcher = ([key, user]: [string, User]) => getScheduledTasksForUser(user);
 
 export default function ProfileClient() {
   const t = useTranslations('profile');
@@ -34,21 +34,20 @@ export default function ProfileClient() {
   const { user: currentUser, loading: authLoading } = useAuth();
 
   // Fetch profile data based on userId from URL
-  const { data: profileData, error: profileError, isLoading: loadingProfile } = useSWR(userId ? ['profile', userId] : null, () => profileDataFetcher(userId));
+  const { data: profileData, error: profileError, isLoading: loadingProfile } = useSWR(userId ? ['profile', userId] : null, profileDataFetcher);
 
-  // Fetch scheduled tasks only after the user for the profile has been loaded
-  const { data: allScheduledTasks, mutate: mutateScheduledTasks } = useSWR(profileData?.user ? ['scheduledTasks', profileData.user] : null, () => scheduledTasksFetcher(profileData!.user));
-  
-  const [viewingTask, setViewingTask] = useState<UserTask | null>(null);
-
-  const { user, userGroups, allUsers, publicTasks } = useMemo(() => {
+  const { user, userGroups, allUsers } = useMemo(() => {
     return {
       user: profileData?.user ?? null,
       userGroups: profileData?.userGroups ?? [],
       allUsers: profileData?.allUsers ?? [],
-      publicTasks: profileData?.publicPersonalTasks ?? [],
     };
   }, [profileData]);
+
+  // Fetch scheduled tasks only after the user for the profile has been loaded
+  const { data: allScheduledTasks, mutate: mutateScheduledTasks } = useSWR(user ? ['scheduledTasks', user] : null, scheduledTasksFetcher);
+  
+  const [viewingTask, setViewingTask] = useState<UserTask | null>(null);
 
   const handleViewTask = (task: PersonalTask) => {
     setViewingTask({
@@ -61,8 +60,22 @@ export default function ProfileClient() {
 
   const userMap = useMemo(() => new Map(allUsers.map(u => [u.id, u])), [allUsers]);
 
-  const isLoading = loadingProfile;
+  const isLoading = authLoading || loadingProfile;
   const isCurrentUserProfile = !authLoading && userId === currentUser?.id;
+
+  const tasksForHabitTracker = useMemo(() => {
+    if (!allScheduledTasks) return [];
+    // If it's not the current user's profile, only show public tasks
+    if (!isCurrentUserProfile) {
+      return allScheduledTasks.filter(task => {
+        // Personal tasks have 'visibility'. Group tasks are implicitly public within the group.
+        return task.taskType === 'group' || (task.taskType === 'personal' && (task as PersonalTask).visibility === 'public');
+      });
+    }
+    // For the current user, show all their tasks
+    return allScheduledTasks;
+  }, [allScheduledTasks, isCurrentUserProfile]);
+
 
   if (isLoading) {
     return (
@@ -165,27 +178,12 @@ export default function ProfileClient() {
           </CardContent>
         </Card>
         
-        {publicTasks.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Ommaviy Vazifalar</CardTitle>
-              <CardDescription>{user.firstName}ning boshqalar bilan bo'lishgan vazifalari.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {publicTasks.map(task => (
-                <div 
-                    key={task.id} 
-                    className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-muted/50"
-                    onClick={() => handleViewTask(task)}
-                >
-                    <p className="font-medium">{task.title}</p>
-                    <Eye className="h-5 w-5 text-muted-foreground" />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
-
+        <HabitTracker 
+            user={user} 
+            allTasks={tasksForHabitTracker} 
+            onDataNeedsRefresh={mutateScheduledTasks} 
+        />
+        
         {userGroups.length > 0 && (
           <Card>
             <CardHeader>
@@ -201,8 +199,6 @@ export default function ProfileClient() {
             </CardContent>
           </Card>
         )}
-        
-        <HabitTracker user={user} allTasks={allScheduledTasks || []} onDataNeedsRefresh={mutateScheduledTasks} />
 
         <GoalMates userId={user.id} />
 
