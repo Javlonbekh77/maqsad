@@ -187,7 +187,7 @@ export default function TodaySchedule({ tasks, userId, onTaskCompletion }: Today
                         {task.title}
                     </span>
                      {task.taskType === 'group' ? 
-                        <Badge variant="secondary" className="ml-auto">{task.groupName}</Badge> :
+                        <Badge variant="secondary" className="ml-auto">Guruh</Badge> :
                         <Badge variant="default" className="ml-auto bg-blue-500/10 text-blue-700 border-blue-500/20 hover:bg-blue-500/20">Shaxsiy</Badge>
                     }
                   </li>
