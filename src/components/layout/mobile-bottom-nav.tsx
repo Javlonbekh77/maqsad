@@ -6,33 +6,45 @@ import {
   Users,
   Trophy,
   UserCircle,
-  PlusSquare,
-  ClipboardList
+  ClipboardList,
+  Clock,
+  BookOpen
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
+import { MoreHorizontal } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Button } from '../ui/button';
+
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
   const { user } = useAuth();
   const t = useTranslations('nav');
 
-  const navItems = [
+  const mainNavItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/groups', label: 'Guruhlar', icon: Users },
     { href: '/my-tasks', label: 'Vazifalar', icon: ClipboardList },
     { href: '/leaderboard', label: 'Liderlar', icon: Trophy },
-    { href: `/profile/${user?.id}`, label: 'Profil', icon: UserCircle },
   ];
+
+  const moreNavItems = [
+    { href: '/pomo-timer', label: 'Fokus Vaqti', icon: Clock },
+    { href: '/kundalik', label: 'Kundalik', icon: BookOpen },
+    { href: `/profile/${user?.id}`, label: 'Profil', icon: UserCircle },
+  ]
 
   return (
     <div className="sm:hidden fixed bottom-0 left-0 z-50 w-full h-16 bg-background/80 border-t backdrop-blur-sm">
       <div className="grid h-full max-w-lg grid-cols-5 mx-auto font-medium">
-        {navItems.map((item) => {
-          // Don't render profile link if user is not loaded
-          if (item.label === 'Profil' && !user) return null;
-          
+        {mainNavItems.map((item) => {
           const isActive = item.href === '/dashboard' 
               ? pathname === item.href 
               : pathname.startsWith(item.href);
@@ -49,10 +61,38 @@ export default function MobileBottomNav() {
               )}
             >
               <item.icon className="w-5 h-5 mb-1" />
-              <span className="text-xs">{item.label}</span>
+              <span className="text-[10px] text-center">{item.label}</span>
             </Link>
           );
         })}
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <button
+                    type="button"
+                    className="inline-flex flex-col items-center justify-center px-2 text-muted-foreground hover:bg-muted/50 group"
+                >
+                    <MoreHorizontal className="w-5 h-5 mb-1" />
+                    <span className="text-[10px]">Ko'proq</span>
+                </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" side="top" className="mb-2 w-48">
+                 {moreNavItems.map((item) => {
+                    if (item.label === 'Profil' && !user) return null;
+                     const isActive = pathname.startsWith(item.href);
+                     return (
+                        <DropdownMenuItem key={item.href} asChild>
+                            <Link
+                                href={item.href}
+                                className={cn('flex items-center gap-3', isActive && 'bg-muted')}
+                            >
+                                <item.icon className="w-4 h-4" />
+                                <span>{item.label}</span>
+                            </Link>
+                        </DropdownMenuItem>
+                     )
+                 })}
+            </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );

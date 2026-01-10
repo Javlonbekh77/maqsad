@@ -17,6 +17,7 @@ import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/navigation';
 import { Skeleton } from '../ui/skeleton';
+import { Badge } from '../ui/badge';
 
 const RankIcon = ({ rank }: { rank: number }) => {
   if (rank === 1) return <Medal className="h-5 w-5 text-yellow-500" />;
@@ -96,13 +97,13 @@ export default function LeaderboardTabs({ topUsers, topGroups, topSilverCoinUser
                                 </Link>
                                                                 </TableCell>
                                                                 <TableCell className="text-center">
-                                                                    {user.lastJournalRewardDate === new Date().toISOString().slice(0,10) ? (
-                                                                        <span className="text-xs rounded-md bg-green-100 text-green-700 px-2 py-1">Yozdi</span>
-                                                                    ) : (
-                                                                        <span className="text-xs rounded-md bg-gray-100 text-gray-500 px-2 py-1">—</span>
-                                                                    )}
-                                                                </TableCell>
-                                                                <TableCell className="text-right">
+                                    {user.lastJournalRewardDate === new Date().toISOString().slice(0, 10) ? (
+                                        <Badge variant="secondary" className="border-green-500/50 bg-green-500/10 text-green-700">Yozdi</Badge>
+                                    ) : (
+                                        <Badge variant="outline" className="border-dashed">—</Badge>
+                                    )}
+                                </TableCell>
+                                <TableCell className="text-right">
                                 <div className="flex items-center justify-end gap-1 font-semibold text-amber-500">
                                     <Coins className="w-4 h-4" />
                                     <span>{user.coins || 0}</span>
@@ -137,7 +138,7 @@ export default function LeaderboardTabs({ topUsers, topGroups, topSilverCoinUser
                                         <RankIcon rank={index + 1} />
                                     </div>
                                     </TableCell>
-                                                                        <TableCell>
+                                    <TableCell>
                                     <Link href={{pathname: '/profile/[id]', params: {id: user.id}}} className="flex items-center gap-3 hover:underline">
                                         <Avatar>
                                         <AvatarImage src={user.avatarUrl} alt={user.fullName} />
@@ -145,15 +146,15 @@ export default function LeaderboardTabs({ topUsers, topGroups, topSilverCoinUser
                                         </Avatar>
                                         <span className="font-medium">{user.fullName}</span>
                                     </Link>
-                                                                        </TableCell>
-                                                                        <TableCell className="text-center">
-                                                                            {user.lastJournalRewardDate === new Date().toISOString().slice(0,10) ? (
-                                                                                <span className="text-xs rounded-md bg-green-100 text-green-700 px-2 py-1">Yozdi</span>
-                                                                            ) : (
-                                                                                <span className="text-xs rounded-md bg-gray-100 text-gray-500 px-2 py-1">—</span>
-                                                                            )}
-                                                                        </TableCell>
-                                                                        <TableCell className="text-right">
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                        {user.lastJournalRewardDate === new Date().toISOString().slice(0, 10) ? (
+                                            <Badge variant="secondary" className="border-green-500/50 bg-green-500/10 text-green-700">Yozdi</Badge>
+                                        ) : (
+                                            <Badge variant="outline" className="border-dashed">—</Badge>
+                                        )}
+                                    </TableCell>
+                                    <TableCell className="text-right">
                                     <div className="flex items-center justify-end gap-1 font-semibold text-slate-500">
                                         <Flame className="w-4 h-4" />
                                         <span>{user.silverCoins || 0}</span>
