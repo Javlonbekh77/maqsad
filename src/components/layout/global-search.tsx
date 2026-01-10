@@ -13,7 +13,7 @@ import {
   CommandList,
 } from "@/components/ui/command"
 import { useDebounce } from '@/hooks/use-debounce';
-import { Link, useRouter } from '@/navigation';
+import { useRouter } from '@/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import Image from 'next/image';
 import { Skeleton } from '../ui/skeleton';

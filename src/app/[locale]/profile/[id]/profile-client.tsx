@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Coins, Briefcase, Settings, Flame, Eye, EyeOff } from "lucide-react";
 import HabitTracker from '@/components/profile/habit-tracker';
-import type { User, Group, PersonalTask, UserTask, UserTaskSchedule } from "@/lib/types";
+import type { User, Group, PersonalTask, UserTask } from "@/lib/types";
 import { Separator } from '@/components/ui/separator';
 import GoBackButton from '@/components/go-back-button';
 import GoalMates from '@/components/profile/goal-mates';
@@ -63,14 +63,10 @@ export default function ProfileClient() {
   }, []);
 
   useEffect(() => {
-     if (!authLoading) {
-        if (!currentUser) {
-            router.push('/login');
-        } else if (userId) {
-          fetchData(userId);
-        }
-    }
-  }, [userId, authLoading, currentUser, router, fetchData]);
+     if (userId) {
+       fetchData(userId);
+     }
+  }, [userId, fetchData]);
   
   const handleViewTask = (task: PersonalTask) => {
     setViewingTask({
@@ -86,7 +82,7 @@ export default function ProfileClient() {
   const isLoading = authLoading || loadingData;
   const isCurrentUserProfile = userId === currentUser?.id;
 
-  if (isLoading || !currentUser) {
+  if (isLoading) {
     return (
         <AppLayout>
             <div className="space-y-8">
