@@ -37,7 +37,11 @@ export default function ProfileClient() {
   const [viewingTask, setViewingTask] = useState<UserTask | null>(null);
 
   const fetchData = useCallback(async (uid: string) => {
-    if (!uid) return;
+    if (!uid) {
+      setLoadingData(false);
+      setUser(null);
+      return;
+    }
     setLoadingData(true);
     try {
       const profileData = await getUserProfileData(uid);
@@ -62,6 +66,7 @@ export default function ProfileClient() {
     }
   }, []);
 
+  // Fetch data as soon as userId is available from the URL.
   useEffect(() => {
      if (userId) {
        fetchData(userId);
@@ -79,8 +84,9 @@ export default function ProfileClient() {
 
   const userMap = useMemo(() => new Map(allUsers.map(u => [u.id, u])), [allUsers]);
 
-  const isLoading = authLoading || loadingData;
-  const isCurrentUserProfile = userId === currentUser?.id;
+  // Loading state should primarily depend on the data being fetched for the profile page.
+  const isLoading = loadingData;
+  const isCurrentUserProfile = !authLoading && userId === currentUser?.id;
 
   if (isLoading) {
     return (
