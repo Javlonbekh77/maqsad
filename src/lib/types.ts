@@ -85,6 +85,7 @@ export type User = {
   createdAt: FieldValue;
   lastRead?: LastRead;
   notificationsLastCheckedAt?: Timestamp;
+  lastJournalRewardDate?: string; // YYYY-MM-DD
 };
 
 export type WeeklyMeeting = {

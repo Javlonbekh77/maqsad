@@ -372,7 +372,8 @@ export const createPersonalTask = async (taskData: Omit<PersonalTask, 'id' | 'cr
     const dataToSave = {
         ...restOfTaskData,
         schedule: cleanedSchedule,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        addedAt: serverTimestamp() // For personal tasks, addedAt is the same as createdAt
     };
     
     const docRef = await addDoc(collection(db, 'personal_tasks'), dataToSave);
@@ -399,24 +400,36 @@ export const deletePersonalTask = async (taskId: string): Promise<void> => {
 
 export const addUserToGroup = async (userId: string, groupId: string, taskSchedules: UserTaskSchedule[]): Promise<void> => {
     const userDocRef = doc(db, "users", userId);
-    
-    const batch = writeBatch(db);
+    const userSnap = await getDoc(userDocRef);
+    if (!userSnap.exists()) {
+        throw new Error("User not found");
+    }
+    const userData = userSnap.data();
 
+    // 1. Prepare new schedules with a concrete timestamp
     const newSchedules = taskSchedules.map(ts => ({ 
         taskId: ts.taskId, 
         schedule: ts.schedule,
-        addedAt: serverTimestamp() // CRITICAL: Set the addedAt timestamp here
+        addedAt: Timestamp.now() // Use a concrete timestamp
     }));
 
-    batch.update(userDocRef, { 
-      groups: arrayUnion(groupId),
-      taskSchedules: arrayUnion(...newSchedules)
+    // 2. Combine with existing schedules
+    const existingSchedules = userData.taskSchedules || [];
+    const allSchedules = [...existingSchedules, ...newSchedules];
+
+    // 3. Combine with existing groups
+    const existingGroups = userData.groups || [];
+    const allGroups = [...existingGroups, groupId];
+
+    // 4. Update user document with the new combined arrays
+    await updateDoc(userDocRef, { 
+      groups: allGroups,
+      taskSchedules: allSchedules
     });
     
+    // 5. Update group document
     const groupDocRef = doc(db, "groups", groupId);
-    batch.update(groupDocRef, { members: arrayUnion(userId) });
-
-    await batch.commit();
+    await updateDoc(groupDocRef, { members: arrayUnion(userId) });
 };
 
 export const completeUserTask = async (userId: string, task: UserTask): Promise<void> => {
@@ -538,14 +551,21 @@ export const getGroupTasksForUser = async (user: User): Promise<UserTask[]> => {
 
 export const addTaskToUserSchedule = async (userId: string, taskId: string, schedule: TaskSchedule): Promise<void> => {
     const userRef = doc(db, 'users', userId);
+    const user = await getUser(userId);
+    if (!user) {
+        throw new Error("User not found");
+    }
     
     const newTaskSchedule: UserTaskSchedule = {
         taskId,
         schedule,
-        addedAt: serverTimestamp(),
+        addedAt: Timestamp.now(),
     };
+    
+    const existingSchedules = user.taskSchedules || [];
+    const updatedSchedules = [...existingSchedules, newTaskSchedule];
 
-    await updateDoc(userRef, { taskSchedules: arrayUnion(newTaskSchedule) });
+    await updateDoc(userRef, { taskSchedules: updatedSchedules });
 };
 
 export const updateGroupTaskSchedule = async (userId: string, taskId: string, schedule: TaskSchedule): Promise<void> => {
@@ -559,13 +579,13 @@ export const updateGroupTaskSchedule = async (userId: string, taskId: string, sc
         existingSchedules[idx] = { 
             taskId, 
             schedule,
-            addedAt: existingSchedules[idx].addedAt || serverTimestamp()
+            addedAt: existingSchedules[idx].addedAt || Timestamp.now()
         };
     } else {
         existingSchedules.push({ 
             taskId, 
             schedule,
-            addedAt: serverTimestamp()
+            addedAt: Timestamp.now()
         });
     }
 
@@ -578,11 +598,9 @@ export const removeGroupTaskFromUserSchedule = async (userId: string, taskId: st
     if (!user) throw new Error('User not found');
 
     const existingSchedules: UserTaskSchedule[] = Array.isArray(user.taskSchedules) ? user.taskSchedules : [];
-    const scheduleToRemove = existingSchedules.find(s => s.taskId === taskId);
+    const updatedSchedules = existingSchedules.filter(s => s.taskId !== taskId);
 
-    if(scheduleToRemove) {
-        await updateDoc(userRef, { taskSchedules: arrayRemove(scheduleToRemove) });
-    }
+    await updateDoc(userRef, { taskSchedules: updatedSchedules });
 };
 
 export const removeUserFromGroup = async (userId: string, groupId: string, removeTasks = false): Promise<void> => {
@@ -709,6 +727,9 @@ export function isTaskScheduledForDate(task: UserTask, date: Date): boolean {
             if (isBefore(startOfDay(date), startOfDay(createdAtDate))) {
                 return false;
             }
+        } else {
+             // If no date information is available, assume it's not scheduled.
+             return false;
         }
     }
     
@@ -822,15 +843,16 @@ export const saveJournalEntry = async (userId: string, date: string, content: st
     if (docSnap.exists()) {
         await updateDoc(entryRef, data);
     } else {
-        await setDoc(entryRef, { ...data, createdAt: serverTimestamp() });
-    }
-
-    // Award silver coin if it's a new entry for today and not already awarded
-    const todayStr = format(new Date(), 'yyyy-MM-dd');
-    if (date === todayStr && user?.lastJournalRewardDate !== todayStr) {
-        await updateDoc(userRef, {
-            silverCoins: (user.silverCoins || 0) + 1,
-            lastJournalRewardDate: todayStr,
-        });
+        const todayStr = format(new Date(), 'yyyy-MM-dd');
+        // Award silver coin if it's a new entry for today and not already awarded
+        if (date === todayStr && user?.lastJournalRewardDate !== todayStr) {
+             await setDoc(entryRef, { ...data, createdAt: serverTimestamp() });
+             await updateDoc(userRef, {
+                silverCoins: (user.silverCoins || 0) + 1,
+                lastJournalRewardDate: todayStr,
+            });
+        } else {
+            await setDoc(entryRef, { ...data, createdAt: serverTimestamp() });
+        }
     }
 }
