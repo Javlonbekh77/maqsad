@@ -26,6 +26,8 @@ type TimerContextType = {
   isRunning: boolean;
 };
 
+const TIMER_STORAGE_KEY = 'maqsadm_active_timer';
+
 const TimerContext = createContext<TimerContextType | undefined>(undefined);
 
 export function TimerProvider({ children }: { children: React.ReactNode }) {
@@ -38,38 +40,47 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
 
   // Load timer from localStorage on mount
   useEffect(() => {
-    const saved = localStorage.getItem('maqsadm_active_timer');
-    if (saved) {
-      try {
-        const timer = JSON.parse(saved);
+    try {
+      const saved = localStorage.getItem(TIMER_STORAGE_KEY);
+      if (saved) {
+        const timer: ActiveTimer = JSON.parse(saved);
+        // If the timer was running when the page was closed, adjust its start time
+        if (timer.paused) {
+          setIsRunning(false);
+        } else {
+           setIsRunning(true);
+        }
         setActiveTimer(timer);
-        setIsRunning(true);
-      } catch (e) {
-        console.error('Error loading timer from localStorage', e);
       }
+    } catch (e) {
+      console.error('Error loading timer from localStorage', e);
+      localStorage.removeItem(TIMER_STORAGE_KEY);
     }
   }, []);
 
   // Timer tick effect
   useEffect(() => {
-    if (!activeTimer) {
-      setTimeRemaining(0);
+    if (!activeTimer || !isRunning) {
+      if (activeTimer && !isRunning) {
+          // If paused, just set the time remaining without starting the interval
+          const elapsed = (activeTimer.pausedAt! - activeTimer.startedAt) / 1000;
+          setTimeRemaining(Math.ceil(Math.max(0, activeTimer.duration - elapsed)));
+      }
       return;
     }
 
     let cancelled = false;
 
     const tick = async () => {
+      if (cancelled) return;
+      
       const elapsed = (Date.now() - activeTimer.startedAt) / 1000;
       const remaining = Math.max(0, activeTimer.duration - elapsed);
-      if (cancelled) return;
+      
       setTimeRemaining(Math.ceil(remaining));
 
       if (remaining <= 0) {
-        // stop running state
         setIsRunning(false);
-
-        // Auto-complete once per timer
         if (activeTimer && activeTimer.taskId !== autoCompletedFor) {
           setAutoCompletedFor(activeTimer.taskId);
           try {
@@ -80,15 +91,11 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
           } catch (e) {
             console.error('Error auto-completing task on timer finish', e);
           }
-
-          // clear active timer after completion
-          setActiveTimer(null);
-          setTimeRemaining(0);
+          stopTimer(); // Clean up after completion
         }
       }
     };
 
-    // initial tick then interval
     tick();
     const interval = setInterval(tick, 1000);
 
@@ -101,9 +108,9 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
   // Persist timer to localStorage
   useEffect(() => {
     if (activeTimer) {
-      localStorage.setItem('maqsadm_active_timer', JSON.stringify(activeTimer));
+      localStorage.setItem(TIMER_STORAGE_KEY, JSON.stringify(activeTimer));
     } else {
-      localStorage.removeItem('maqsadm_active_timer');
+      localStorage.removeItem(TIMER_STORAGE_KEY);
     }
   }, [activeTimer]);
 
@@ -129,11 +136,11 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
 
   const resumeTimer = useCallback(() => {
     if (activeTimer && !isRunning) {
-      const pausedDuration = activeTimer.pausedAt ? (Date.now() - activeTimer.pausedAt) / 1000 : 0;
+      const pausedDuration = activeTimer.pausedAt ? (Date.now() - activeTimer.pausedAt) : 0;
       setActiveTimer(prev => prev ? { 
         ...prev, 
         paused: false,
-        startedAt: prev.startedAt + pausedDuration * 1000,
+        startedAt: prev.startedAt + pausedDuration,
         pausedAt: undefined,
       } : null);
       setIsRunning(true);
@@ -144,12 +151,13 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     setActiveTimer(null);
     setIsRunning(false);
     setTimeRemaining(0);
+    localStorage.removeItem(TIMER_STORAGE_KEY);
   }, []);
 
   const completeTimer = useCallback(() => {
     setTimeRemaining(0);
     setIsRunning(false);
-    // Keep activeTimer so UI can show "completed" state
+    // Keep activeTimer so UI can show "completed" state, stopTimer will clear it
   }, []);
 
   return (

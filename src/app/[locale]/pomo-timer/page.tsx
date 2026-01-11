@@ -11,12 +11,13 @@ import { useAuth } from '@/context/auth-context';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 
 const POMO_DURATIONS = [
-  { label: '15 min', value: 15 },
-  { label: '25 min', value: 25 },
-  { label: '45 min', value: 45 },
-  { label: '60 min', value: 60 },
+  { label: '15', value: 15 },
+  { label: '25', value: 25 },
+  { label: '45', value: 45 },
+  { label: '60', value: 60 },
 ];
 
 function formatTime(seconds: number): string {
@@ -42,6 +43,10 @@ export default function PomoTimerPage() {
   const handleStartPomo = useCallback(() => {
     if (!user) {
       alert("Please log in to start a timer.");
+      return;
+    }
+    if (selectedDuration <= 0) {
+      alert("Vaqt 0 dan katta bo'lishi kerak.");
       return;
     }
     const task = {
@@ -112,7 +117,7 @@ export default function PomoTimerPage() {
                      <div 
                         className="absolute inset-0 rounded-full bg-primary transition-transform duration-500 origin-bottom" 
                         style={{
-                            transform: `scaleY(${(timeRemaining / (selectedDuration * 60))})`
+                            transform: `scaleY(${(activeTimer ? timeRemaining : selectedDuration * 60) / (selectedDuration * 60)})`
                         }}
                      ></div>
                     <div className="text-center relative z-20">
@@ -121,18 +126,33 @@ export default function PomoTimerPage() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-4 gap-2 mb-8">
+                <div className="grid grid-cols-2 gap-4 mb-8">
+                  <div className="grid grid-cols-2 gap-2">
                     {POMO_DURATIONS.map((item) => (
-                    <Button
-                        key={item.value}
-                        variant={selectedDuration === item.value && !activeTimer ? 'default' : 'outline'}
-                        onClick={() => handleDurationChange(item.value)}
-                        disabled={!!activeTimer}
-                    >
-                        {item.label}
-                    </Button>
+                      <Button
+                          key={item.value}
+                          variant={selectedDuration === item.value && !activeTimer ? 'default' : 'outline'}
+                          onClick={() => handleDurationChange(item.value)}
+                          disabled={!!activeTimer}
+                      >
+                          {item.label}
+                      </Button>
                     ))}
+                  </div>
+                  <div className="space-y-2">
+                      <Label htmlFor="custom-duration">O'zingiz kiriting (daqiqa)</Label>
+                      <Input
+                        id="custom-duration"
+                        type="number"
+                        placeholder="Masalan, 30"
+                        value={selectedDuration}
+                        onChange={(e) => handleDurationChange(parseInt(e.target.value) || 0)}
+                        disabled={!!activeTimer}
+                        className="text-center"
+                      />
+                  </div>
                 </div>
+
 
                 <div className="flex gap-4 justify-center mb-8">
                     <Button 
