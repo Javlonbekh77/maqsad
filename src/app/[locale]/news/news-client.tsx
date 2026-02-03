@@ -10,46 +10,7 @@ import { useAuth } from "@/context/auth-context";
 import { useRouter } from "@/navigation";
 import { Skeleton } from '@/components/ui/skeleton';
 import { Brain, Rocket, Users } from 'lucide-react';
-import PostCard from '@/components/news/post-card'; // Import the new component
 import { useToast } from '@/hooks/use-toast';
-
-// Sample data for posts
-const samplePosts = [
-    {
-        author: {
-            name: 'Javlonbek Xoldorov',
-            avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=500&h=500&fit=crop',
-            username: 'javlonbekh',
-        },
-        content: '🚀 Men yangi maqsad sari qadamni boshladim! "MaqsadM 2.0" loyihasi ustida ishlayapman. Bu talabalar uchun O\'zbekistondagi eng kuchli networking platformasi bo\'ladi!',
-        imageUrl: 'https://images.unsplash.com/photo-1556740738-b6a63e27c4df?w=800&h=450&fit=crop',
-        imageHint: 'startup workspace',
-        timestamp: '5m ago',
-        tags: ['#maqsadm', '#startup', '#networking'],
-    },
-    {
-        author: {
-            name: 'Aziza Olimova',
-            avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500&h=500&fit=crop',
-            username: 'aziza_dev',
-        },
-        content: '💡 Men yangi g\'oya o\'rgandim! React\'dagi "Server Components" haqida o\'qib, uning qanchalik kuchli ekanligini angladim. Kelajak loyihalarimda albatta ishlataman.',
-        timestamp: '1h ago',
-        tags: ['#react', '#webdev', '#learning'],
-    },
-    {
-        author: {
-            name: 'Sardor Komilov',
-            avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=500&h=500&fit=crop',
-            username: 'sardor_k',
-        },
-        content: '🎯 Men maqsaddosh qidiryapman. IELTS imtihoniga tayyorlanayotganlar bo\'lsa, birga shug\'ullansak bo\'lardi. Maqsadim 8.0+',
-        imageUrl: 'https://images.unsplash.com/photo-1521790797524-1f44c0ebb37b?w=800&h=450&fit=crop',
-        imageHint: 'study group books',
-        timestamp: '3h ago',
-        tags: ['#ielts', '#goalmates'],
-    }
-];
 
 export default function NewsClient() {
     const { user, loading } = useAuth();
@@ -142,11 +103,9 @@ export default function NewsClient() {
                         </CardContent>
                     </Card>
 
-                    {/* Sample Posts */}
+                    {/* Posts will be dynamically loaded here in the future */}
                     <div className="space-y-8">
-                        {samplePosts.map((post, index) => (
-                            <PostCard key={index} {...post} />
-                        ))}
+                       {/* This space is reserved for dynamically loaded posts. */}
                     </div>
                 </div>
                 <div className="hidden md:block space-y-8">
