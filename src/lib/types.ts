@@ -86,6 +86,8 @@ export type User = {
   lastRead?: LastRead;
   notificationsLastCheckedAt?: Timestamp;
   lastJournalRewardDate?: string; // YYYY-MM-DD
+  status?: 'open-to-help' | 'searching-goalmates' | 'open-to-learn' | 'none';
+  interests?: string;
 };
 
 export type WeeklyMeeting = {

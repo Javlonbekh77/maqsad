@@ -5,7 +5,7 @@ import AppLayout from "@/components/layout/app-layout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Coins, Briefcase, Settings, Flame, Eye, EyeOff } from "lucide-react";
+import { Coins, Briefcase, Settings, Flame, Eye, EyeOff, BrainCircuit, HandHelping, Search } from "lucide-react";
 import HabitTracker from '@/components/profile/habit-tracker';
 import type { User, Group, PersonalTask, UserTask } from "@/lib/types";
 import { Separator } from '@/components/ui/separator';
@@ -20,6 +20,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { getUserProfileData, getScheduledTasksForUser } from '@/lib/data';
 import TaskDetailDialog from '@/components/tasks/task-detail-dialog';
 import useSWR from 'swr';
+import { Badge } from '@/components/ui/badge';
 
 
 const profileDataFetcher = ([key, userId]: [string, string]) => getUserProfileData(userId);
@@ -75,6 +76,29 @@ export default function ProfileClient() {
     // For the current user, show all their tasks
     return allScheduledTasks;
   }, [allScheduledTasks, isCurrentUserProfile]);
+
+  const statusInfo = useMemo(() => {
+    if (!user?.status || user.status === 'none') return null;
+
+    const options = {
+      'open-to-help': {
+        text: 'Yordam berishga tayyor',
+        icon: HandHelping,
+        variant: 'secondary' as const,
+      },
+      'searching-goalmates': {
+        text: 'Maqsaddosh qidirmoqda',
+        icon: Search,
+        variant: 'default' as const,
+      },
+      'open-to-learn': {
+        text: 'O\'rganishga ochiq',
+        icon: BrainCircuit,
+        variant: 'secondary' as const,
+      },
+    };
+    return options[user.status];
+  }, [user?.status]);
 
 
   if (isLoading) {
@@ -144,6 +168,12 @@ export default function ProfileClient() {
                 </Avatar>
                 <div className="flex flex-col justify-center gap-1">
                     <h2 className="text-3xl font-bold font-display">{user.fullName}</h2>
+                    {statusInfo && (
+                        <Badge variant={statusInfo.variant} className="w-fit my-2">
+                            <statusInfo.icon className="mr-2 h-4 w-4" />
+                            {statusInfo.text}
+                        </Badge>
+                    )}
                      <div className="flex items-center gap-2 text-muted-foreground">
                         <Briefcase className="h-5 w-5" />
                         <span className="text-lg">{user.occupation || 'Kasbi kiritilmagan'}</span>
@@ -165,7 +195,7 @@ export default function ProfileClient() {
           </CardHeader>
           <CardContent>
              <Separator className="my-6" />
-              <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                   <div>
                       <h3 className="text-lg font-semibold">{t('myGoals')}</h3>
                       <p className="mt-1 text-muted-foreground">{user.goals || 'Foydalanuvchi hali maqsadlarini kiritmagan.'}</p>
@@ -173,6 +203,10 @@ export default function ProfileClient() {
                     <div>
                       <h3 className="text-lg font-semibold">{t('myHabits')}</h3>
                       <p className="mt-1 text-muted-foreground">{user.habits || 'Foydalanuvchi hali odatlarini kiritmagan.'}</p>
+                  </div>
+                   <div>
+                      <h3 className="text-lg font-semibold">Qiziqishlar</h3>
+                      <p className="mt-1 text-muted-foreground">{user.interests || 'Foydalanuvchi hali qiziqishlarini kiritmagan.'}</p>
                   </div>
               </div>
           </CardContent>

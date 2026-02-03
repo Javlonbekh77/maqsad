@@ -7,7 +7,7 @@ import type { User } from '@/lib/types';
 import { auth, db } from '@/lib/firebase';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
-type SignupData = Omit<User, 'id' | 'firebaseId' | 'coins' | 'silverCoins' | 'goals' | 'habits' | 'groups' | 'taskHistory' | 'fullName' | 'occupation' | 'createdAt' | 'avatarUrl' | 'taskSchedules' | 'lastJournalRewardDate'> & { password: string; };
+type SignupData = Omit<User, 'id' | 'firebaseId' | 'coins' | 'silverCoins' | 'goals' | 'habits' | 'groups' | 'taskHistory' | 'fullName' | 'createdAt' | 'avatarUrl' | 'taskSchedules' | 'lastJournalRewardDate'> & { password: string; };
 
 interface AuthContextType {
   user: User | null;
@@ -100,7 +100,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       goals: '',
       habits: '',
       groups: [],
-      occupation: data.specialization || '',
+      occupation: data.occupation || '',
       taskHistory: [],
       taskSchedules: [],
       university: data.university || '',
@@ -109,6 +109,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       telegram: data.telegram || '',
       createdAt: serverTimestamp(),
       lastJournalRewardDate: '',
+      interests: data.interests || '',
+      status: data.status || 'none',
     };
     
     await setDoc(userDocRef, newUser);

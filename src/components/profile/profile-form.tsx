@@ -21,6 +21,7 @@ import { useTranslations } from 'next-intl';
 import { updateUserProfile } from '@/lib/data';
 import { useRouter } from '@/navigation';
 import { useTransition, useEffect } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 const profileFormSchema = z.object({
   firstName: z.string().min(2, "Ism kamida 2 belgidan iborat bo'lishi kerak."),
@@ -38,6 +39,8 @@ const profileFormSchema = z.object({
   specialization: z.string().optional().or(z.literal('')),
   course: z.string().optional().or(z.literal('')),
   telegram: z.string().optional().or(z.literal('')),
+  interests: z.string().optional().or(z.literal('')),
+  status: z.enum(['open-to-help', 'searching-goalmates', 'open-to-learn', 'none']).optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -60,6 +63,8 @@ export default function ProfileForm({ user }: { user: User }) {
       specialization: user.specialization || '',
       course: user.course || '',
       telegram: user.telegram || '',
+      interests: user.interests || '',
+      status: user.status || 'none',
     },
     mode: 'onChange',
   });
@@ -75,6 +80,8 @@ export default function ProfileForm({ user }: { user: User }) {
       specialization: user.specialization || '',
       course: user.course || '',
       telegram: user.telegram || '',
+      interests: user.interests || '',
+      status: user.status || 'none',
     });
   }, [user, form]);
 
@@ -98,6 +105,13 @@ export default function ProfileForm({ user }: { user: User }) {
       }
     });
   }
+
+  const statusOptions = [
+      { value: 'none', label: 'Hech biri' },
+      { value: 'open-to-learn', label: 'O\'rganishga ochiqman' },
+      { value: 'open-to-help', label: 'Yordam berishga tayyorman' },
+      { value: 'searching-goalmates', label: 'Maqsaddosh qidiryapman' },
+  ]
 
   return (
     <Form {...form}>
@@ -197,7 +211,52 @@ export default function ProfileForm({ user }: { user: User }) {
                   </FormItem>
                 )}
               />
+               <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Networking Statusi</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Statusingizni tanlang" />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                {statusOptions.map(opt => (
+                                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                         <FormDescription>
+                            Bu profilingizda ko'rinadi va boshqalarga nima maqsadda ekanligingizni bildiradi.
+                        </FormDescription>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
         </div>
+         <FormField
+          control={form.control}
+          name="interests"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-lg">Qiziqishlaringiz</FormLabel>
+              <FormDescription>
+                Qiziqishlaringizni vergul bilan ajratib yozing (masalan, Dasturlash, Kitob o'qish, Futbol).
+              </FormDescription>
+              <FormControl>
+                <Textarea
+                  placeholder="Qiziqishlaringizni shu yerga yozing..."
+                  className="resize-y min-h-[100px]"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="goals"
