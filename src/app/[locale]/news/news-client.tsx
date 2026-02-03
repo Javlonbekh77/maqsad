@@ -10,11 +10,53 @@ import { useAuth } from "@/context/auth-context";
 import { useRouter } from "@/navigation";
 import { Skeleton } from '@/components/ui/skeleton';
 import { Brain, Rocket, Users } from 'lucide-react';
+import PostCard from '@/components/news/post-card'; // Import the new component
+import { useToast } from '@/hooks/use-toast';
+
+// Sample data for posts
+const samplePosts = [
+    {
+        author: {
+            name: 'Javlonbek Xoldorov',
+            avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=500&h=500&fit=crop',
+            username: 'javlonbekh',
+        },
+        content: '🚀 Men yangi maqsad sari qadamni boshladim! "MaqsadM 2.0" loyihasi ustida ishlayapman. Bu talabalar uchun O\'zbekistondagi eng kuchli networking platformasi bo\'ladi!',
+        imageUrl: 'https://images.unsplash.com/photo-1556740738-b6a63e27c4df?w=800&h=450&fit=crop',
+        imageHint: 'startup workspace',
+        timestamp: '5m ago',
+        tags: ['#maqsadm', '#startup', '#networking'],
+    },
+    {
+        author: {
+            name: 'Aziza Olimova',
+            avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500&h=500&fit=crop',
+            username: 'aziza_dev',
+        },
+        content: '💡 Men yangi g\'oya o\'rgandim! React\'dagi "Server Components" haqida o\'qib, uning qanchalik kuchli ekanligini angladim. Kelajak loyihalarimda albatta ishlataman.',
+        timestamp: '1h ago',
+        tags: ['#react', '#webdev', '#learning'],
+    },
+    {
+        author: {
+            name: 'Sardor Komilov',
+            avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=500&h=500&fit=crop',
+            username: 'sardor_k',
+        },
+        content: '🎯 Men maqsaddosh qidiryapman. IELTS imtihoniga tayyorlanayotganlar bo\'lsa, birga shug\'ullansak bo\'lardi. Maqsadim 8.0+',
+        imageUrl: 'https://images.unsplash.com/photo-1521790797524-1f44c0ebb37b?w=800&h=450&fit=crop',
+        imageHint: 'study group books',
+        timestamp: '3h ago',
+        tags: ['#ielts', '#goalmates'],
+    }
+];
 
 export default function NewsClient() {
     const { user, loading } = useAuth();
     const router = useRouter();
+    const { toast } = useToast();
     const [postContent, setPostContent] = useState('');
+    const [isPosting, setIsPosting] = useState(false);
 
     useEffect(() => {
         if (!loading && !user) {
@@ -26,6 +68,22 @@ export default function NewsClient() {
         setPostContent(template);
     };
 
+    const handlePost = async () => {
+        if (!postContent.trim()) return;
+
+        setIsPosting(true);
+        // Simulate a network request
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        toast({
+            title: "Post muvaffaqiyatli qo'shildi!",
+            description: "Sizning fikringiz endi lentada.",
+        });
+
+        setPostContent('');
+        setIsPosting(false);
+    };
+
     if (loading || !user) {
         return (
              <AppLayout>
@@ -34,8 +92,14 @@ export default function NewsClient() {
                         <CardHeader><Skeleton className="h-24 w-full" /></CardHeader>
                         <CardContent><Skeleton className="h-10 w-full" /></CardContent>
                     </Card>
-                    <div className="text-center py-16">
-                        <Skeleton className="h-32 w-full" />
+                    <div className="grid md:grid-cols-3 gap-8">
+                        <div className="md:col-span-2 space-y-8">
+                           <Skeleton className="h-64 w-full" />
+                           <Skeleton className="h-64 w-full" />
+                        </div>
+                        <div className="hidden md:block space-y-8">
+                            <Skeleton className="h-48 w-full" />
+                        </div>
                     </div>
                 </div>
             </AppLayout>
@@ -72,15 +136,17 @@ export default function NewsClient() {
                                      <Brain className="h-4 w-4 mr-2" /> Yangi g'oya
                                 </Button>
                             </div>
-                            <Button disabled={!postContent.trim()}>
-                                Post qilish
+                            <Button onClick={handlePost} disabled={!postContent.trim() || isPosting}>
+                                {isPosting ? 'Post qilinmoqda...' : 'Post qilish'}
                             </Button>
                         </CardContent>
                     </Card>
 
-                    <div className="text-center py-16 border-2 border-dashed rounded-lg">
-                        <h3 className="text-xl font-semibold text-muted-foreground">Yangiliklar Lentasi</h3>
-                        <p className="text-sm text-muted-foreground mt-2">Bu bo'lim tez kunda ishga tushadi!</p>
+                    {/* Sample Posts */}
+                    <div className="space-y-8">
+                        {samplePosts.map((post, index) => (
+                            <PostCard key={index} {...post} />
+                        ))}
                     </div>
                 </div>
                 <div className="hidden md:block space-y-8">
