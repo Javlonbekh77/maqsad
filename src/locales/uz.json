@@ -8,7 +8,8 @@
         "groups": "Guruhlar",
         "leaderboard": "Peshqadamlar ro'yxati",
         "profile": "Profil",
-        "explore": "Qidiruv"
+        "explore": "Qidiruv",
+        "news": "Yangiliklar"
     },
     "header": {
         "searchPlaceholder": "Qidirish...",

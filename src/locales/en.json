@@ -8,7 +8,8 @@
         "groups": "Groups",
         "leaderboard": "Leaderboard",
         "profile": "Profile",
-        "explore": "Explore"
+        "explore": "Explore",
+        "news": "News"
     },
     "header": {
         "searchPlaceholder": "Search...",

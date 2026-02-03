@@ -12,7 +12,8 @@ import {
   ClipboardList,
   Clock,
   BookOpen,
-  Compass
+  Compass,
+  Newspaper
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
@@ -97,14 +98,15 @@ export default function AppSidebar() {
 
 
   const navItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/news', label: t('news'), icon: Newspaper },
+    { href: '/dashboard', label: t('dashboard'), icon: LayoutDashboard },
     { href: '/my-tasks', label: 'Mening Vazifalarim', icon: ClipboardList },
     { href: '/explore', label: t('explore'), icon: Compass },
     { href: '/pomo-timer', label: 'Fokus Vaqti', icon: Clock },
     { href: '/kundalik', label: 'Kundalik', icon: BookOpen },
-    { href: '/groups', label: 'Guruhlar', icon: Users },
-    { href: '/leaderboard', label: 'Peshqadamlar', icon: Trophy },
-    { href: `/profile/${user?.id}`, label: 'Profil', icon: UserCircle },
+    { href: '/groups', label: t('groups'), icon: Users },
+    { href: '/leaderboard', label: t('leaderboard'), icon: Trophy },
+    { href: `/profile/${user?.id}`, label: t('profile'), icon: UserCircle },
   ];
 
   return (
@@ -119,7 +121,7 @@ export default function AppSidebar() {
                 <ul className="grid items-start px-4 text-sm font-medium">
                     {navItems.map((item) => (
                         // Don't render profile link if user is not loaded
-                        (item.label === 'Profil' && !user) ? null :
+                        (item.label === t('profile') && !user) ? null :
                         <li key={item.href}>
                             <Link
                             href={item.href}

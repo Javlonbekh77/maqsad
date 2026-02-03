@@ -43,7 +43,7 @@ export default function LoginPage() {
     setError(null);
     try {
       await login(values.email, values.password);
-      router.push('/dashboard');
+      router.push('/news');
     } catch (err: any) {
       if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
           setError('Invalid email or password. Please check your credentials and try again.');

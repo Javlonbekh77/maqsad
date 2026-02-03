@@ -9,7 +9,8 @@ import {
   ClipboardList,
   Clock,
   BookOpen,
-  Compass
+  Compass,
+  Newspaper
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useTranslations } from 'next-intl';
@@ -30,17 +31,18 @@ export default function MobileBottomNav() {
   const t = useTranslations('nav');
 
   const mainNavItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/explore', label: t('explore'), icon: Compass },
-    { href: '/groups', label: 'Guruhlar', icon: Users },
+    { href: '/news', label: t('news'), icon: Newspaper },
+    { href: '/dashboard', label: t('dashboard'), icon: LayoutDashboard },
+    { href: '/groups', label: t('groups'), icon: Users },
     { href: '/my-tasks', label: 'Vazifalar', icon: ClipboardList },
   ];
 
   const moreNavItems = [
-    { href: '/leaderboard', label: 'Liderlar', icon: Trophy },
+    { href: '/explore', label: t('explore'), icon: Compass },
+    { href: '/leaderboard', label: t('leaderboard'), icon: Trophy },
     { href: '/pomo-timer', label: 'Fokus Vaqti', icon: Clock },
     { href: '/kundalik', label: 'Kundalik', icon: BookOpen },
-    { href: `/profile/${user?.id}`, label: 'Profil', icon: UserCircle },
+    { href: `/profile/${user?.id}`, label: t('profile'), icon: UserCircle },
   ]
 
   return (
@@ -79,7 +81,7 @@ export default function MobileBottomNav() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" side="top" className="mb-2 w-48">
                  {moreNavItems.map((item) => {
-                    if (item.label === 'Profil' && !user) return null;
+                    if (item.label === t('profile') && !user) return null;
                      const isActive = pathname.startsWith(item.href);
                      return (
                         <DropdownMenuItem key={item.href} asChild>

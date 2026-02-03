@@ -67,7 +67,7 @@ const steps = [
 const skillOptions = ['Dasturlash', 'Dizayn', 'Marketing', 'Biznes', 'Matematika', 'Fizika', 'Tarix', 'Ingliz tili', 'Rus tili', 'Startup'];
 
 const SkillCheckboxGroup = ({ name, label, description }: { name: keyof FormValues, label: string, description: string }) => {
-  const { control } = useFormContext<FormValues>();
+  const { control } = useForm<FormValues>();
   return (
     <FormField
       control={control}
@@ -121,7 +121,7 @@ export default function SignupPage() {
   
   useEffect(() => {
     if (!loading && user) {
-      router.push('/dashboard');
+      router.push('/news');
     }
   }, [user, loading, router]);
 
@@ -147,7 +147,7 @@ export default function SignupPage() {
     setError(null);
     try {
       await signup(values);
-      router.push('/dashboard');
+      router.push('/news');
     } catch (err: any) {
        if (err.code === 'auth/email-already-in-use') {
         setError('This email is already registered. Please log in or use a different email.');
