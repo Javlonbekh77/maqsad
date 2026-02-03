@@ -5,7 +5,7 @@ import AppLayout from "@/components/layout/app-layout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Coins, Briefcase, Settings, Flame, BrainCircuit, HandHelping, Search, GraduationCap, Building, PencilRuler, BookOpen, Star, Sparkles, Link as LinkIcon, UserPlus } from "lucide-react";
+import { Coins, Briefcase, Settings, Flame, BrainCircuit, HandHelping, Search, GraduationCap, Building, PencilRuler, BookOpen, Star, Sparkles, Link as LinkIcon, UserPlus, School, UserCheck } from "lucide-react";
 import HabitTracker from '@/components/profile/habit-tracker';
 import type { User, Group, PersonalTask, UserTask } from "@/lib/types";
 import { Separator } from '@/components/ui/separator';
