@@ -29,17 +29,17 @@ const chartConfig = {
 } satisfies ChartConfig
 
 
-function WeeklyActivityChart({ user }: { user: User }) {
+function MonthlyActivityChart({ user }: { user: User }) {
     const chartData = useMemo(() => {
         const today = endOfDay(new Date());
-        const last7Days = Array.from({ length: 7 }, (_, i) => subDays(today, i)).reverse();
+        const last30Days = Array.from({ length: 30 }, (_, i) => subDays(today, i)).reverse();
 
-        return last7Days.map(date => {
+        return last30Days.map(date => {
             const dateStr = format(date, 'yyyy-MM-dd');
             const completedCount = user.taskHistory.filter(h => h.date === dateStr).length;
             
             return {
-                date: format(date, 'EEE'), // e.g., "Mon"
+                date: format(date, 'MMM d'),
                 tasks: completedCount,
             }
         });
@@ -48,7 +48,7 @@ function WeeklyActivityChart({ user }: { user: User }) {
     return (
          <Card>
             <CardHeader>
-                <CardTitle>Haftalik Faollik</CardTitle>
+                <CardTitle>Oylik Faollik</CardTitle>
             </CardHeader>
             <CardContent>
                 <ChartContainer config={chartConfig} className="h-40 w-full">
@@ -59,13 +59,14 @@ function WeeklyActivityChart({ user }: { user: User }) {
                         tickLine={false}
                         tickMargin={10}
                         axisLine={false}
-                        tickFormatter={(value) => value.slice(0, 3)}
+                        tickFormatter={(value, index) => index % 5 === 0 ? value : ''} // Show label every 5 days
                     />
+                    <YAxis tickLine={false} axisLine={false} tickMargin={10} allowDecimals={false} />
                     <ChartTooltip
                         cursor={false}
                         content={<ChartTooltipContent indicator="line" />}
                     />
-                    <Bar dataKey="tasks" fill="var(--color-tasks)" radius={4} />
+                    <Bar dataKey="tasks" fill="var(--color-tasks)" radius={2} />
                 </BarChart>
                 </ChartContainer>
             </CardContent>
@@ -185,7 +186,7 @@ function LeaderboardMotivation({ user }: { user: User }) {
 export default function DashboardStats({ user, tasks }: DashboardStatsProps) {
     return (
        <div className="space-y-8">
-            <WeeklyActivityChart user={user} />
+            <MonthlyActivityChart user={user} />
             <LeaderboardMotivation user={user} />
        </div>
     )

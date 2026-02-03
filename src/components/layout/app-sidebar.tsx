@@ -11,7 +11,8 @@ import {
   PlusSquare,
   ClipboardList,
   Clock,
-  BookOpen
+  BookOpen,
+  Compass
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
@@ -98,6 +99,7 @@ export default function AppSidebar() {
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/my-tasks', label: 'Mening Vazifalarim', icon: ClipboardList },
+    { href: '/explore', label: t('explore'), icon: Compass },
     { href: '/pomo-timer', label: 'Fokus Vaqti', icon: Clock },
     { href: '/kundalik', label: 'Kundalik', icon: BookOpen },
     { href: '/groups', label: 'Guruhlar', icon: Users },

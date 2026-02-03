@@ -34,6 +34,10 @@ const educationStatusMap = {
     other: { text: "Boshqa", icon: UserCheck }
 };
 
+const SkillBadge = ({ skill }: { skill: string }) => (
+    <Badge variant="secondary" className="text-sm">{skill.trim()}</Badge>
+);
+
 export default function ProfileClient() {
   const t = useTranslations('profile');
   const params = useParams();
@@ -138,6 +142,21 @@ export default function ProfileClient() {
         </AppLayout>
       );
   }
+  
+  const renderSkills = (skills: string | undefined, title: string) => {
+    if (!skills) return null;
+    const skillList = skills.split(',').filter(s => s.trim() !== '');
+    if (skillList.length === 0) return null;
+    
+    return (
+        <div className='mb-6'>
+            <h3 className="text-lg font-semibold mb-2">{title}</h3>
+            <div className="flex flex-wrap gap-2">
+                {skillList.map((skill, index) => <SkillBadge key={index} skill={skill} />)}
+            </div>
+        </div>
+    );
+  }
 
   return (
     <AppLayout>
@@ -191,12 +210,10 @@ export default function ProfileClient() {
             </CardHeader>
             <CardContent>
                <Separator className="my-6" />
-                {statusInfo?.skills && (
-                  <div className='mb-6'>
-                      <h3 className="text-lg font-semibold">{statusInfo.text} sohalari:</h3>
-                      <p className="mt-1 text-muted-foreground">{statusInfo.skills}</p>
-                  </div>
-                )}
+                {renderSkills(user.skillsToHelp, "Yordam bera oladigan sohalari")}
+                {renderSkills(user.skillsToLearn, "O'rganmoqchi bo'lgan sohalari")}
+                {renderSkills(user.goalMateTopics, "Maqsaddosh qidirayotgan yo'nalishlari")}
+                {renderSkills(user.interests, "Qiziqishlari")}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                     <div>
                         <h3 className="text-lg font-semibold">{t('myGoals')}</h3>
@@ -205,10 +222,6 @@ export default function ProfileClient() {
                       <div>
                         <h3 className="text-lg font-semibold">{t('myHabits')}</h3>
                         <p className="mt-1 text-muted-foreground">{user.habits || 'Foydalanuvchi hali odatlarini kiritmagan.'}</p>
-                    </div>
-                     <div>
-                        <h3 className="text-lg font-semibold">Qiziqishlar</h3>
-                        <p className="mt-1 text-muted-foreground">{user.interests || 'Foydalanuvchi hali qiziqishlarini kiritmagan.'}</p>
                     </div>
                 </div>
             </CardContent>

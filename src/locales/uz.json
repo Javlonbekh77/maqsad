@@ -7,7 +7,8 @@
         "dashboard": "Boshqaruv paneli",
         "groups": "Guruhlar",
         "leaderboard": "Peshqadamlar ro'yxati",
-        "profile": "Profil"
+        "profile": "Profil",
+        "explore": "Qidiruv"
     },
     "header": {
         "searchPlaceholder": "Qidirish...",
@@ -127,5 +128,12 @@
         "label": "Til",
         "uz": "O'zbekcha",
         "en": "English"
+    },
+    "explore": {
+        "title": "Qidiruv",
+        "subtitle": "Iqtidorli insonlar va qiziqarli guruhlarni toping.",
+        "searchPlaceholder": "Foydalanuvchi, guruh, ko'nikma qidirish...",
+        "usersTab": "Foydalanuvchilar",
+        "groupsTab": "Guruhlar"
     }
 }

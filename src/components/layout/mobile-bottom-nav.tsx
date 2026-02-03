@@ -8,7 +8,8 @@ import {
   UserCircle,
   ClipboardList,
   Clock,
-  BookOpen
+  BookOpen,
+  Compass
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useTranslations } from 'next-intl';
@@ -30,12 +31,13 @@ export default function MobileBottomNav() {
 
   const mainNavItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/explore', label: t('explore'), icon: Compass },
     { href: '/groups', label: 'Guruhlar', icon: Users },
     { href: '/my-tasks', label: 'Vazifalar', icon: ClipboardList },
-    { href: '/leaderboard', label: 'Liderlar', icon: Trophy },
   ];
 
   const moreNavItems = [
+    { href: '/leaderboard', label: 'Liderlar', icon: Trophy },
     { href: '/pomo-timer', label: 'Fokus Vaqti', icon: Clock },
     { href: '/kundalik', label: 'Kundalik', icon: BookOpen },
     { href: `/profile/${user?.id}`, label: 'Profil', icon: UserCircle },

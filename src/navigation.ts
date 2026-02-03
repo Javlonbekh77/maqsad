@@ -24,6 +24,7 @@ export const pathnames = {
   '/groups/[id]/edit-task/[taskId]': '/groups/[id]/edit-task/[taskId]',
   '/pomo-timer': '/pomo-timer',
   '/kundalik': '/kundalik',
+  '/explore': '/explore',
 } satisfies Pathnames<typeof locales>;
  
 export const {Link, redirect, usePathname, useRouter} =
