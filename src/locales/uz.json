@@ -134,6 +134,12 @@
         "subtitle": "Iqtidorli insonlar va qiziqarli guruhlarni toping.",
         "searchPlaceholder": "Foydalanuvchi, guruh, ko'nikma qidirish...",
         "usersTab": "Foydalanuvchilar",
-        "groupsTab": "Guruhlar"
+        "groupsTab": "Guruhlar",
+        "noUsersFound": "Foydalanuvchilar Topilmadi",
+        "noUsersFoundForTerm": "\"{searchTerm}\" qidiruvingiz bo'yicha hech qanday foydalanuvchi topilmadi.",
+        "noUsersFoundDefault": "Hozircha foydalanuvchilar yo'q.",
+        "noGroupsFound": "Guruhlar Topilmadi",
+        "noGroupsFoundForTerm": "\"{searchTerm}\" qidiruvingiz bo'yicha hech qanday guruh topilmadi.",
+        "noGroupsFoundDefault": "Hozircha guruhlar yo'q."
     }
 }

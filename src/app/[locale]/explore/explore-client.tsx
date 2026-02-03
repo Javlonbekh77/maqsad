@@ -158,9 +158,9 @@ export default function ExploreClient() {
                 </div>
               ) : (
                 <div className="text-center py-16">
-                  <h3 className="text-xl font-semibold">Foydalanuvchilar Topilmadi</h3>
+                  <h3 className="text-xl font-semibold">{t('noUsersFound')}</h3>
                   <p className="text-muted-foreground mt-2">
-                    {searchTerm ? `"${searchTerm}" qidiruvingiz bo'yicha hech qanday foydalanuvchi topilmadi.` : "Hozircha foydalanuvchilar yo'q."}
+                    {searchTerm ? t('noUsersFoundForTerm', { searchTerm }) : t('noUsersFoundDefault')}
                   </p>
                 </div>
               )}
@@ -177,9 +177,9 @@ export default function ExploreClient() {
                 </div>
               ) : (
                 <div className="text-center py-16">
-                  <h3 className="text-xl font-semibold">Guruhlar Topilmadi</h3>
+                  <h3 className="text-xl font-semibold">{t('noGroupsFound')}</h3>
                   <p className="text-muted-foreground mt-2">
-                     {searchTerm ? `"${searchTerm}" qidiruvingiz bo'yicha hech qanday guruh topilmadi.` : "Hozircha guruhlar yo'q."}
+                     {searchTerm ? t('noGroupsFoundForTerm', { searchTerm }) : t('noGroupsFoundDefault')}
                   </p>
                 </div>
               )}

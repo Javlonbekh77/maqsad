@@ -134,6 +134,12 @@
         "subtitle": "Discover talented people and interesting groups.",
         "searchPlaceholder": "Search users, groups, skills...",
         "usersTab": "Users",
-        "groupsTab": "Groups"
+        "groupsTab": "Groups",
+        "noUsersFound": "No Users Found",
+        "noUsersFoundForTerm": "No users found for your search \"{searchTerm}\".",
+        "noUsersFoundDefault": "There are no users yet.",
+        "noGroupsFound": "No Groups Found",
+        "noGroupsFoundForTerm": "No groups found for your search \"{searchTerm}\".",
+        "noGroupsFoundDefault": "There are no groups yet."
     }
 }

@@ -26,7 +26,8 @@ import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+
 
 const formSchema = z.object({
   // Step 1
@@ -62,6 +63,50 @@ const steps = [
     { id: 'Step 3', name: 'Networking', fields: ['status', 'skillsToHelp', 'skillsToLearn', 'goalMateTopics']},
     { id: 'Step 4', name: 'Qo\'shimcha', fields: ['occupation', 'telegram', 'interests'] }
 ]
+
+const skillOptions = ['Dasturlash', 'Dizayn', 'Marketing', 'Biznes', 'Matematika', 'Fizika', 'Tarix', 'Ingliz tili', 'Rus tili', 'Startup'];
+
+const SkillCheckboxGroup = ({ name, label, description }: { name: keyof FormValues, label: string, description: string }) => {
+  const { control } = useFormContext<FormValues>();
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>{label}</FormLabel>
+          <FormDescription>{description}</FormDescription>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 py-2">
+            {skillOptions.map((option) => {
+              const currentValues = typeof field.value === 'string' ? field.value.split(',').map(s => s.trim()).filter(Boolean) : [];
+              return (
+                <FormItem key={option} className="flex flex-row items-center space-x-2 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={currentValues.includes(option)}
+                      onCheckedChange={(checked) => {
+                        const set = new Set(currentValues);
+                        if (checked) {
+                          set.add(option);
+                        } else {
+                          set.delete(option);
+                        }
+                        field.onChange(Array.from(set).join(', '));
+                      }}
+                    />
+                  </FormControl>
+                  <FormLabel className="font-normal text-sm">{option}</FormLabel>
+                </FormItem>
+              );
+            })}
+          </div>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+};
+
 
 export default function SignupPage() {
   const { signup, user, loading } = useAuth();
@@ -151,7 +196,7 @@ export default function SignupPage() {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form className="space-y-6">
              {error && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
@@ -218,10 +263,21 @@ export default function SignupPage() {
                         </FormItem>
                      )}/>
                     
-                    {educationStatus && (
-                         <FormField control={form.control} name="institution" render={({ field }) => (
-                            <FormItem><FormLabel>O'quv Muassasasi Nomi</FormLabel><FormControl><Input placeholder="e.g., TUIT, 5-maktab, PDP Academy" {...field} /></FormControl><FormMessage /></FormItem>
-                        )}/>
+                    {educationStatus === 'pupil' && (
+                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                           <FormField control={form.control} name="institution" render={({ field }) => (
+                               <FormItem><FormLabel>Maktab Nomi</FormLabel><FormControl><Input placeholder="e.g., 5-maktab" {...field} /></FormControl><FormMessage /></FormItem>
+                           )}/>
+                           <FormField control={form.control} name="course" render={({ field }) => (
+                               <FormItem><FormLabel>Sinf (raqam)</FormLabel><FormControl><Input type="number" placeholder="e.g., 10" {...field} /></FormControl><FormMessage /></FormItem>
+                           )}/>
+                       </div>
+                    )}
+
+                    {(educationStatus === 'student' || educationStatus === 'master' || educationStatus === 'applicant' || educationStatus === 'other') && (
+                       <FormField control={form.control} name="institution" render={({ field }) => (
+                          <FormItem><FormLabel>O'quv Muassasasi Nomi</FormLabel><FormControl><Input placeholder="e.g., TUIT, PDP Academy" {...field} /></FormControl><FormMessage /></FormItem>
+                      )}/>
                     )}
 
                     {(educationStatus === 'student' || educationStatus === 'master') && (
@@ -268,23 +324,29 @@ export default function SignupPage() {
                      <AnimatePresence>
                       {networkingStatus === 'open-to-help' && (
                         <motion.div initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}>
-                            <FormField control={form.control} name="skillsToHelp" render={({ field }) => (
-                                <FormItem><FormLabel>Yordam bera oladigan sohalaringiz</FormLabel><FormControl><Textarea placeholder="Qaysi fanlar yoki sohalarda bilimingiz kuchli? (Vergul bilan ajrating)" {...field} /></FormControl><FormMessage /></FormItem>
-                            )}/>
+                            <SkillCheckboxGroup
+                              name="skillsToHelp"
+                              label="Yordam bera oladigan sohalaringiz"
+                              description="Qaysi fanlar yoki sohalarda bilimingiz kuchli?"
+                            />
                         </motion.div>
                       )}
                       {networkingStatus === 'open-to-learn' && (
                          <motion.div initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}>
-                            <FormField control={form.control} name="skillsToLearn" render={({ field }) => (
-                                <FormItem><FormLabel>O'rganmoqchi bo'lgan sohalaringiz</FormLabel><FormControl><Textarea placeholder="Qaysi yangi bilimlarni egallashni xohlaysiz?" {...field} /></FormControl><FormMessage /></FormItem>
-                            )}/>
+                            <SkillCheckboxGroup
+                              name="skillsToLearn"
+                              label="O'rganmoqchi bo'lgan sohalaringiz"
+                              description="Qaysi yangi bilimlarni egallashni xohlaysiz?"
+                            />
                         </motion.div>
                       )}
                       {networkingStatus === 'searching-goalmates' && (
                          <motion.div initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}>
-                            <FormField control={form.control} name="goalMateTopics" render={({ field }) => (
-                                <FormItem><FormLabel>Maqsaddosh qidirayotgan yo'nalishlaringiz</FormLabel><FormControl><Textarea placeholder="Qaysi umumiy maqsadlar yo'lida ishlamoqchi bo'lgan sheriklar qidiryapsiz?" {...field} /></FormControl><FormMessage /></FormItem>
-                            )}/>
+                            <SkillCheckboxGroup
+                              name="goalMateTopics"
+                              label="Maqsaddosh qidirayotgan yo'nalishlaringiz"
+                              description="Qaysi umumiy maqsadlar yo'lida sheriklar qidiryapsiz?"
+                            />
                         </motion.div>
                       )}
                      </AnimatePresence>
@@ -324,7 +386,7 @@ export default function SignupPage() {
                         Keyingisi <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                 ) : (
-                    <Button type="submit" disabled={form.formState.isSubmitting}>
+                    <Button type="button" onClick={form.handleSubmit(onSubmit)} disabled={form.formState.isSubmitting}>
                         {form.formState.isSubmitting ? 'Ro\'yxatdan o\'tilmoqda...' : 'Ro\'yxatdan O\'tish'}
                     </Button>
                 )}
