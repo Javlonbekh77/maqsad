@@ -26,21 +26,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 const profileFormSchema = z.object({
   firstName: z.string().min(2, "Ism kamida 2 belgidan iborat bo'lishi kerak."),
   lastName: z.string().min(2, "Familiya kamida 2 belgidan iborat bo'lishi kerak."),
-  goals: z
-    .string()
-    .max(300, { message: 'Maqsadlar 300 belgidan oshmasligi kerak.' })
-    .optional().or(z.literal('')),
-  habits: z
-    .string()
-    .max(300, { message: 'Odatlar 300 belgidan oshmasligi kerak.' })
-    .optional().or(z.literal('')),
+  goals: z.string().max(300, { message: 'Maqsadlar 300 belgidan oshmasligi kerak.' }).optional().or(z.literal('')),
+  habits: z.string().max(300, { message: 'Odatlar 300 belgidan oshmasligi kerak.' }).optional().or(z.literal('')),
   occupation: z.string().optional().or(z.literal('')),
-  university: z.string().optional().or(z.literal('')),
-  specialization: z.string().optional().or(z.literal('')),
-  course: z.string().optional().or(z.literal('')),
   telegram: z.string().optional().or(z.literal('')),
   interests: z.string().optional().or(z.literal('')),
   status: z.enum(['open-to-help', 'searching-goalmates', 'open-to-learn', 'none']).optional(),
+  
+  // Education
+  educationStatus: z.enum(['student', 'master', 'applicant', 'pupil', 'other']).optional(),
+  institution: z.string().optional().or(z.literal('')),
+  fieldOfStudy: z.string().optional().or(z.literal('')),
+  course: z.string().optional().or(z.literal('')),
+
+  // Skills
+  skillsToHelp: z.string().optional().or(z.literal('')),
+  skillsToLearn: z.string().optional().or(z.literal('')),
+  goalMateTopics: z.string().optional().or(z.literal('')),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -53,19 +55,7 @@ export default function ProfileForm({ user }: { user: User }) {
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
-    defaultValues: {
-      firstName: user.firstName || '',
-      lastName: user.lastName || '',
-      goals: user.goals || '',
-      habits: user.habits || '',
-      occupation: user.occupation || '',
-      university: user.university || '',
-      specialization: user.specialization || '',
-      course: user.course || '',
-      telegram: user.telegram || '',
-      interests: user.interests || '',
-      status: user.status || 'none',
-    },
+    defaultValues: {},
     mode: 'onChange',
   });
   
@@ -76,12 +66,16 @@ export default function ProfileForm({ user }: { user: User }) {
       goals: user.goals || '',
       habits: user.habits || '',
       occupation: user.occupation || '',
-      university: user.university || '',
-      specialization: user.specialization || '',
-      course: user.course || '',
       telegram: user.telegram || '',
       interests: user.interests || '',
       status: user.status || 'none',
+      educationStatus: user.educationStatus || 'other',
+      institution: user.institution || '',
+      fieldOfStudy: user.fieldOfStudy || '',
+      course: user.course || '',
+      skillsToHelp: user.skillsToHelp || '',
+      skillsToLearn: user.skillsToLearn || '',
+      goalMateTopics: user.goalMateTopics || '',
     });
   }, [user, form]);
 
@@ -112,6 +106,16 @@ export default function ProfileForm({ user }: { user: User }) {
       { value: 'open-to-help', label: 'Yordam berishga tayyorman' },
       { value: 'searching-goalmates', label: 'Maqsaddosh qidiryapman' },
   ]
+  
+  const educationStatusOptions = [
+      { value: 'student', label: 'Talaba' },
+      { value: 'master', label: 'Magistr' },
+      { value: 'applicant', label: 'Abituriyent' },
+      { value: 'pupil', label: 'Maktab o\'quvchisi' },
+      { value: 'other', label: 'Boshqa' },
+  ]
+
+  const userStatus = form.watch('status');
 
   return (
     <Form {...form}>
@@ -173,13 +177,35 @@ export default function ProfileForm({ user }: { user: User }) {
               )}
             />
              <FormField
+                    control={form.control}
+                    name="educationStatus"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Ta'lim Statusi</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Ta'lim statusini tanlang" />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                {educationStatusOptions.map(opt => (
+                                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+               <FormField
                 control={form.control}
-                name="university"
+                name="institution"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Universitet</FormLabel>
+                    <FormLabel>O'quv Muassasasi</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., TUIT" {...field} />
+                      <Input placeholder="e.g., TUIT, 5-maktab" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -187,10 +213,10 @@ export default function ProfileForm({ user }: { user: User }) {
               />
                <FormField
                 control={form.control}
-                name="specialization"
+                name="fieldOfStudy"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Mutaxassislik</FormLabel>
+                    <FormLabel>Mutaxassislik / Yo'nalish</FormLabel>
                     <FormControl>
                       <Input placeholder="e.g., Software Engineering" {...field} />
                     </FormControl>
@@ -198,12 +224,12 @@ export default function ProfileForm({ user }: { user: User }) {
                   </FormItem>
                 )}
               />
-               <FormField
+              <FormField
                 control={form.control}
                 name="course"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Kurs (raqam)</FormLabel>
+                    <FormLabel>Kurs / Sinf (raqam)</FormLabel>
                     <FormControl>
                       <Input type="number" placeholder="e.g., 3" {...field} />
                     </FormControl>
@@ -211,7 +237,7 @@ export default function ProfileForm({ user }: { user: User }) {
                   </FormItem>
                 )}
               />
-               <FormField
+             <FormField
                     control={form.control}
                     name="status"
                     render={({ field }) => (
@@ -237,6 +263,62 @@ export default function ProfileForm({ user }: { user: User }) {
                     )}
                 />
         </div>
+
+        {userStatus === 'open-to-help' && (
+             <FormField
+              control={form.control}
+              name="skillsToHelp"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-lg">Yordam Bera Oladigan Sohalaringiz</FormLabel>
+                  <FormDescription>
+                    Qaysi sohalarda bilim va tajribangiz bor? Vergul bilan ajratib yozing.
+                  </FormDescription>
+                  <FormControl>
+                    <Textarea placeholder="masalan, Matematika, Ingliz tili, Python dasturlash..." className="resize-y min-h-[100px]" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+        )}
+        {userStatus === 'open-to-learn' && (
+             <FormField
+              control={form.control}
+              name="skillsToLearn"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-lg">O'rganmoqchi Bo'lgan Sohalaringiz</FormLabel>
+                  <FormDescription>
+                    Qaysi yangi bilimlarni egallashni xohlaysiz?
+                  </FormDescription>
+                  <FormControl>
+                    <Textarea placeholder="masalan, Public Speaking, UI/UX dizayn, Sun'iy intellekt..." className="resize-y min-h-[100px]" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+        )}
+        {userStatus === 'searching-goalmates' && (
+             <FormField
+              control={form.control}
+              name="goalMateTopics"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-lg">Maqsaddosh Izlayotgan Yo'nalishlaringiz</FormLabel>
+                  <FormDescription>
+                    Qaysi umumiy maqsadlar yo'lida ishlamoqchi bo'lgan sheriklar qidiryapsiz?
+                  </FormDescription>
+                  <FormControl>
+                    <Textarea placeholder="masalan, Startup qurish, IELTS 8+ olish, Marafon yugurish..." className="resize-y min-h-[100px]" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+        )}
+
          <FormField
           control={form.control}
           name="interests"

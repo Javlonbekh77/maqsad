@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -18,34 +19,48 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAuth } from '@/context/auth-context';
 import { Link, useRouter } from '@/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, ArrowLeft, ArrowRight, BrainCircuit, HandHelping, Users, Search } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ArrowRight, BrainCircuit, HandHelping, Users, Search, School, GraduationCap, UserCheck, BookOpen } from 'lucide-react';
 import Logo from '@/components/logo';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const formSchema = z.object({
+  // Step 1
   firstName: z.string().min(2, { message: "Ism kamida 2 harfdan iborat bo'lishi kerak." }),
   lastName: z.string().min(2, { message: "Familiya kamida 2 harfdan iborat bo'lishi kerak." }),
   email: z.string().email({ message: 'Yaroqsiz email manzili.' }),
   password: z.string().min(6, { message: 'Parol kamida 6 belgidan iborat bo\'lishi kerak.' }),
-  occupation: z.string().optional(),
-  university: z.string().optional(),
-  specialization: z.string().optional(),
+  
+  // Step 2
+  educationStatus: z.enum(['student', 'master', 'applicant', 'pupil', 'other']),
+  institution: z.string().min(2, { message: "O'quv muassasasi nomini kiriting." }),
+  fieldOfStudy: z.string().optional(),
   course: z.string().optional(),
+  
+  // Step 3
+  status: z.enum(['open-to-help', 'searching-goalmates', 'open-to-learn', 'none']).default('none'),
+  skillsToHelp: z.string().optional(),
+  skillsToLearn: z.string().optional(),
+  goalMateTopics: z.string().optional(),
+
+  // Step 4
+  occupation: z.string().optional(),
   telegram: z.string().optional(),
   interests: z.string().optional(),
-  status: z.enum(['open-to-help', 'searching-goalmates', 'open-to-learn', 'none']).default('none'),
 });
+
 
 type FormValues = z.infer<typeof formSchema>;
 
 const steps = [
     { id: 'Step 1', name: 'Hisob ma\'lumotlari', fields: ['firstName', 'lastName', 'email', 'password'] },
-    { id: 'Step 2', name: 'Ta\'lim va Kasb', fields: ['university', 'specialization', 'course', 'occupation'] },
-    { id: 'Step 3', name: 'Networking', fields: ['telegram', 'interests', 'status'] }
+    { id: 'Step 2', name: 'Ta\'lim', fields: ['educationStatus', 'institution', 'fieldOfStudy', 'course'] },
+    { id: 'Step 3', name: 'Networking', fields: ['status', 'skillsToHelp', 'skillsToLearn', 'goalMateTopics']},
+    { id: 'Step 4', name: 'Qo\'shimcha', fields: ['occupation', 'telegram', 'interests'] }
 ]
 
 export default function SignupPage() {
@@ -56,19 +71,7 @@ export default function SignupPage() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      firstName: '',
-      lastName: '',
-      email: '',
-      password: '',
-      occupation: '',
-      university: '',
-      specialization: '',
-      course: '',
-      telegram: '',
-      interests: '',
-      status: 'none',
-    },
+    defaultValues: { status: 'none' },
   });
   
   useEffect(() => {
@@ -103,15 +106,7 @@ export default function SignupPage() {
     } catch (err: any) {
        if (err.code === 'auth/email-already-in-use') {
         setError('This email is already registered. Please log in or use a different email.');
-      } else if (err.code === 'auth/operation-not-allowed') {
-        setError('Email/password sign-up is not enabled. Please check your Firebase Console settings.');
-      }
-      else if (err.code === 'auth/network-request-failed') {
-        setError('Network error. Please check your internet connection.');
-      } else if (err.code === 'auth/configuration-not-found') {
-         setError('Firebase configuration is missing or incorrect. Please contact support.');
-      }
-      else {
+      } else {
         setError(`An unexpected error occurred: ${err.message}`);
       }
     }
@@ -120,7 +115,7 @@ export default function SignupPage() {
   if (loading || user) {
     return (
         <div className="flex items-center justify-center min-h-screen bg-secondary">
-          <p>Loading...</p>
+          <p>Yuklanmoqda...</p>
         </div>
     );
   }
@@ -129,7 +124,19 @@ export default function SignupPage() {
       { value: 'open-to-learn', label: 'O\'rganishga ochiqman', icon: BrainCircuit },
       { value: 'open-to-help', label: 'Yordam berishga tayyorman', icon: HandHelping },
       { value: 'searching-goalmates', label: 'Maqsaddosh qidiryapman', icon: Search },
+      { value: 'none', label: 'Hech biri', icon: UserCheck },
   ]
+  
+  const educationStatusOptions = [
+      { value: 'student', label: 'Talaba', icon: GraduationCap },
+      { value: 'master', label: 'Magistr', icon: GraduationCap },
+      { value: 'applicant', label: 'Abituriyent', icon: BookOpen },
+      { value: 'pupil', label: 'Maktab o\'quvchisi', icon: School },
+      { value: 'other', label: 'Boshqa', icon: Users },
+  ]
+
+  const educationStatus = form.watch('educationStatus');
+  const networkingStatus = form.watch('status');
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-secondary py-12 px-4">
@@ -148,7 +155,7 @@ export default function SignupPage() {
              {error && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Signup Failed</AlertTitle>
+                  <AlertTitle>Ro'yxatdan o'tishda xatolik</AlertTitle>
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
@@ -160,6 +167,7 @@ export default function SignupPage() {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -50 }}
                     transition={{ duration: 0.3 }}
+                    className="min-h-[350px]"
                 >
 
               {currentStep === 0 && (
@@ -184,44 +192,13 @@ export default function SignupPage() {
 
               {currentStep === 1 && (
                   <div className="space-y-4">
-                    <h3 className='font-semibold text-lg'>2. Ta'lim va Kasb</h3>
-                     <FormField control={form.control} name="university" render={({ field }) => (
-                        <FormItem><FormLabel>Universitet</FormLabel><FormControl><Input placeholder="e.g., TUIT" {...field} /></FormControl><FormMessage /></FormItem>
-                    )}/>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                         <FormField control={form.control} name="specialization" render={({ field }) => (
-                            <FormItem><FormLabel>Mutaxassislik</FormLabel><FormControl><Input placeholder="e.g., Software Engineering" {...field} /></FormControl><FormMessage /></FormItem>
-                        )}/>
-                         <FormField control={form.control} name="course" render={({ field }) => (
-                            <FormItem><FormLabel>Kurs (raqam)</FormLabel><FormControl><Input type="number" placeholder="e.g., 3" {...field} /></FormControl><FormMessage /></FormItem>
-                        )}/>
-                    </div>
-                     <FormField control={form.control} name="occupation" render={({ field }) => (
-                        <FormItem><FormLabel>Kasbingiz</FormLabel><FormControl><Input placeholder="e.g., Dasturchi, Marketolog" {...field} /></FormControl><FormMessage /></FormItem>
-                    )}/>
-                  </div>
-              )}
-
-              {currentStep === 2 && (
-                  <div className="space-y-4">
-                     <h3 className='font-semibold text-lg'>3. Networking</h3>
-                     <FormField control={form.control} name="telegram" render={({ field }) => (
-                        <FormItem><FormLabel>Telegram Username</FormLabel><FormControl>
-                            <div className="relative">
-                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">@</span>
-                                <Input placeholder="username" {...field} className="pl-7"/>
-                            </div>
-                        </FormControl><FormMessage /></FormItem>
-                    )}/>
-                     <FormField control={form.control} name="interests" render={({ field }) => (
-                        <FormItem><FormLabel>Qiziqishlaringiz</FormLabel><FormControl><Textarea placeholder="Qiziqishlaringizni vergul bilan ajratib yozing (masalan, Dasturlash, Kitob o'qish, Futbol)" {...field} /></FormControl><FormMessage /></FormItem>
-                    )}/>
-                    <FormField control={form.control} name="status" render={({ field }) => (
+                    <h3 className='font-semibold text-lg'>2. Ta'lim</h3>
+                    <FormField control={form.control} name="educationStatus" render={({ field }) => (
                         <FormItem className="space-y-3">
-                            <FormLabel>Sizning hozirgi maqsadingiz qanday?</FormLabel>
-                            <FormControl>
-                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {statusOptions.map(opt => (
+                            <FormLabel>Sizning hozirgi statusingiz?</FormLabel>
+                             <FormControl>
+                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                                {educationStatusOptions.map(opt => (
                                      <FormItem key={opt.value}>
                                         <FormControl>
                                             <RadioGroupItem value={opt.value} id={opt.value} className="sr-only" />
@@ -240,8 +217,100 @@ export default function SignupPage() {
                             <FormMessage />
                         </FormItem>
                      )}/>
+                    
+                    {educationStatus && (
+                         <FormField control={form.control} name="institution" render={({ field }) => (
+                            <FormItem><FormLabel>O'quv Muassasasi Nomi</FormLabel><FormControl><Input placeholder="e.g., TUIT, 5-maktab, PDP Academy" {...field} /></FormControl><FormMessage /></FormItem>
+                        )}/>
+                    )}
+
+                    {(educationStatus === 'student' || educationStatus === 'master') && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <FormField control={form.control} name="fieldOfStudy" render={({ field }) => (
+                                <FormItem><FormLabel>Mutaxassislik</FormLabel><FormControl><Input placeholder="e.g., Software Engineering" {...field} /></FormControl><FormMessage /></FormItem>
+                            )}/>
+                            <FormField control={form.control} name="course" render={({ field }) => (
+                                <FormItem><FormLabel>Kurs (raqam)</FormLabel><FormControl><Input type="number" placeholder="e.g., 3" {...field} /></FormControl><FormMessage /></FormItem>
+                            )}/>
+                        </div>
+                    )}
                   </div>
               )}
+
+              {currentStep === 2 && (
+                  <div className="space-y-4">
+                     <h3 className='font-semibold text-lg'>3. Networking Maqsadingiz</h3>
+                     <FormField control={form.control} name="status" render={({ field }) => (
+                        <FormItem className="space-y-3">
+                            <FormLabel>Qanday maqsadda hamjamiyatga qo'shilyapsiz?</FormLabel>
+                            <FormControl>
+                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-2 gap-4">
+                                {statusOptions.map(opt => (
+                                     <FormItem key={opt.value}>
+                                        <FormControl>
+                                            <RadioGroupItem value={opt.value} id={`status-${opt.value}`} className="sr-only" />
+                                        </FormControl>
+                                        <label
+                                            htmlFor={`status-${opt.value}`}
+                                            className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer h-full", field.value === opt.value && "border-primary")}
+                                        >
+                                            <opt.icon className="h-6 w-6 mb-2" />
+                                            {opt.label}
+                                        </label>
+                                     </FormItem>
+                                ))}
+                                </RadioGroup>
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                     )}/>
+                     
+                     <AnimatePresence>
+                      {networkingStatus === 'open-to-help' && (
+                        <motion.div initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}>
+                            <FormField control={form.control} name="skillsToHelp" render={({ field }) => (
+                                <FormItem><FormLabel>Yordam bera oladigan sohalaringiz</FormLabel><FormControl><Textarea placeholder="Qaysi fanlar yoki sohalarda bilimingiz kuchli? (Vergul bilan ajrating)" {...field} /></FormControl><FormMessage /></FormItem>
+                            )}/>
+                        </motion.div>
+                      )}
+                      {networkingStatus === 'open-to-learn' && (
+                         <motion.div initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}>
+                            <FormField control={form.control} name="skillsToLearn" render={({ field }) => (
+                                <FormItem><FormLabel>O'rganmoqchi bo'lgan sohalaringiz</FormLabel><FormControl><Textarea placeholder="Qaysi yangi bilimlarni egallashni xohlaysiz?" {...field} /></FormControl><FormMessage /></FormItem>
+                            )}/>
+                        </motion.div>
+                      )}
+                      {networkingStatus === 'searching-goalmates' && (
+                         <motion.div initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}}>
+                            <FormField control={form.control} name="goalMateTopics" render={({ field }) => (
+                                <FormItem><FormLabel>Maqsaddosh qidirayotgan yo'nalishlaringiz</FormLabel><FormControl><Textarea placeholder="Qaysi umumiy maqsadlar yo'lida ishlamoqchi bo'lgan sheriklar qidiryapsiz?" {...field} /></FormControl><FormMessage /></FormItem>
+                            )}/>
+                        </motion.div>
+                      )}
+                     </AnimatePresence>
+                  </div>
+              )}
+
+              {currentStep === 3 && (
+                 <div className="space-y-4">
+                    <h3 className='font-semibold text-lg'>4. Qo'shimcha Ma'lumotlar</h3>
+                    <FormField control={form.control} name="occupation" render={({ field }) => (
+                        <FormItem><FormLabel>Kasbingiz (ixtiyoriy)</FormLabel><FormControl><Input placeholder="e.g., Dasturchi, Marketolog" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                     <FormField control={form.control} name="telegram" render={({ field }) => (
+                        <FormItem><FormLabel>Telegram Username (ixtiyoriy)</FormLabel><FormControl>
+                            <div className="relative">
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">@</span>
+                                <Input placeholder="username" {...field} className="pl-7"/>
+                            </div>
+                        </FormControl><FormMessage /></FormItem>
+                    )}/>
+                     <FormField control={form.control} name="interests" render={({ field }) => (
+                        <FormItem><FormLabel>Qiziqishlaringiz (ixtiyoriy)</FormLabel><FormControl><Textarea placeholder="Qiziqishlaringizni vergul bilan ajratib yozing (masalan, Dasturlash, Kitob o'qish, Futbol)" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                 </div>
+              )}
+
                </motion.div>
             </AnimatePresence>
 

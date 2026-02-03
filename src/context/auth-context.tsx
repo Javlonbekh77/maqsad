@@ -7,7 +7,7 @@ import type { User } from '@/lib/types';
 import { auth, db } from '@/lib/firebase';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
-type SignupData = Omit<User, 'id' | 'firebaseId' | 'coins' | 'silverCoins' | 'goals' | 'habits' | 'groups' | 'taskHistory' | 'fullName' | 'createdAt' | 'avatarUrl' | 'taskSchedules' | 'lastJournalRewardDate'> & { password: string; };
+type SignupData = Omit<User, 'id' | 'firebaseId' | 'coins' | 'silverCoins' | 'goals' | 'habits' | 'groups' | 'taskHistory' | 'fullName' | 'createdAt' | 'avatarUrl' | 'taskSchedules' | 'lastJournalRewardDate' | 'university' | 'specialization'> & { password: string; };
 
 interface AuthContextType {
   user: User | null;
@@ -76,7 +76,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
      return signInWithEmailAndPassword(auth, email, password);
   };
 
-  const signup = async (data: SignupData) => {
+  const signup = async (data: any) => {
     const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
     const { password, ...profileData } = data;
     
@@ -103,14 +103,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       occupation: data.occupation || '',
       taskHistory: [],
       taskSchedules: [],
-      university: data.university || '',
-      specialization: data.specialization || '',
+      institution: data.institution || '',
+      educationStatus: data.educationStatus || 'other',
+      fieldOfStudy: data.fieldOfStudy || '',
       course: data.course || '',
       telegram: data.telegram || '',
       createdAt: serverTimestamp(),
       lastJournalRewardDate: '',
       interests: data.interests || '',
       status: data.status || 'none',
+      skillsToHelp: data.skillsToHelp || '',
+      skillsToLearn: data.skillsToLearn || '',
+      goalMateTopics: data.goalMateTopics || '',
     };
     
     await setDoc(userDocRef, newUser);

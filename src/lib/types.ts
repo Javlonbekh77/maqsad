@@ -78,8 +78,10 @@ export type User = {
   occupation: string;
   taskHistory: TaskHistory[];
   taskSchedules?: UserTaskSchedule[]; // User's specific schedules for group tasks
-  university?: string;
-  specialization?: string;
+  university?: string; // Kept for backward compatibility
+  institution?: string; // Replaces university/school/center
+  educationStatus?: 'student' | 'master' | 'applicant' | 'pupil' | 'other';
+  fieldOfStudy?: string;
   course?: string;
   telegram?: string;
   createdAt: FieldValue;
@@ -88,6 +90,9 @@ export type User = {
   lastJournalRewardDate?: string; // YYYY-MM-DD
   status?: 'open-to-help' | 'searching-goalmates' | 'open-to-learn' | 'none';
   interests?: string;
+  skillsToHelp?: string; // For 'open-to-help' status
+  skillsToLearn?: string; // For 'open-to-learn' status
+  goalMateTopics?: string; // For 'searching-goalmates' status
 };
 
 export type WeeklyMeeting = {

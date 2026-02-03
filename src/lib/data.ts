@@ -463,21 +463,39 @@ export const updateUserProfile = async (userId: string, data: Partial<User>): Pr
     const userDocRef = doc(db, 'users', userId);
     const updateData: { [key: string]: any } = {};
 
-    if (data.firstName && data.lastName) {
-        updateData.firstName = data.firstName;
-        updateData.lastName = data.lastName;
-        updateData.fullName = `${data.firstName} ${data.lastName}`.trim();
+    // Basic Info
+    if (data.firstName) updateData.firstName = data.firstName;
+    if (data.lastName) updateData.lastName = data.lastName;
+    if (data.firstName || data.lastName) {
+         const user = await getUser(userId);
+         const fName = data.firstName || user?.firstName;
+         const lName = data.lastName || user?.lastName;
+         updateData.fullName = `${fName} ${lName}`.trim();
     }
+    if (data.avatarUrl) updateData.avatarUrl = data.avatarUrl;
+    if (data.occupation !== undefined) updateData.occupation = data.occupation;
+    if (data.telegram !== undefined) updateData.telegram = data.telegram;
+
+    // Goals and Interests
     if (data.goals !== undefined) updateData.goals = data.goals;
     if (data.habits !== undefined) updateData.habits = data.habits;
-    if (data.avatarUrl) updateData.avatarUrl = data.avatarUrl;
-    if (data.notificationsLastCheckedAt) updateData.notificationsLastCheckedAt = data.notificationsLastCheckedAt;
-    if (data.occupation !== undefined) updateData.occupation = data.occupation;
-    if (data.university !== undefined) updateData.university = data.university;
-    if (data.specialization !== undefined) updateData.specialization = data.specialization;
-    if (data.course !== undefined) updateData.course = data.course;
-    if (data.telegram !== undefined) updateData.telegram = data.telegram;
+    if (data.interests !== undefined) updateData.interests = data.interests;
     
+    // Education Info
+    if (data.educationStatus !== undefined) updateData.educationStatus = data.educationStatus;
+    if (data.institution !== undefined) updateData.institution = data.institution;
+    if (data.fieldOfStudy !== undefined) updateData.fieldOfStudy = data.fieldOfStudy;
+    if (data.course !== undefined) updateData.course = data.course;
+    
+    // Networking Status and Skills
+    if (data.status !== undefined) updateData.status = data.status;
+    if (data.skillsToHelp !== undefined) updateData.skillsToHelp = data.skillsToHelp;
+    if (data.skillsToLearn !== undefined) updateData.skillsToLearn = data.skillsToLearn;
+    if (data.goalMateTopics !== undefined) updateData.goalMateTopics = data.goalMateTopics;
+    
+    // System fields
+    if (data.notificationsLastCheckedAt) updateData.notificationsLastCheckedAt = data.notificationsLastCheckedAt;
+
     if (Object.keys(updateData).length > 0) {
       await updateDoc(userDocRef, updateData);
     }

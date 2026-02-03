@@ -12,6 +12,7 @@ import { getScheduledTasksForUser } from '@/lib/data';
 import useSWR from 'swr';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth-context';
+import GoalMates from '@/components/profile/goal-mates';
 
 
 function LoadingFallback() {
@@ -110,6 +111,9 @@ export default function DashboardClient() {
                 <QuickAccess />
             </div>
         </div>
+
+        <GoalMates userId={user.id} />
+
       </div>
     </AppLayout>
   );
